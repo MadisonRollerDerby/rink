@@ -71,7 +71,7 @@ class MyUserAdmin(AuthUserAdmin):
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        #(_('Personal info'), {'fields': ('first_name', 'last_name', 'email')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name')}),
         #(_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',
         #                               'groups', 'user_permissions')}),
         #(_('Important dates'), {'fields': ('last_login', 'date_joined')}),
@@ -79,7 +79,7 @@ class MyUserAdmin(AuthUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2'),
+            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name'),
         }),
     )
 
@@ -87,10 +87,10 @@ class MyUserAdmin(AuthUserAdmin):
     #        ('User Profile', {'fields': ('name',)}),
     #) #+ AuthUserAdmin.fieldsets
 
-    list_display = ('email', 'name', 'is_superuser')
+    list_display = ('email', 'first_name', 'last_name', 'derby_name', 'is_superuser')
 
-    search_fields = ['name']
-    ordering = ('name',)
+    search_fields = ['last_name', 'first_name']
+    ordering = ('last_name', 'first_name',)
     filter_horizontal = ()
     list_filter = ('is_admin',)
     list_display = ('email',)

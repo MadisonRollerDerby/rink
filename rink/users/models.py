@@ -37,15 +37,19 @@ class RinkUserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
 
-    # First Name and Last Name do not cover name patterns
-    # around the globe.
-    name = models.CharField(_('Name of User'), blank=True, max_length=255)
+    first_name = models.CharField(_('First Name'), blank=True, max_length=255)
+    last_name = models.CharField(_('Last Name'), blank=True, max_length=255)
 
     email = models.EmailField(
         verbose_name='email address',
         max_length=255,
         unique=True,
     )
+
+    derby_name = models.CharField(_('Derby Name'), blank=True, max_length=255)
+
+    # Derby Name can be a maximum of 4 characters
+    derby_number = models.CharField(_('Derby Number'), blank=True, max_length=4)
 
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -56,7 +60,19 @@ class User(AbstractBaseUser):
     objects = RinkUserManager()
 
     def __str__(self):
-        return self.email
+        if self.first_name and self.last_name:
+            name = "{} {}".format(self.first_name, self.last_name)
+        elif self.last_name:
+            name = self.last_name
+        elif self.first_name:
+            name = self.first_name
+        else:
+            name = self.email
+
+        if self.derby_name:
+            name = "{} ({})".format(name, self.derby_name)
+
+        return name
 
     @property
     def is_staff(self):
