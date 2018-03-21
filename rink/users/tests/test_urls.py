@@ -1,10 +1,13 @@
 from django.urls import reverse, resolve
-
 from test_plus.test import TestCase
+
+from .factories import UserFactory
 
 
 class TestUserURLs(TestCase):
     """Test URL patterns for users app."""
+
+    user_factory = UserFactory
 
     def setUp(self):
         self.user = self.make_user()
@@ -29,15 +32,15 @@ class TestUserURLs(TestCase):
         )
 
     def test_detail_reverse(self):
-        """users:detail should reverse to /users/testuser/."""
+        """users:detail should reverse to /users/1/."""
         self.assertEqual(
-            reverse('users:detail', kwargs={'username': 'testuser'}),
-            '/users/testuser/'
+            reverse('users:detail', kwargs={'id': self.user.id}),
+            '/users/{}/'.format(self.user.id)
         )
 
     def test_detail_resolve(self):
-        """/users/testuser/ should resolve to users:detail."""
-        self.assertEqual(resolve('/users/testuser/').view_name, 'users:detail')
+        """/users/1/ should resolve to users:detail."""
+        self.assertEqual(resolve('/users/{}/'.format(self.user.id)).view_name, 'users:detail')
 
     def test_update_reverse(self):
         """users:update should reverse to /users/~update/."""

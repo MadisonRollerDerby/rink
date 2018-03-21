@@ -20,7 +20,7 @@ urlpatterns = [
         name='update'
     ),
     url(
-        regex=r'^(?P<username>[\w.@+-]+)/$',
+        regex=r'^(?P<id>[\d]+)/$',
         view=views.UserDetailView.as_view(),
         name='detail'
     ),
