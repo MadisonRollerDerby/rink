@@ -287,3 +287,4 @@ pip-selfcheck.json
 rink/media/
 
 .pytest_cache
+.idea/
