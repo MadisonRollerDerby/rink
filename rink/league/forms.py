@@ -20,6 +20,11 @@ class LeagueForm(forms.ModelForm):
             'stripe_public_key', 
             'default_address_state',
             'logo',
+            'email_from_name',
+            'email_from_address',
+            'email_cc_address',
+            'email_header',
+            'email_footer',
         ]
 
     def __init__(self, *args, **kwargs):

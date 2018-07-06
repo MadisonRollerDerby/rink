@@ -11,7 +11,7 @@ from users.models import User
 
 from .forms import LeagueForm, PermissionsForm
 from .models import League, Organization
-from .utils import OrganizationAdminRequiredMixIn
+from .mixins import OrganizationAdminRequiredMixIn
 
 
 class LeagueAdminList(OrganizationAdminRequiredMixIn, View):

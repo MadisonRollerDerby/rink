@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from django.urls import reverse
 
 from fernet_fields import EncryptedCharField
@@ -17,13 +19,15 @@ class Organization(models.Model):
     name = models.CharField(
         "Organization Name",
         max_length=50,
-        help_text = "Example: 'Wreckers', 'Juniors', 'Madison Roller Derby', etc.",
+        help_text = "Example: 'Madison Roller Derby', etc.",
     )
 
     slug = models.CharField(
         "Organization Slug",
         max_length=20,
         help_text = "Example: 'mrd', 'wreckers', 'juniors'. DO NOT CHANGE.",
+        unique=True,
+        blank=True,
     )
 
     def __str__(self):
@@ -48,10 +52,17 @@ class League(models.Model):
         help_text = "Example: 'Wreckers', 'Juniors', 'Madison Roller Derby', etc.",
     )
 
+    short_name = models.CharField(
+        "Short Name",
+        max_length=50,
+        help_text = "Example: 'MWD', 'Juniors', 'MRD', etc. Something short.",
+    )
+
     slug = models.CharField(
         "League Slug",
         max_length=20,
         help_text = "Example: 'mrd', 'wreckers', 'juniors'. DO NOT CHANGE.",
+        blank=True,
     )
 
     organization = models.ForeignKey(
@@ -88,11 +99,44 @@ class League(models.Model):
         options={'quality': 80}
     )
 
+    email_from_name = models.CharField(
+        "Email From Name",
+        max_length=100,
+        help_text="The name of the person or account sending email. Example 'MRD Training'.",
+        blank=True,
+    )
+
+    email_from_address = models.EmailField(
+        "Email From Address",
+        max_length=100,
+        help_text="The email address all emails from this league will be from."
+    )
+
+    email_cc_address = models.EmailField(
+        "CC Emails To",
+        max_length=100,
+        help_text="If you would like all emails sent from this league to be CC'd to an email, enter one here. Leave blank to disable.",
+        blank=True,
+    )
+
+    email_header = models.TextField(
+        "Email Header",
+        help_text="Custom header design HTML for all emails sent from this system.",
+        blank=True,
+    )
+
+    email_footer = models.TextField(
+        "Email Footer",
+        help_text="Custom header design HTML (bottom) for all emails sent from this system.",
+        blank=True,
+    )
+
     def __str__(self):
         return self.name
 
     class Meta:
         ordering = ['name']
+        unique_together = ('slug', 'organization')
         permissions = (
             ('league_admin', 'Can manage league settings and email templates.'),
             ('billing_manager', 'Can send bills and manage dues.'),
@@ -106,4 +150,11 @@ class League(models.Model):
 
     def get_absolute_url(self):
         return reverse('league:league_update', kwargs={'slug': self.slug, 'organization_slug': self.organization.slug })
+
+
+@receiver(pre_save, sender=Organization)
+@receiver(pre_save, sender=League)
+def my_callback(sender, instance, *args, **kwargs):
+    if not instance.slug:
+        instance.slug = slugify(instance.name)
         
