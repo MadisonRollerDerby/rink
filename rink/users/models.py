@@ -1,4 +1,4 @@
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
+from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -35,7 +35,7 @@ class RinkUserManager(BaseUserManager):
 
 
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
 
     first_name = models.CharField(_('First Name'), blank=True, max_length=255)
     last_name = models.CharField(_('Last Name'), blank=True, max_length=255)
@@ -44,6 +44,13 @@ class User(AbstractBaseUser):
         verbose_name='email address',
         max_length=255,
         unique=True,
+    )
+
+    organization = models.ForeignKey(
+        'league.Organization',
+        "Organization",
+        blank = True,
+        default = 1,
     )
 
     derby_name = models.CharField(_('Derby Name'), blank=True, max_length=255)

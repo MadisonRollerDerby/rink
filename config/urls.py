@@ -15,6 +15,8 @@ urlpatterns = [
     url(r'^users/', include('rink.users.urls', namespace='users')),
     url(r'^accounts/', include('allauth.urls')),
 
+    url(r'^organization/', include('league.urls', namespace='league')),
+
     url(r'^<slug:league_slug>/registration/', include('registration.urls', namespace='registration')),
 
 

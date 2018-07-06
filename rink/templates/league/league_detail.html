@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'league:league_list' organization_slug=request.user.organization.slug %}">Manage Leagues</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if league %}Edit{% else %}New{% endif %} League</li>
+  </ol>
+</nav>
+
+<div class="container">
+    <div class="row">
+        {% if league.logo %}
+            <img src="{{ league.logo_thumbnail.url }}" alt="{{ league.name }} logo" class="img-thumbnail">
+        {% endif %}
+        <h1>{% if league %}{{ league }}{% else %}New League{% endif %}</h1>
+    </div>
+</div>
+
+{% crispy form %}
+
+{% endblock %}

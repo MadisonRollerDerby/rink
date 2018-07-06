@@ -16,7 +16,9 @@ django-crispy-forms==1.7.2  # https://github.com/django-crispy-forms/django-cris
 django-redis==4.9.0  # https://github.com/niwinz/django-redis
 django-localflavor
 django-phonenumber-field
-django-guardian
+-e https://github.com/django-guardian/django-guardian/archive/devel.zip
+django-fernet-fields
+django-imagekit
 
 # Django REST Framework
 djangorestframework==3.7.7  # https://github.com/encode/django-rest-framework

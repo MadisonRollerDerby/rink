@@ -43,10 +43,10 @@
             {% if request.user.is_authenticated %}
               {% if request.user.is_admin %}
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Organization</a>
+                  <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="{% url 'league:league_list' organization_slug=request.user.organization.slug %}" role="button" aria-haspopup="true" aria-expanded="false">Organization</a>
                   <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#">Leagues</a>
-                    <a class="dropdown-item" href="#">Permissions</a>
+                    <a class="dropdown-item" href="{% url 'league:league_list' organization_slug=request.user.organization.slug  %}">Leagues</a>
+                    <a class="dropdown-item" href="{% url 'league:organization_permissions' organization_slug=request.user.organization.slug %}">Permissions</a>
                   </div>
                 </li>
               {% endif %}

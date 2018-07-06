@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <h1>Organization Admins</h1>
+    </div>
+</div>
+
+{% if organization.users %}
+<div class="list-group">
+    {% for user in organization.users %}
+        <a href="{% url 'league:organization_permissions_update' user_id=user.pk organization_slug=organization.slug %}">
+            <button type="button" class="list-group-item list-group-item-action">
+                {{ user }}
+                <span class="badge badge-pill badge-danger">org admin</span>
+            </button>
+        </a>
+    {% endfor %}
+</div>
+{% else %}
+No organization admins have been set. Which is weird. How are you here?
+{% endif %}
+
+
+
+{% for league in leagues %}
+<div class="container">
+    <div class="row">
+        <h1>
+            <img src="{{ league.logo_thumbnail.url }}" alt="{{ league.name }} logo" class="img-thumbnail">
+                        {{ league.name }}
+        </h1>
+    </div>
+</div>
+
+{% if league.users %}
+    <div class="list-group">
+        {% for user, permissions in league.users.items %}
+            <a href="{% url 'league:organization_permissions_update' user_id=user.pk organization_slug=organization.slug %}" class="list-group-item list-group-item-action">
+
+                {{ user }}
+
+                {% for permission in permissions %}
+                    {% if permission not in ignore %}
+                        <span class="badge badge-pill badge-primary">{{ permission }}</span>
+                    {% endif %}
+                {% endfor %}
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    No users in this league have admin privileges.
+{% endif %}
+
+
+{% endfor %}
+
+
+
+
+
+{% endblock %}

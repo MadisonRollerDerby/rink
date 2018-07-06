@@ -66,13 +66,15 @@ THIRD_PARTY_APPS = [
     'crispy_forms',
     'phonenumber_field',
     'guardian',
+    'imagekit',
+    'stronghold',
 
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.facebook',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.twitter',
+    #'allauth.socialaccount.providers.facebook',
+    #'allauth.socialaccount.providers.google',
+    #'allauth.socialaccount.providers.twitter',
 
     'rest_framework',
 ]
@@ -147,6 +149,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'stronghold.middleware.LoginRequiredMiddleware',
 ]
 
 # STATIC
@@ -262,3 +265,28 @@ SOCIALACCOUNT_ADAPTER = 'rink.users.adapters.SocialAccountAdapter'
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+STRONGHOLD_DEFAULTS = True
+#STRONGHOLD_PUBLIC_URLS = ()
+
+STRONGHOLD_PUBLIC_NAMED_URLS = (
+    'account_login',
+    'account_logout',
+    'account_reset_password',
+    'account_reset_password_done',
+    'password_reset_from_key',
+    'account_reset_password_from_key',
+    'account_reset_password_from_key_done',
+    'account_inactive',
+)
+
+
+# Permissions that the permissions setup page should ignore
+RINK_PERMISSIONS_IGNORE = (
+    'add_league',
+    'change_league',
+    'delete_league',
+    'add_organization',
+    'change_organization',
+    'delete_organization',
+    'league_member',
+)

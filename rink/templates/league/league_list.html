@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <h1>Manage Leagues</h1>
+    </div>
+    <div class="row">
+        <a href="{% url 'league:league_create' organization_slug=request.user.organization.slug %}">
+            <button type="button" class="btn btn-primary btn-sm">Create League</button>
+        </a>
+    </div>
+    <div class="row">
+        {% if leagues %}
+            <div class="list-group">
+                {% for league in leagues %}
+                    <a href="{% url 'league:league_update' slug=league.slug organization_slug=request.user.organization.slug %}" class="list-group-item list-group-item-action">
+                        <img src="{{ league.logo_thumbnail.url }}" alt="{{ league.name }} logo" class="img-thumbnail">
+                        {{ league.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            No Leagues found. Maybe you should create one?
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
