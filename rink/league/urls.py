@@ -13,5 +13,6 @@ urlpatterns = [
     path('<slug:organization_slug>/permissions/', views.OrganizationPermissionsView.as_view(), name="organization_permissions"),
     path('<slug:organization_slug>/permission/', views.OrganizationPermissionsChange.as_view(), name="organization_permissions_create"),
     path('<slug:organization_slug>/permission/<int:user_id>', views.OrganizationPermissionsChange.as_view(), name="organization_permissions_update"),
+    path('<slug:organization_slug>/create-user/', views.CreateUserView.as_view(), name="create_rink_user"),
 
 ]

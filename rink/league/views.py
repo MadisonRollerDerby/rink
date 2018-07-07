@@ -2,6 +2,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.utils.crypto import get_random_string
 from django.views.generic.edit import CreateView, UpdateView
 from django.views import View
 
@@ -9,9 +10,11 @@ from guardian.shortcuts import get_perms_for_model, get_users_with_perms
 
 from users.models import User
 
-from .forms import LeagueForm, PermissionsForm
+from .forms import LeagueForm, PermissionsForm, CreateRinkUserForm
 from .models import League, Organization
-from .mixins import OrganizationAdminRequiredMixIn
+from .mixins import OrganizationAdminRequiredMixIn, LeagueAdminRequiredMixIn
+from league.utils import send_email
+from users.models import User
 
 
 class LeagueAdminList(OrganizationAdminRequiredMixIn, View):
@@ -33,7 +36,7 @@ class LeagueAdminCreate(OrganizationAdminRequiredMixIn, CreateView):
         return super().form_valid(form)
 
 
-class LeagueAdminUpdate(OrganizationAdminRequiredMixIn, UpdateView):
+class LeagueAdminUpdate(LeagueAdminRequiredMixIn, UpdateView):
     model = League
     form_class = LeagueForm
     template_name = 'league/league_detail.html'
@@ -114,4 +117,60 @@ class OrganizationPermissionsChange(OrganizationAdminRequiredMixIn, View):
         # TODO display errors
         #else:
         #    print(form.non_field_errors())
+
+
+class CreateUserView(OrganizationAdminRequiredMixIn, View):
+    template = "league/create_rink_user.html"
+    def get(self, request, organization_slug):
+        return render(request, self.template, {'form': CreateRinkUserForm()})
+
+
+    def post(self, request, organization_slug):
+        form = CreateRinkUserForm(request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+
+            # Yeah I guess... this could be something more custom.
+            organization = Organization.objects.get(pk=request.session['view_organization'])
+            league = League.objects.get(pk=request.session['view_league'])
+
+            password = get_random_string(12)
+            user = User.objects.create_user(
+                email = cleaned_data['email'],
+                password = password,
+            )
+
+            user.first_name = cleaned_data['first_name']
+            user.last_name = cleaned_data['last_name']
+            user.derby_name = cleaned_data['derby_name']
+
+            # These two might make more sense elsewhere as an item on the
+            # form or validating that they are allowed to access it.
+            user.organization = organization
+            user.league = league
+            user.save()
+
+            send_email(
+                league = league,
+                to_email = cleaned_data['email'],
+                template = "admin_user_creation_invite",
+                context = {
+                    'user': user,
+                    'password': password,
+                    'league': league,
+                    'organization': organization,
+                }
+            )
+
+            return HttpResponseRedirect(
+                reverse("league:organization_permissions_update", 
+                    kwargs = {
+                        'organization_slug': organization.slug,
+                        'user_id': user.pk,
+                    }
+                )
+            )
+
+        else:
+            return render(request, self.template, {'form': form})
 

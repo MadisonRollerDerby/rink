@@ -9,6 +9,7 @@ from guardian.shortcuts import get_perms_for_model, get_user_perms, \
 import re
 
 from .models import Organization, League
+from users.models import User
 
 
 class LeagueForm(forms.ModelForm):
@@ -180,3 +181,19 @@ class PermissionsForm(forms.Form):
                     assign_perm(match.group(3), self.editing_user, obj)
                 elif obj and not value:
                     remove_perm(match.group(3), self.editing_user, obj)
+
+
+class CreateRinkUserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = [
+            'first_name', 
+            'last_name', 
+            'derby_name',
+            'email', 
+        ]
+
+    def __init__(self, *args, **kwargs):
+        self.helper = FormHelper()
+        super(CreateRinkUserForm, self).__init__(*args, **kwargs)
+        self.helper.add_input(Submit('submit', 'Submit'))

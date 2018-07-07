@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <h1>Create Admin User</h1>
+    </div>
+    <div class="row">
+        <p>Use this form to quickly add someone to the system as an admin. They will receive an email with a temporary password.</p>
+    </div>
+</div>
+
+{% crispy form %}
+
+{% endblock %}

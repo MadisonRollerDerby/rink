@@ -5,8 +5,8 @@
 
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{% url 'league:league_list' organization_slug=request.user.organization.slug %}">Manage Leagues</a></li>
-    <li class="breadcrumb-item active" aria-current="page">{% if league %}Edit{% else %}New{% endif %} League</li>
+    {% if request.session.organization_admin %}<li class="breadcrumb-item"><a href="{% url 'league:league_list' organization_slug=request.user.organization.slug %}">Manage Leagues</a></li>{% endif %}
+    <li class="breadcrumb-item active" aria-current="page">{% if league %}Edit{% else %}New{% endif %} League {% if not request.session.organization_admin %} Settings{% endif %}</li>
   </ol>
 </nav>
 

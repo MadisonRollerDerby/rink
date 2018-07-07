@@ -1,4 +1,5 @@
-{% load static i18n %}<!DOCTYPE html>
+{% load static i18n %}
+{% load guardian_tags %}<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -41,26 +42,36 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
             {% if request.user.is_authenticated %}
-              {% if request.user.is_admin %}
+              {% if request.session.organization_admin %}
                 <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="{% url 'league:league_list' organization_slug=request.user.organization.slug %}" role="button" aria-haspopup="true" aria-expanded="false">Organization</a>
+                  <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="{% url 'league:league_list' organization_slug=request.session.view_organization_slug %}" role="button" aria-haspopup="true" aria-expanded="false">Organization</a>
                   <div class="dropdown-menu">
-                    <a class="dropdown-item" href="{% url 'league:league_list' organization_slug=request.user.organization.slug  %}">Leagues</a>
-                    <a class="dropdown-item" href="{% url 'league:organization_permissions' organization_slug=request.user.organization.slug %}">Permissions</a>
+                    <a class="dropdown-item" href="{% url 'league:league_list' organization_slug=request.session.view_organization_slug  %}">Leagues</a>
+                    <a class="dropdown-item" href="{% url 'league:organization_permissions' organization_slug=request.session.view_organization_slug %}">Permissions</a>
+                    <a class="dropdown-item" href="{% url 'league:create_rink_user' organization_slug=request.session.view_organization_slug %}">Create User</a>
                   </div>
                 </li>
               {% endif %}
 
-              {% if request.user.is_admin %}
+              {% if request.session.league_admin %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">League</a>
                   <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#">Roster</a>
-                    <a class="dropdown-item" href="#">Dues</a>
-                    <a class="dropdown-item" href="#">Registration</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Emails</a>
-                    <a class="dropdown-item" href="#">Settings</a>
+                    {% if "roster_manager" in request.session.league_permissions %}
+                      <a class="dropdown-item" href="#">Roster</a>
+                    {% endif %}
+
+                    {% if "dues_manager" in request.session.league_permissions %}
+                      <a class="dropdown-item" href="#">Dues</a>
+                    {% endif %}
+
+                    {% if "registration_manager" in request.session.league_permissions %}
+                      <a class="dropdown-item" href="#">Registration</a>
+                    {% endif %}
+
+                    {% if "league_admin" in request.session.league_permissions %}
+                      <a class="dropdown-item" href="{% url 'league:league_update' organization_slug=request.session.view_organization_slug slug=request.session.view_league_slug %}">Settings</a>
+                    {% endif %}
                   </div>
                 </li>
               {% endif %}

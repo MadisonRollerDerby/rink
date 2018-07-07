@@ -1,34 +1,29 @@
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
-from django.shortcuts import get_object_or_404
-
-from guardian.core import ObjectPermissionChecker
-
-from .models import Organization
 
 
-class OrganizationAdminRequiredMixIn(object):
-    """
-    Check that a user has administration permissions for the current organization.
-    Requires organization_slug to be passed in the URL.
-
-    Return 403 if they don't have access.
-    Returns 404 if the object doesn't exist.
-    Returns impoperly configured if the organization slug isn't in the URL args.
-    """
-
+class RinkPermissionRequiredMixIn(object):
     def dispatch(self, request, *args, **kwargs):
-        # Raise ImproperlyConfigured if organization slug is not sent in the URL
-        organization_slug = kwargs.get('organization_slug', None)
-        if organization_slug is None:
-            raise ImproperlyConfigured("URL does not have an organization_slug, can't determine permissions or organization object.")
+        self.organization_permissions = getattr(self, 'organization_permissions', [])
+        self.league_permissions = getattr(self, 'league_permissions', [])
+        if not self.organization_permissions and not self.league_permissions:
+            raise ImproperlyConfigured("RinkPermissionRequiredMixIn requires either/both organization_permissions or league_permissions to be set.")
 
-        # Raise 404 if object is not found
-        organization = get_object_or_404(Organization, slug=organization_slug)
-
-        # Check if the user has admin access to this organization, if not, raise
-        # that they don't have access.
-        checker = ObjectPermissionChecker(request.user)
-        if checker.has_perm('org_admin', organization):
-            return super(OrganizationAdminRequiredMixIn, self).dispatch(request, *args, **kwargs)
+        # https://stackoverflow.com/questions/24270711/checking-if-two-lists-share-at-least-one-element
+        if any(x in self.organization_permissions for x in request.session['organization_permissions']) or any(x in self.league_permissions for x in request.session['league_permissions']):
+            return super(RinkPermissionRequiredMixIn, self).dispatch(request, *args, **kwargs)
 
         raise PermissionDenied
+
+
+
+"""
+Here's a couple permission mixins for easily setting the org/league permissions
+on a class based view.
+"""
+
+class OrganizationAdminRequiredMixIn(RinkPermissionRequiredMixIn):
+    organization_permissions = ['org_admin']
+
+class LeagueAdminRequiredMixIn(RinkPermissionRequiredMixIn):
+    organization_permissions = ['org_admin']
+    league_permissions = ['league_admin']

@@ -277,7 +277,7 @@ STRONGHOLD_PUBLIC_NAMED_URLS = (
 )
 
 
-# Permissions that the permissions setup page should ignore
+# Non-admin permissions should get ignored here.
 RINK_PERMISSIONS_IGNORE = (
     'add_league',
     'change_league',
