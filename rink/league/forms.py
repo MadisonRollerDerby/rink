@@ -17,10 +17,16 @@ class LeagueForm(forms.ModelForm):
         model = League
         fields = [
             'name', 
+            'logo',
+            'short_name',
+
+            'default_payment_due_day',
+            'default_invoice_day_diff',
             'stripe_private_key', 
             'stripe_public_key', 
+
             'default_address_state',
-            'logo',
+
             'email_from_name',
             'email_from_address',
             'email_cc_address',

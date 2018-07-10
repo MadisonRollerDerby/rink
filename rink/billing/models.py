@@ -1,22 +1,33 @@
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 
 class BillingStatus(models.Model):
-
     name = models.CharField(
         "Status Name",
         max_length=50,
-        help_text = "Example: 'injured', 'active', 'adminisration', 'social'",
+        help_text = "Example: 'Injured', 'Active', 'Adminisration', 'Social'",
+    )
+
+    slug = models.CharField(
+        "Status Slug",
+        max_length=50,
+    )
+
+    league = models.ForeignKey(
+        "league.League",
+        on_delete=models.CASCADE,
     )
 
     description = models.CharField(
         "Status Description",
         max_length=250,
         blank = True,
-        help_text = "Notes detailing what this Billing Status all entails.",
+        help_text = "Any details about what this status represents.",
     )
 
-    dues_amount = models.DecimalField(
+    bill_amount = models.DecimalField(
         "Dues Amount",
         max_digits = 10,
         decimal_places = 2,
@@ -27,72 +38,71 @@ class BillingStatus(models.Model):
     def __str__(self):
         return self.name
 
-
-class BillingSession(models.Model):
     class Meta:
-        verbose_name = "Billing Session"
-        verbose_name_plural = "Billing Sessions"
-
-    name = models.CharField(
-        "Session Name",
-        max_length = 50,
-        help_text = "Name of the session. Keep it simple, examples: 'Fall 2012', 'Summer 2013'")
-
-    def __str__(self):
-        return self.name
+        unique_together = ('slug', 'league')
 
 
 class BillingPeriod(models.Model):
+    name = models.CharField(
+        "Billing Period Name",
+        max_length=50,
+        help_text = "Example: 'July Dues''",
+    )
+
+    event = models.ForeignKey(
+        "registration.RegistrationEvent",
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        "league.League",
+        on_delete=models.CASCADE,
+    )
+
+    start_date = models.DateField(
+        "Start Date",
+        help_text = "First day of this billing period."
+    )
+
+    end_date = models.DateField(
+        "End Date",
+        help_text = "Last day of this billing period."
+    )
+
+    invoice_date = models.DateField(
+        "Invoice Date",
+        help_text = "The date invoices will be sent out for this billing period."
+    )
+
+    due_date = models.DateField(
+        "Due Date",
+        help_text = "The date payments are due. Automatic credit card billing will also occur on this day."
+    )
+
+    dues_amounts = models.ManyToManyField(
+        'billing.BillingStatus',
+        through='BillingPeriodCustomPaymentAmount',
+    )
+
     class Meta:
         verbose_name = "Dues Billing Date"
         verbose_name_plural = "Dues Billing Dates"
         ordering = ["start_date"]
 
     def __str__(self):
-        return self.session.name + ' - ' + str(self.start_date) + ' to ' + str(self.end_date)
+        return "{} - {} to {}".format(
+            self.name,
+            self.start_date,
+            self.end_date,
+        )
 
-    session = models.ForeignKey(
-        "billing.BillingSession",
-        help_text = "Select the Session that this billing period is associated with.",
+
+
+class BillingPeriodCustomPaymentAmount(models.Model):
+    status = models.ForeignKey(
+        'billing.BillingStatus',
+        on_delete=models.CASCADE,
     )
-
-    invoice_date = models.DateField(
-        "Invoice Date",
-        help_text = "The date that invoices will be emailed out.",
-    )
-
-    due_date = models.DateField(
-        "Due Date",
-        help_text = "The date that payments are due for this billing period. We will attempt to charge credit cards on this date.",
-    )
-
-    start_date = models.DateField(
-        "Start Date",
-        help_text = "Start date for this billing period.",
-    )
-
-    end_date = models.DateField(
-        "End Date",
-        help_text = "End date for this billing period.",
-    )
-
-    dues_amounts = models.ManyToManyField(
-        SkaterStatus,
-        through='SessionCustomPaymentAmount',
-    )
-
-
-
-"""
-" Skate session payment amount
-"   Provides a way to handle custom payment amounts for billing peroids
-"""
-class SessionCustomPaymentAmount(models.Model):
-    class Meta:
-        verbose_name = "Custom Dues Billing Amount"
-        verbose_name_plural = "Custom Dues Billing Amounts"
-
-    status = models.ForeignKey(SkaterStatus)
 
     dues_amount = models.DecimalField(
         "Custom Dues Amount",
@@ -101,7 +111,15 @@ class SessionCustomPaymentAmount(models.Model):
         help_text = "The amount we should bill a user matching this status for the billing period specified above.",
     )
 
-    schedule = models.ForeignKey(SkateSessionPaymentSchedule)
+    period = models.ForeignKey(
+        'billing.BillingPeriod',
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = "Custom Dues Billing Amount"
+        verbose_name_plural = "Custom Dues Billing Amounts"
+
 
 
 
@@ -111,4 +129,8 @@ class SessionCustomPaymentAmount(models.Model):
 
 
 
+@receiver(pre_save, sender=BillingStatus)
+def my_callback(sender, instance, *args, **kwargs):
+    if not instance.slug:
+        instance.slug = slugify(instance.name)
 

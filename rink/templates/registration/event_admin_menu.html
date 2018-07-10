@@ -1,0 +1,16 @@
+<h2>{{ event.name }} Registration</h2>
+
+<ul class="nav nav-tabs">
+  <li class="nav-item">
+    <a class="nav-link {% if event_menu_selected == "roster" %}active{% endif %}" href="{% url 'registration:event_admin_roster' event_slug=event_slug %}">Roster</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if event_menu_selected == "invites" %}active{% endif %}" href="{% url 'registration:event_admin_invites' event_slug=event_slug %}">Invites</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if event_menu_selected == "billingperiods" %}active{% endif %}" href="{% url 'registration:event_admin_billing_periods' event_slug=event_slug %}">Billing Periods</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if event_menu_selected == "settings" %}active{% endif %}" href="{% url 'registration:event_admin_settings' event_slug=event_slug %}">Settings</a>
+  </li>
+</ul>

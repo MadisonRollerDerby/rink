@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+{% include "registration/event_admin_menu.html" %}
+
+<h3>Change Registration Settings</h3>
+
+{% crispy event_form %}
+
+{% endblock %}

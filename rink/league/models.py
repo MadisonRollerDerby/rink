@@ -8,6 +8,10 @@ from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
 from localflavor.us.us_states import STATE_CHOICES
 
+DAY_OF_MONTH_CHOICES = [(i,i) for i in range(1, 31)]
+INVOICE_DAY_CHOICES = [(i, '{} days before due date'.format(i)) for i in range(1, 21)]
+LATE_DAY_CHOICES = [(i, '{} days after due date'.format(i)) for i in range(1, 21)]
+
 
 class Organization(models.Model):
     
@@ -70,6 +74,31 @@ class League(models.Model):
         on_delete = models.CASCADE,
     )
 
+    logo = models.ImageField(upload_to='logos', blank=True, null=True)
+    logo_thumbnail = ImageSpecField(
+        source='logo',
+        processors=[ResizeToFill(100, 100)],
+        format='JPEG',
+        options={'quality': 80}
+    )
+
+
+    # Payment Settings
+
+    default_payment_due_day = models.IntegerField(
+        "Default Payment Due Day",
+        choices=DAY_OF_MONTH_CHOICES,
+        help_text="Default day of month to set billing due date.",
+        default=1
+    )
+
+    default_invoice_day_diff = models.IntegerField(
+        "Default Invoice Generation Day",
+        choices=INVOICE_DAY_CHOICES,
+        help_text="Default day to generate and email invoices.",
+        default=10,
+    )
+
     stripe_private_key = EncryptedCharField(
         "Stripe Private Key",
         max_length = 100,
@@ -84,6 +113,9 @@ class League(models.Model):
         help_text = "Private API key for Stripe.com. Used for charging credit cards.",
     )
 
+
+    # Registration Settings
+
     default_address_state = models.CharField(
         max_length=2,
         blank=True,
@@ -91,13 +123,9 @@ class League(models.Model):
         help_text = "Default state choice on Registration forms.",
     )
 
-    logo = models.ImageField(upload_to='logos', blank=True, null=True)
-    logo_thumbnail = ImageSpecField(
-        source='logo',
-        processors=[ResizeToFill(100, 100)],
-        format='JPEG',
-        options={'quality': 80}
-    )
+
+
+    # Email Settings
 
     email_from_name = models.CharField(
         "Email From Name",

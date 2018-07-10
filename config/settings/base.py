@@ -82,6 +82,7 @@ LOCAL_APPS = [
     'users.apps.UsersConfig',
     'league',
     'registration',
+    'billing',
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
