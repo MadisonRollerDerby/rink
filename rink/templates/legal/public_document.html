@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <h1>{{ document.name }} ({{ document.date }})</h1>
+    </div>
+    <div class="row">
+        {{ document.content_html|safe }}
+    </div>
+</div>
+
+{% endblock %}

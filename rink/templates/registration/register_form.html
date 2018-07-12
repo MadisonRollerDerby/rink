@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<h2>{{ event.name }} Registration</h2>
+
+{% include 'utils/messages.html' %}
+
+
+<form method="post" action="{% url 'register:show_form' event_slug=event.slug %}">
+
+{% crispy form %}
+
+
+{% if legal_form %}
+    <legend>Legal Forms</legend>
+    
+    Please read and indicate that you agree to the following:
+    <div id="div_id_legal_forms" class="form-group"> 
+     <div class="">
+    {% for field in legal_form %}
+        <div class="form-check"> 
+            <label class="form-check-label" for="{{ field.name }}"> 
+                <input type="checkbox" class="form-check-input" name="{{ field.name }}" id="{{ field.name }}" value="{{ field.name }}" required>
+                <a href="{{ field.label }}" target="_blank">{{ field.help_text }}</a>
+            </label> 
+        </div>
+    {% endfor %}
+     </div>
+    </div>
+{% endif %}
+
+
+<div class="form-group row"> 
+    <div class=""> 
+        <input type="submit"name="submit" value="Submit Registration" class="btn btn-primary button white" id="submit-id-submit" /> 
+    </div>
+</div>
+
+</form>
+
+{% endblock %}

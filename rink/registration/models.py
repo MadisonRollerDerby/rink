@@ -9,7 +9,6 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from localflavor.us.forms import USZipCodeField
 from localflavor.us.us_states import STATE_CHOICES
-from phonenumber_field.modelfields import PhoneNumberField
 
 from billing.models import BillingPeriod
 from league.models import Organization , League
@@ -77,6 +76,10 @@ class RegistrationEvent(models.Model):
         blank = True,
         null = True,
         help_text = "The maximum age someone can register for this event. Calculated based on the Start Date. Leave blank to disable this check.",
+    )
+
+    legal_forms = models.ManyToManyField(
+        'legal.LegalDocument',
     )
 
     class Meta:
@@ -188,8 +191,17 @@ class RegistrationInvite(models.Model):
         null=True,
     )
 
+    public_registration = models.BooleanField(
+        "Public Registration",
+        blank=True,
+        default=False,
+    )
+
     def __str__(self):
         return "{}".format(self.email)
+
+
+
 
 
 class RegistrationData(models.Model):
@@ -197,36 +209,96 @@ class RegistrationData(models.Model):
     invite = models.ForeignKey(
         "registration.RegistrationInvite",
         blank=True,
-        on_delete=models.CASCADE
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+    )
+
+    event = models.ForeignKey(
+        "registration.RegistrationEvent",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
     )
     
-    contact_email = models.EmailField()
+    contact_email = models.EmailField("Email Address")
     contact_first_name = models.CharField("First Name", max_length=100)
     contact_last_name = models.CharField("Last Name", max_length=100)
     contact_address1 = models.CharField("Address 1", max_length=100)
-    contact_address2 = models.CharField("Address 2", max_length=100)
+    contact_address2 = models.CharField("Address 2", max_length=100, blank=True)
     contact_city = models.CharField("City", max_length=100)
-    state = models.CharField("State", choices=STATE_CHOICES, max_length=2)
-    #contact_zipcode = USZipCodeField("Zip Code")
+    contact_state = models.CharField("State", choices=STATE_CHOICES, max_length=2)
     contact_zipcode = models.CharField("Zip Code", max_length=11)
-    contact_phone = PhoneNumberField("Phone Number")
+    contact_phone = models.CharField("Phone Number", max_length=25)
 
-    derby_name = models.CharField("Derby Name", max_length=100)
-    derby_number = models.CharField("Derby Number", max_length=10)
-    derby_pronoun = models.CharField("Personal Pronoun", max_length=50)
-    derby_insurance_type = models.CharField("Derby Insurance", max_length=50)
-    derby_insurance_number = models.CharField("Derby Insurance Number", max_length=50)
+    derby_name = models.CharField(
+        "Derby Name",
+        max_length=100,
+        help_text="Not required. Guidance document link is where?",
+        blank=True
+    )
+    derby_number = models.CharField(
+        "Derby Number",
+        max_length=10,
+        help_text="Not required. Guidance document link is where?",
+        blank=True
+    )
+    derby_insurance_type = models.CharField(
+        "Derby Insurance Type",
+        max_length=50,
+        help_text="Derby insurance details. Insurance may not be required.",
+        blank=True,
+    )
+    derby_insurance_number = models.CharField(
+        "Derby Insurance Number",
+        max_length=50,
+        help_text="Derby insurance details. Insurance may not be required.",
+        blank=True,
+    )
 
-    emergency_date_of_birth = models.DateField("Date of Birth")
-    emergency_contact = models.CharField("Derby Name", max_length=100)
-    emergency_phone = PhoneNumberField("Emergency Phone Contact")
-    emergency_relationship = models.CharField("Emergency Relationship", max_length=100)
-    emergency_hospital = models.CharField("Preferred Hospital", max_length=100)
-    emergency_allergies = models.TextField("Allergies and Medical Conditions")
+    derby_pronoun = models.CharField(
+        "Personal Pronoun",
+        max_length=50,
+        help_text="Optional. Examples: her/she, he/her, etc.",
+        blank=True
+    )
 
+    emergency_date_of_birth = models.DateField(
+        "Date of Birth",
+    )
+    emergency_contact = models.CharField(
+        "Emergency Contact Name",
+        max_length=100,
+    )
+    emergency_phone = models.CharField(
+        "Emergency Phone Contact",
+        max_length=25
+    )
+    emergency_relationship = models.CharField(
+        "Emergency Contact Relationship", 
+        max_length=100,
+    )
+    emergency_hospital = models.CharField(
+        "Preferred Hospital Name",
+        max_length=100,
+    )
+    emergency_allergies = models.TextField(
+        "Allergies and Medical Conditions.\n\nPlease write 'none' if you have no medical concerns we might need to know about.",
+        #help_text="If you have none, please write 'none'.",
+    )
 
+    registration_date = models.DateTimeField(
+        "Registration Date",
+        auto_now_add=True,
+    )
 
-
+    legal_forms = models.ManyToManyField(
+        'legal.LegalDocument',
+    )
 
 
 

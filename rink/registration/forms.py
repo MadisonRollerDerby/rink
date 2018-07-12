@@ -1,133 +1,189 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field
+from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML
+from crispy_forms.bootstrap import FormActions
 from django import forms
-from django.core.validators import RegexValidator
-from django.forms import TextInput
-
-from billing.models import BillingPeriod
-from registration.models import RegistrationData, RegistrationEvent
-
-
-AUTOMATIC_BILLING_CHOICES = (
-    ('', 'None - Custom'),
-    ('once', 'Bill Only Once'),
-    ('monthly', 'Bill Monthly'),
+from django.contrib.auth import (
+    authenticate, password_validation,
 )
+from django.forms.widgets import CheckboxSelectMultiple
+from guardian.shortcuts import assign_perm
+
+from legal.models import LegalDocument
+from users.models import User
 
 
-class RegistrationForm(forms.ModelForm):
+from .models import RegistrationData, RegistrationEvent
+
+class RegistrationSignupForm(forms.ModelForm):
+    email = forms.EmailField(
+        label="Email Address",
+        required=True,
+        widget=forms.TextInput(attrs={
+            'type': 'email', 
+            'placeholder': 'Email Address'
+        })
+    )
+
+    password1 = forms.CharField(
+        label="Password",
+        strip=False,
+        widget=forms.PasswordInput,
+        help_text=""
+    )
+
+    password2 = forms.CharField(
+        label="Password confirmation",
+        widget=forms.PasswordInput,
+        strip=False,
+        help_text="Enter the same password as before, for verification.",
+    )
+
+    class Meta:
+        model = User
+        fields = ("email",)
+
     def __init__(self, *args, **kwargs):
-        super(RegistrationForm, self).__init__(*args, **kwargs)
+        super(RegistrationSignupForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            'email',
+            'password1',
+            'password2',
+            ButtonHolder(
+                Submit('submit', 'Continue Registration', css_class='button white')
+            )
+        )
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError(
+                self.error_messages['password_mismatch'],
+                code='password_mismatch',
+            )
+        return password2
+
+    def _post_clean(self):
+        super()._post_clean()
+        # Validate the password after self.instance is updated with form data
+        # by super().
+        password = self.cleaned_data.get('password2')
+        if password:
+            try:
+                password_validation.validate_password(password, self.instance)
+            except forms.ValidationError as error:
+                self.add_error('password2', error)
+
+    def save(self, league,  commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        user.league = league
+        user.organization = league.organization
+        if commit:
+            user.save()
+            #assign_perm('league_member', user, league)
+
+        return user
+
+
+
+class LegalCheckboxSelectMultiple(CheckboxSelectMultiple):
+    template_name = 'registration/legal_checkbox_select.html'
+    option_template_name = 'registration/legal_checkbox_option.html'
+    def use_required_attribute(self, initial):
+        # Require all fields to be selected
+        return True
+
+
+
+class RegistrationDataForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(RegistrationDataForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+
+        for field_name, field in self.fields.items():
+            field.widget.attrs['placeholder'] = field.label
+
+
+        self.helper.form_show_labels = False
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Fieldset(
+                'Contact Details',
+                'contact_email',
+                'contact_first_name',
+                'contact_last_name',
+                'contact_address1',
+                'contact_address2',
+                'contact_city',
+                'contact_state',
+                'contact_zipcode',
+                'contact_phone',
+            ),
+            Fieldset(
+                'Derby Details',
+                'derby_name',
+                'derby_number',
+                'derby_insurance_type',
+                'derby_insurance_number',
+                'derby_pronoun',
+            ),
+            Fieldset(
+                'Emergency Details',
+                'emergency_date_of_birth',
+                'emergency_phone',
+                'emergency_relationship',
+                'emergency_hospital',
+                'emergency_allergies',
+            ),
+        )
+
+
+
 
     class Meta:
         model = RegistrationData
-        exclude = ['invite',]
-
-
-class RegistrationAdminEventForm(forms.ModelForm):
-    automatic_billing_dates = forms.ChoiceField(
-        label="Create automatic billing dates?",
-        choices=AUTOMATIC_BILLING_CHOICES,
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(RegistrationAdminEventForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-
-        self.helper.layout = Layout(
-            Fieldset(
-                'Details',
-                'name',
-                'automatic_billing_dates',
-                'start_date',
-                'end_date',
-            ),
-            Fieldset(
-                'Optional Dates',
-                'public_registration_open_date',
-                'public_registration_closes_date',
-                'invite_expiration_date',
-            ),
-            Fieldset(
-                'Settings',
-                'minimum_registration_age',
-                'maximum_registration_age',
-            ),
-            ButtonHolder(
-                Submit('submit', 'Save Event', css_class='button white')
-            )
-        )
-
-
-    class Meta:
-        model = RegistrationEvent
-        
         fields = [
-            'name',
-            'start_date',
-            'end_date',
-            'public_registration_open_date',
-            'public_registration_closes_date',
-            'invite_expiration_date',
-            'minimum_registration_age',
-            'maximum_registration_age',
+            'contact_email',
+            'contact_first_name',
+            'contact_last_name',
+            'contact_address1',
+            'contact_address2',
+            'contact_city',
+            'contact_state',
+            'contact_zipcode',
+            'contact_phone',
+
+            'derby_name',
+            'derby_number',
+            'derby_insurance_type',
+            'derby_insurance_number',
+            'derby_pronoun',
+
+            'emergency_date_of_birth',
+            'emergency_phone',
+            'emergency_relationship',
+            'emergency_hospital',
+            'emergency_allergies',
         ]
+
         widgets = {
-            'start_date': TextInput(attrs={'type':'date'}),
-            'end_date': TextInput(attrs={'type':'date'}),
-            'public_registration_open_date': TextInput(attrs={'type':'date'}),
-            'public_registration_closes_date': TextInput(attrs={'type':'date'}),
-            'invite_expiration_date': TextInput(attrs={'type':'date'}),
+            'emergency_date_of_birth': forms.TextInput(attrs={'type':'date'}),
         }
 
 
-class BillingPeriodInlineForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(BillingPeriodInlineForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
+class LegalDocumentAgreeForm(forms.Form):
+    def __init__(self, event, *args, **kwargs):
+        super(LegalDocumentAgreeForm, self).__init__(*args, **kwargs)
 
-    class Meta:
-        model = BillingPeriod
-        fields = [
-            'name',
-            'start_date',
-            'end_date',
-            'invoice_date',
-            'due_date',
-        ]
+        for document in LegalDocument.objects.filter(league=event.league):
+            doc_key = "{}{}".format("Legal", document.pk)
 
-
-
-class EventInviteEmailForm(forms.Form):
-    emails = forms.CharField(
-        widget=forms.Textarea,
-        label="Email Addresses",
-        help_text="Email addresses invites should be sent to. One per line, please.",
-        required=True,
-    )
-
-    def __init__(self, *args, **kwargs):
-        
-        super(EventInviteEmailForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-
-        self.helper.layout = Layout(
-            'emails',
-            ButtonHolder(
-                Submit('submit', 'Send Invites', css_class='button white')
+            self.fields[doc_key] = forms.BooleanField(
+                required=True,
+                label=document.get_absolute_url(),
+                help_text="{} ({})".format(document.name, document.date),
             )
-        )
-
-    class Meta:
-        fields = [ 'emails', ]
-        
 
 
-invite_or_user_validator = RegexValidator(r"^(invite|user)-(\d+)$", "Invalid invite or user ID")
-class EventInviteAjaxForm(forms.Form):
-    user_or_invite_id = forms.CharField(
-        label="Invite or User ID",
-        required=True,  # Note: validators are not run against empty fields
-        validators=[invite_or_user_validator]
-    )

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<h2>{{ event.name }} Registration</h2>
+
+{% include 'utils/messages.html' %}
+
+{% crispy form %}
+
+{% endblock %}

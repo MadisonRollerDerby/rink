@@ -14,9 +14,9 @@ import re
 from billing.models import BillingPeriod
 from league.mixins import LeagueAdminRequiredMixIn
 from league.models import Organization, League
-from registration.forms import RegistrationAdminEventForm, \
-    BillingPeriodInlineForm, EventInviteEmailForm, EventInviteAjaxForm
-from registration.models import RegistrationEvent, RegistrationInvite
+from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
+    EventInviteEmailForm, EventInviteAjaxForm
+from .models import RegistrationEvent, RegistrationInvite
 from users.models import User
 
 from registration.tasks import send_registration_invite_email
@@ -34,8 +34,11 @@ class EventAdminBaseView(LeagueAdminRequiredMixIn, View):
     def dispatch(self, request, *args, **kwargs):
         self.organization = get_object_or_404(Organization, pk=request.session['view_organization'])
         self.league = get_object_or_404(League, pk=request.session['view_league'])
-        self.event = get_object_or_404(RegistrationEvent, slug=kwargs['event_slug'])
-        self.event_slug = self.event.slug
+        try:
+            self.event = get_object_or_404(RegistrationEvent, slug=kwargs['event_slug'])
+            self.event_slug = self.event.slug
+        except KeyError:
+            pass
 
         return super(EventAdminBaseView, self).dispatch(request, *args, **kwargs)
 
@@ -73,18 +76,19 @@ class EventAdminCreate(EventAdminBaseView):
     template = 'registration/event_admin_create.html'
 
     def get(self, request, *args, **kwargs):
-        form = RegistrationAdminEventForm()
+        form = RegistrationAdminEventForm(event=self.event)
         
         return self.render(request, {
             'form': form,
         })
 
     def post(self, request, *args, **kwargs):
-        form = RegistrationAdminEventForm(request.POST)
+        form = RegistrationAdminEventForm(request.POST, event=self.event)
         if form.is_valid():
             event = form.save(commit=False)
             event.league = self.league
             event.save()
+            form.save_m2m()
 
             auto_create = form.cleaned_data['automatic_billing_dates']
 
@@ -107,8 +111,20 @@ class EventAdminSettings(EventAdminBaseView):
 
     def get(self, request, *args, **kwargs):
         return self.render(request, {
-            'event_form':  RegistrationAdminEventForm(instance=self.event),
+            'event_form':  RegistrationAdminEventForm(event=self.event, instance=self.event),
         })
+
+    def post(self, request, *args, **kwargs):
+        form = RegistrationAdminEventForm(event=self.event, data=request.POST)
+        if form.is_valid():
+            event = form.save()
+
+            return HttpResponseRedirect(
+                reverse("registration:event_admin_settings", 
+                    kwargs={'event_slug':event.slug })
+            )
+
+        return self.render(request, {'event_form': form})
 
 
 class EventAdminRoster(EventAdminBaseView):
@@ -149,9 +165,14 @@ class EventAdminInvites(EventAdminBaseView):
             elif not invite.completed_date:
                 invite.row_class = "info"
                 invite.invite_status = "Invited"
+            elif invite.public_registration:
+                invite.row_class = "success"
+                invite.invite_text = "Registered via Public Link"
+                invite.invite_status = "Completed"
             else:
                 invite.row_class = "success"
-                invite.invite_status = "Registered"
+                invite.invite_text = "Registered via Invite"
+                invite.invite_status = "Completed"
 
         return self.render(request, {
             'invites': invites,
@@ -308,9 +329,14 @@ class EventAdminInviteUsers(EventAdminBaseView):
                 elif not invite.completed_date:
                     user.row_class = "info"
                     user.invite_status = "Invited"
+                elif invite.public_registration:
+                    user.row_class = "success"
+                    user.invite_text = "Registered via Public Link"
+                    user.invite_status = "Completed"
                 else:
                     user.row_class = "success"
-                    user.invite_status = "Registered"
+                    user.invite_text = "Registered via Invite"
+                    user.invite_status = "Completed"
 
         return self.render(request, {
             'users': league_users,

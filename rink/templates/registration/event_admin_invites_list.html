@@ -34,7 +34,7 @@
                 {% elif invite.invite_status != "Completed" %}
                     Resend Invite
                 {% else %}
-                    Registered
+                    &#9989; {{ invite.invite_text }}
                 {% endif %}
             </button>
           </td>

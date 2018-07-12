@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>{{ event.name }} Registration</h2>
+
+<p>Oh no! It looks like there was a problem with your request.</p>
+
+<div class="alert alert-warning" role="alert">
+  {% if error_code == "already_registered" %}
+    <p><strong>You have already registered for this event.</strong></p>
+    <p>You can try to <a href="{% url "account_logout" %}">log out of the current account</a> and try again with a different account. If... for some reason you have two accounts. But that would be weird, right?</p>
+  {% else %}
+    Some unspecified, weird error occured here. That might be the issue. Wait, what?
+  {% endif %}
+</div>
+
+<p>If you continue to be confused about the error message above, please contact the person(s) in charge of your event for help. Thanks!</p>
+
+{% endblock %}

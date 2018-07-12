@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.urls import reverse
+from django.utils.text import slugify
 
 from fernet_fields import EncryptedCharField
 from imagekit.models import ImageSpecField

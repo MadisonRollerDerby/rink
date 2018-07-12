@@ -20,7 +20,7 @@ django-phonenumber-field
 -e https://github.com/django-guardian/django-guardian/archive/devel.zip
 django-fernet-fields
 django-imagekit
-
+django-markdownx
 
 
 

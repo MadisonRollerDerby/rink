@@ -31,3 +31,17 @@ def send_registration_invite_email(invite_ids=[]):
 
         invite.sent_date = timezone.now()
         invite.save()
+
+
+@shared_task(ignore_result=True)
+def send_registration_confirmation(user, registration_data):
+    send_email(
+        league=registration_data.league,
+        to_email=user.email,
+        template="registration_confirmation",
+        context={
+            'user': user,
+            'event': registration.event,
+            'registration': registration,
+        },
+    )
