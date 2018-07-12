@@ -1,0 +1,49 @@
+<h5>Invites Sent</h5>
+
+
+{% if invites_waiting > 0 %}
+    <h6><span class="badge badge-pill badge-primary">{{ invites_waiting }}</span> Pending Invites</h6>
+{% endif %}
+
+{% if invites_completed > 0 %}
+    <h6><span class="badge badge-pill badge-success">{{ invites_completed }}</span> Registration Complete</h6>
+{% endif %}
+
+
+{% if invites %}
+<div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Derby Name</th>
+          <th scope="col">Email</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invite in invites %}
+        <tr class="{% if invite.row_class %}table-{{ invite.row_class }}{% endif %}">
+          <th scope="row">{{ invite.user.first_name }} {{ invite.user.last_name }}</th>
+          <td>{{ invite.user.derby_name }}</td>
+          <td><a href="malto:{{user.email}}">{{ invite.email }}</a></td>
+          <td>
+            <button id="invite-{{ invite.pk }}" type="button" class="btn btn-primary btn-sm {% if invite.invite_status == "Completed" %}disabled{% else %}registration-invite-button{% endif %}">
+                {% if invite.invite_status == "Not Invited" %}
+                    Send Invite
+                {% elif invite.invite_status != "Completed" %}
+                    Resend Invite
+                {% else %}
+                    Registered
+                {% endif %}
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
+
+{% else %}
+No invites have been sent yet. Maybe you should send some?
+{% endif %}

@@ -237,12 +237,14 @@ MANAGERS = ADMINS
 # ------------------------------------------------------------------------------
 INSTALLED_APPS += ['rink.taskapp.celery.CeleryConfig']
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-broker_url
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='django://')
+#CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='django://')
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
-if CELERY_BROKER_URL == 'django://':
-    CELERY_RESULT_BACKEND = 'redis://'
-else:
-    CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+#CELERY_RESULT_BACKEND = 'redis://'
+
+CELERY_BROKER_TRANSPORT = "redis"
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
 CELERY_ACCEPT_CONTENT = ['json']
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-task_serializer
@@ -275,6 +277,8 @@ STRONGHOLD_PUBLIC_NAMED_URLS = (
     'account_reset_password_from_key',
     'account_reset_password_from_key_done',
     'account_inactive',
+    'registration_event',
+    'registration_event_uuid'
 )
 
 

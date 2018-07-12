@@ -1,1 +1,1 @@
-{{ league.name }} Registration Invite
+{{ invite.event.name }} -- {{ invite.event.league.name }} Registration Invite

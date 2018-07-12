@@ -17,7 +17,8 @@ urlpatterns = [
 
     url(r'^organization/', include('league.urls', namespace='league')),
 
-    url(r'^registration/', include('registration.urls', namespace='registration')),
+    url(r'^register/', include('registration.urls', namespace="register")),
+    url(r'^registration/', include('registration.urls_admin', namespace='registration')),
 
 
 

@@ -3,6 +3,7 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils.text import slugify
+import uuid
 
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
@@ -156,6 +157,7 @@ class RegistrationInvite(models.Model):
     user = models.ForeignKey(
         "users.User",
         blank=True,
+        null=True,
         on_delete=models.CASCADE,
     )
 
@@ -166,6 +168,12 @@ class RegistrationInvite(models.Model):
     event = models.ForeignKey(
         "registration.RegistrationEvent",
         on_delete=models.CASCADE,
+    )
+
+    uuid = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4, 
+        editable=False
     )
 
     sent_date = models.DateTimeField(

@@ -1,0 +1,41 @@
+<h5>Invite Users to Register</h5>
+
+
+{% if users %}
+
+<div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Derby Name</th>
+          <th scope="col">Email</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr class="{% if user.row_class %}table-{{ user.row_class }}{% endif %}">
+          <th scope="row">{{ user.first_name }} {{ user.last_name }}</th>
+          <td>{{ user.derby_name }}</td>
+          <td><a href="malto:{{user.email}}">{{ user.email }}</a></td>
+          <td>
+            <button id="user-{{ user.pk }}" type="button" class="btn btn-primary btn-sm {% if user.invite_status == "Completed" %}disabled{% else %}registration-invite-button{% endif %}">
+                {% if user.invite_status == "Not Invited" %}
+                    Send Invite
+                {% elif user.invite_status != "Completed" %}
+                    Resend Invite
+                {% else %}
+                    Registered
+                {% endif %}
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
+
+{% else %}
+No users available to invite.
+{% endif %}

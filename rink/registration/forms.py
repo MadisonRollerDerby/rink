@@ -1,6 +1,7 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field
 from django import forms
+from django.core.validators import RegexValidator
 from django.forms import TextInput
 
 from billing.models import BillingPeriod
@@ -95,3 +96,38 @@ class BillingPeriodInlineForm(forms.ModelForm):
             'invoice_date',
             'due_date',
         ]
+
+
+
+class EventInviteEmailForm(forms.Form):
+    emails = forms.CharField(
+        widget=forms.Textarea,
+        label="Email Addresses",
+        help_text="Email addresses invites should be sent to. One per line, please.",
+        required=True,
+    )
+
+    def __init__(self, *args, **kwargs):
+        
+        super(EventInviteEmailForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+
+        self.helper.layout = Layout(
+            'emails',
+            ButtonHolder(
+                Submit('submit', 'Send Invites', css_class='button white')
+            )
+        )
+
+    class Meta:
+        fields = [ 'emails', ]
+        
+
+
+invite_or_user_validator = RegexValidator(r"^(invite|user)-(\d+)$", "Invalid invite or user ID")
+class EventInviteAjaxForm(forms.Form):
+    user_or_invite_id = forms.CharField(
+        label="Invite or User ID",
+        required=True,  # Note: validators are not run against empty fields
+        validators=[invite_or_user_validator]
+    )

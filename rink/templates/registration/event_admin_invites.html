@@ -5,7 +5,16 @@
 
 {% include "registration/event_admin_menu.html" %}
 
-<h3>Invites</h3>
+<div class="container">
+    <div class="row">
+        <nav class="nav nav-pills flex-column flex-sm-row">
+          <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "invites" %}active{%endif%}" href="{% url 'registration:event_admin_invites' event_slug=event_slug %}">View Invites</a>
+          <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "users" %}active{%endif%}" href="{% url 'registration:event_admin_invite_users' event_slug=event_slug %}">Invite Users</a>
+          <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "emails" %}active{%endif%}" href="{% url 'registration:event_admin_invite_emails' event_slug=event_slug %}">Invite Emails</a>
+        </nav>
+    </div>
+</div>
 
+{% include event_admin_template_include %}
 
 {% endblock %}
