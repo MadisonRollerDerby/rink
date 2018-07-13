@@ -32,9 +32,9 @@ class LegalDocument(models.Model):
         help_text="Effective date of this legal document.",
     )
 
-    content = MarkdownxField(
+    content = models.TextField(
         "Document Content",
-        help_text="Plaintext version of the legal document.",
+        help_text="Plaintext version of the legal document. You can use <a target='_blank' href='https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet'>Markdown Code</a> to format the document.",
     )
 
     def __str__(self):

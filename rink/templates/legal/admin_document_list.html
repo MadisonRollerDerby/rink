@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<h2>Legal Documents</h2>
+
+{% include 'utils/messages.html' %}
+
+<a href="{% url 'legal:admin_document_create_update' %}">
+    <button type="button" class="btn btn-primary">Create Legal Document</button>
+</a>
+<br/>
+
+<ul class="list-group">
+{% for document in object_list %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <a href="{% url 'legal:admin_document_create_update' document_id=document.pk %}">{{ document.name }} ({{ document.date }})</a>
+    <span class="badge badge-primary badge-pill">{{ document.legalsignature__count }}</span>
+  </li>
+{% endfor %}
+</ul>
+
+{% endblock %}
