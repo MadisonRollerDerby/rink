@@ -25,6 +25,12 @@ urlpatterns = [
         name="admin_document_delete"),
 
 
+    # User Views
+    path('signed-forms/', 
+        views.UserLegalSignaturesListView.as_view(),
+        name="signed_forms"),
+
+
     # Public Views
     path('<slug:league_slug>/<slug:document_slug>/', 
         views.LegalDocumentPublicView.as_view(),

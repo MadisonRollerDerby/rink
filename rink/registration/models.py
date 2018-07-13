@@ -247,12 +247,15 @@ class RegistrationData(models.Model):
         help_text="Not required. Guidance document link is where?",
         blank=True
     )
-    derby_insurance_type = models.CharField(
-        "Derby Insurance Type",
-        max_length=50,
-        help_text="Derby insurance details. Insurance may not be required.",
+    
+    derby_insurance_type = models.ForeignKey(
+        'league.InsuranceType',
         blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text="If you have Derby insurance, specify it here. Insurance may not be required."
     )
+
     derby_insurance_number = models.CharField(
         "Derby Insurance Number",
         max_length=50,

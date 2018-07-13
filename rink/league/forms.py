@@ -26,6 +26,7 @@ class LeagueForm(forms.ModelForm):
             'stripe_public_key', 
 
             'default_address_state',
+            'default_insurance_type',
 
             'email_from_name',
             'email_from_address',

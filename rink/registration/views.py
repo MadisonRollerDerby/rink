@@ -130,6 +130,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         form = RegistrationDataForm(initial={
             'contact_email': request.user.email,
             'contact_state': self.event.league.default_address_state,
+            'derby_insurance_type': self.event.league.default_insurance_type,
         })
 
         legal_form = LegalDocumentAgreeForm(event=self.event)

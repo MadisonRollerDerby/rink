@@ -14,6 +14,32 @@ INVOICE_DAY_CHOICES = [(i, '{} days before due date'.format(i)) for i in range(1
 LATE_DAY_CHOICES = [(i, '{} days after due date'.format(i)) for i in range(1, 21)]
 
 
+class InsuranceType(models.Model):
+    name = models.CharField(
+        "Insurer Name",
+        max_length=50,
+        help_text = "Example: 'WFTDA'",
+    )
+
+    long_name = models.CharField(
+        "Insurer Long Name",
+        max_length=50,
+        help_text = "Example: 'Women's Flat Track Derby Association'",
+    )
+
+    details_url = models.CharField(
+        "Insurer Details URL",
+        max_length=200,
+        help_text = "Link to sign up for insurance or get more information.",
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering: ['name']
+
+
 class Organization(models.Model):
     
     """
@@ -124,6 +150,13 @@ class League(models.Model):
         help_text = "Default state choice on Registration forms.",
     )
 
+    default_insurance_type = models.ForeignKey(
+        'league.InsuranceType',
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text = "Default insurance type to show on Registration forms."
+    )
 
 
     # Email Settings

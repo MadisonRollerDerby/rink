@@ -8,9 +8,11 @@ from django.views import View
 from django.views.generic import ListView
 
 from league.models import League
+from registration.models import RegistrationData
 from .forms import LegalDocumentAdminForm
 from .models import LegalDocument, LegalSignature
 
+# Publically accessable documents
 
 class LegalDocumentPublicView(View):
     def get(self, request, document_slug, league_slug):
@@ -23,9 +25,26 @@ class LegalDocumentPublicView(View):
         })         
 
 
-class UserLegalSignaturesListView(ListView):
-    pass
+# User Classes
 
+class UserLegalSignaturesListView(ListView):
+    def get(self, request):
+        return render(request, 'legal/user_signed_forms.html', {
+            'registration_data': RegistrationData.objects.filter(
+                user=request.user,
+                event__league=get_object_or_404(
+                    League, 
+                    pk=self.request.session['view_league']
+                ),
+            ).prefetch_related(
+                'legalsignature_set',
+                'event',
+                'legalsignature_set__document',
+            )
+        })   
+
+
+# Admin Stuff Below
 
 class LegalDocumentList(ListView):
     model = LegalDocument
