@@ -64,7 +64,6 @@ DJANGO_APPS = [
 ]
 THIRD_PARTY_APPS = [
     'crispy_forms',
-    'phonenumber_field',
     'guardian',
     'imagekit',
     'stronghold',
@@ -80,11 +79,11 @@ THIRD_PARTY_APPS = [
     'rest_framework',
 ]
 LOCAL_APPS = [
-    'users.apps.UsersConfig',
-    'league',
-    'registration',
     'billing',
+    'league',
     'legal',
+    'registration',
+    'users.apps.UsersConfig',
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

@@ -1,5 +1,6 @@
 
 import os
+import sys
 from celery import Celery
 from django.apps import apps, AppConfig
 from django.conf import settings
@@ -8,6 +9,22 @@ from django.conf import settings
 if not settings.configured:
     # set the default Django settings module for the 'celery' program.
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')  # pragma: no cover
+
+
+from celery.signals import after_setup_logger
+import logging
+MyLogHandler = logging.StreamHandler(sys.stdout)
+
+@after_setup_logger.connect()
+def logger_setup_handler(logger, **kwargs ):
+  my_handler = MyLogHandler
+  my_handler.setLevel(logging.DEBUG) 
+  my_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s') #custom formatter
+  my_handler.setFormatter(my_formatter)
+  logger.addHandler(my_handler)
+
+  logging.info("My log handler connected -> Global Logging")
+
 
 
 app = Celery('rink', broker="redis://")

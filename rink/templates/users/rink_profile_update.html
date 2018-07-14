@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+
+  <h2>{{ user.email }}</h2>
+
+  {% include 'utils/messages.html' %}
+
+  {% crispy form %}
+
+{% endblock %}

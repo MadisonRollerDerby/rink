@@ -11,7 +11,7 @@ from django.views import View
 from guardian.shortcuts import get_users_with_perms
 import re
 
-from billing.models import BillingPeriod
+from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount
 from league.mixins import LeagueAdminRequiredMixIn
 from league.models import Organization, League
 from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
@@ -76,14 +76,15 @@ class EventAdminCreate(EventAdminBaseView):
     template = 'registration/event_admin_create.html'
 
     def get(self, request, *args, **kwargs):
-        form = RegistrationAdminEventForm(event=self.event)
+
+        form = RegistrationAdminEventForm(league=self.league)
         
         return self.render(request, {
             'form': form,
         })
 
     def post(self, request, *args, **kwargs):
-        form = RegistrationAdminEventForm(request.POST, event=self.event)
+        form = RegistrationAdminEventForm(data=request.POST, league=self.league)
         if form.is_valid():
             event = form.save(commit=False)
             event.league = self.league
@@ -93,12 +94,34 @@ class EventAdminCreate(EventAdminBaseView):
             auto_create = form.cleaned_data['automatic_billing_dates']
 
             if auto_create == "monthly":
-                billing_period = event.create_monthly_biling_periods()
+                billing_periods = event.create_monthly_biling_periods()
             elif auto_create == "once":
-                billing_periods = event.create_billing_period()
+                billing_periods = [event.create_billing_period()]
+            else:
+                billing_periods = []
+
+            if billing_periods:
+                for group in BillingGroup.objects.filter(league=self.league):
+                    try:
+                        amount = form.cleaned_data['billinggroup{}'.format(group.pk)]
+                    except KeyError:
+                        print(cleaned_data)
+                        print(dir(form.cleaned_data))
+                        print("NO GROUP billinggroup{}".format(group.pk))
+                        continue
+
+                    for period in billing_periods:
+                        BillingPeriodCustomPaymentAmount.objects.create(
+                            invoice_amount = amount,
+                            group = group,
+                            period = period,
+                        )
 
             return HttpResponseRedirect(
                 reverse("registration:event_admin_invites", kwargs={'event_slug':event.slug }))
+
+        else:
+            print(form.errors)
 
         return self.render(request, {
             'form': form,

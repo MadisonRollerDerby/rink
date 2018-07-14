@@ -1,18 +1,20 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field
+from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML
 from django import forms
 from django.core.validators import RegexValidator
-from django.forms import TextInput
+from django.forms import TextInput, NumberInput
 
-from billing.models import BillingPeriod
+from billing.models import BillingPeriod, BillingGroup
 from legal.models import LegalDocument
 from .models import RegistrationEvent
 
+from decimal import Decimal
+
 
 AUTOMATIC_BILLING_CHOICES = (
-    ('', 'None - Custom'),
-    ('once', 'Bill Only Once'),
     ('monthly', 'Bill Monthly'),
+    ('once', 'Bill Only Once'),
+    ('', 'None - Custom'),
 )
 
 
@@ -23,45 +25,70 @@ class RegistrationAdminEventForm(forms.ModelForm):
         required=False,
     )
 
-    def __init__(self, event, *args, **kwargs):
+    def __init__(self, league, *args, **kwargs):
         super(RegistrationAdminEventForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
 
-        self.fields['legal_forms'] = forms.ModelChoiceField(
+        self.fields['legal_forms'] = forms.ModelMultipleChoiceField(
             widget=forms.CheckboxSelectMultiple, 
-            queryset=LegalDocument.objects.filter(league=event.league),
-            empty_label=None,
+            queryset=LegalDocument.objects.filter(league=league),
+            #empty_label=None,
             label="",
+            required=False,
         )
 
-
         self.helper.layout = Layout(
+            HTML('<hr>'),
             Fieldset(
                 'Details',
                 'name',
-                'automatic_billing_dates',
                 'start_date',
                 'end_date',
             ),
+            HTML('<hr>'),
+            # If this fieldset is no longer #3, change the code below.
+            Fieldset(
+                'Invoices and Billing',
+                'automatic_billing_dates',
+            ),
+            HTML('<hr>'),
+            Fieldset(
+                'Legal Forms Required',
+                'legal_forms',
+            ),
+            HTML('<hr>'),
             Fieldset(
                 'Optional Dates',
                 'public_registration_open_date',
                 'public_registration_closes_date',
                 'invite_expiration_date',
             ),
+            HTML('<hr>'),
             Fieldset(
                 'Settings',
                 'minimum_registration_age',
                 'maximum_registration_age',
             ),
-            Fieldset(
-                'Legal Forms',
-                'legal_forms',
-            ),
+            HTML('<hr>'),
+
             ButtonHolder(
                 Submit('submit', 'Save Event', css_class='button white')
             )
         )
+
+        for group in BillingGroup.objects.filter(league=league):
+            field_name = 'billinggroup{}'.format(group.pk)
+            self.fields[field_name] = forms.DecimalField(
+                min_value=0,
+                decimal_places=2,
+                max_digits=10,
+                label="{} Invoice Amount".format(group.name),
+            )
+            self.fields[field_name].widget.attrs.update({'placeholder': "0.00"})
+
+            self.helper.layout[3].append(
+                field_name
+            )
 
 
     class Meta:

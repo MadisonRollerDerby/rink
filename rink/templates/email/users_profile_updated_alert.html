@@ -1,0 +1,26 @@
+{{ header_html }}
+
+<p>Hi Admin,</p>
+
+<p>This is a heads up that {{ initial }} has updated their user details at Rink. You may need to update these details elsewhere in your spreadsheets, emails, phonebooks, etc.</p>
+
+<h3>OLD PROFILE</h3>
+Name: {{ initial.first_name }} {{ initial.last_name }}<br/>
+Email: {{ initial.email }}<br/>
+Derby Name: {{ initial.derby_name }}<br/>
+Derby Number: {{ initial.derby_number }}<br/>
+<br/>
+<br/>
+<h3>*NEW* PROFILE</h3>
+Name: {{ updated.first_name }} {{ updated.last_name }}<br/>
+Email: {{ updated.email }}<br/>
+Derby Name: {{ updated.derby_name }}<br/>
+Derby Number: {{ updated.derby_number }}<br/>
+<br/>
+<br/>
+<p><b>NOTE:</b> This notice is sent to all leauges in Rink that this person is a member of. They may also be long gone from your league but be active elsewhere.</p>
+
+Thanks.<br/>
+THE RINK ROBOT<br/>
+
+{{ footer_html }}
