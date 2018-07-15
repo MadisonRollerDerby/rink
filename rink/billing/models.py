@@ -105,6 +105,14 @@ class BillingPeriod(models.Model):
             self.end_date,
         )
 
+    def clean(self):
+        # Start date needs to come before End date
+        if self.start_date > self.end_date:
+            raise ValidationError("End date invalid, should be a date after Start Date. Did you switch start and end dates?")
+        # Invoice date needs to come before due date
+        if self.invoice_date > self.due_date:
+            raise ValidationError("Invoice date needs occur before Due date. We cannot process payments before they are actually billed. Did you swap the invoice and due dates?")
+
 
 
 class BillingPeriodCustomPaymentAmount(models.Model):
@@ -126,8 +134,17 @@ class BillingPeriodCustomPaymentAmount(models.Model):
     )
 
     class Meta:
-        verbose_name = "Custom Dues Billing Amount"
-        verbose_name_plural = "Custom Dues Billing Amounts"
+        verbose_name = "Billing Period Amount for Group"
+        verbose_name_plural = "Billing Period Amounts for Groups"
+        ordering = ['group__name']
+        unique_together = ['group', 'period']
+
+    def __str__(self):
+        return "{} - {} - ${}".format(self.group.name, self.period.name, self.invoice_amount)
+
+    def clean(self):
+        if self.invoice_amount < 0:
+            raise ValidationError("Invoice amount must be a positive number.")
 
 
 

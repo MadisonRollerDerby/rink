@@ -10,9 +10,8 @@ from guardian.shortcuts import assign_perm
 
 from legal.models import LegalDocument
 from users.models import User
-
-
 from .models import RegistrationData, RegistrationEvent
+
 
 class RegistrationSignupForm(forms.ModelForm):
     email = forms.EmailField(
@@ -139,9 +138,6 @@ class RegistrationDataForm(forms.ModelForm):
             ),
         )
 
-
-
-
     class Meta:
         model = RegistrationData
         fields = [
@@ -185,5 +181,3 @@ class LegalDocumentAgreeForm(forms.Form):
                 label=document.get_absolute_url(),
                 help_text="{} ({})".format(document.name, document.date),
             )
-
-

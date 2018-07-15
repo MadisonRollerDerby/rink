@@ -117,7 +117,7 @@ class RegistrationEvent(models.Model):
             month_start = dt
             month_end = dt + relativedelta(months=1) - relativedelta(days=1)
             period = self.create_billing_period(
-                name = "{} - {} Dues".format(self.name, dt.strftime('%B')),
+                name = "{} Dues".format(dt.strftime('%B')),
                 start_date=month_start,
                 end_date=month_end,
             )

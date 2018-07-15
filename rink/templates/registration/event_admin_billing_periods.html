@@ -1,5 +1,74 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style type="text/css">
+table.dues-period-admin-width tbody tr td {
+  padding: .50rem !important;
+}
+
+.delete_row img {
+  width: 16px;
+}
+</style>
+{% endblock %}
+
+{% block javascript %}
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+
+var new_item_id = 1;
+
+// yes, this is the least efficient way to do this, but... it's a pretty simple
+// form and i have a deadline.
+var del_row = false
+var del = false
+function delete_row() {
+  del_row = $(this).closest('tr');
+
+  del_name = del_row.find('input')[0].value
+  del_id = del_row.find('input')[0].name.replace("name", "");
+  $(this).closest('tr').remove();
+
+  del = $('#delete_row_alert').clone().removeAttr('id').appendTo('#delete_alerts');
+  del.find('input').prop("name", "delete" + del_id);
+  del.find('p').html("Billing Period <strong>'" + del_name + "'</strong> has been marked for deletion. Press 'Submit' to delete or reload the page to start over.")
+
+}
+function remove_events() {
+  $('.delete_row').off('click', delete_row);
+}
+function setup_events() {
+  $('.delete_row').on('click', delete_row);
+}
+
+setup_events();
+
+$(".datepicker").each(function() {    
+    $(this).datepicker({ dateFormat: "m/d/y" }).datepicker('setDate', $(this).val());
+});
+
+var row = false;
+$('#add_period_button').click(function() {
+  remove_events();
+  row = $('#new_row').clone().removeAttr('id').appendTo('#billing_table_body');
+  row.find('.needsdatepicker').each(function() {    
+    $(this).datepicker({ dateFormat: "m/d/y" }).datepicker('setDate', $(this).val());
+  });
+  setup_events();
+  row.find('input').each(function() {
+    new_name = 
+    $(this).prop("name", $(this).prop("name") + new_item_id);
+  })
+  new_item_id++;
+});
+
+
+
+</script>
+{% endblock %}
 
 {% block content %}
 
@@ -7,7 +76,121 @@
 
 <h3>Billing Periods</h3>
 
+{% include 'utils/messages.html' %}
 
+<form method="post">
+{% csrf_token %}
+
+<table class="table table-striped table-responsive table-hover dues-period-admin-width">
+  <thead>
+    <tr>
+      <th scope="col"></th>
+      <th scope="col">Start Date</th>
+      <th scope="col">End Date</th>
+      <th scope="col">Invoice Date</th>
+      <th scope="col">Due Date</th>
+      {% for group in billing_groups %}
+      <th scope="col">{{ group.name }}{% if group.default_group_for_league %}*{% endif %}</th>
+      {% endfor %}
+      <th></th>
+
+    </tr>
+  </thead>
+  <tbody id="billing_table_body">
+    {% for period in billing_periods %}
+    <tr>
+      <td scope="row">
+        <input class="form-control form-control-sm" type="text" placeholder="Name - ex:(July Dues)" style="width:165px" value="{{ period.name }}" name="name{{ period.pk }}">
+      </td>
+      <td>
+        <input class="form-control form-control-sm datepicker" type="text" placeholder="Start Date" style="width:100px" value="{{ period.start_date|date:"n/j/y" }}" name="start_date{{ period.pk }}">
+      </td>
+      <td>
+        <input class="form-control form-control-sm datepicker" type="text" placeholder="End Date" style="width:100px" value="{{ period.end_date|date:"n/j/y" }}" name="end_date{{ period.pk }}">
+      </td>
+      <td>
+        <input class="form-control form-control-sm datepicker" type="text" placeholder="Invoice Date" style="width:100px" value="{{ period.invoice_date|date:"n/j/y" }}" name="invoice_date{{ period.pk }}">
+      </td>
+      <td>
+        <input class="form-control form-control-sm datepicker" type="text" placeholder="Due Date" style="width:100px" value="{{ period.due_date|date:"n/j/y" }}" name="due_date{{ period.pk }}">
+      </td>
+      
+      {% for group_billing in period.billingperiodcustompaymentamount_set.all %}
+      <td>
+        <div class="input-group mb-0 input-group-sm" style="width:105px">
+          <div class="input-group-prepend">
+            <span class="input-group-text">$</span>
+          </div>
+          <input class="form-control" type="text" placeholder="0.00" style="width:75px" value="{{ group_billing.invoice_amount }}" name="invoice_amount_group{{ group_billing.group.pk }}_{{ group_billing.period.pk }}">
+        </div>
+      </td>
+      {% endfor %}
+      <td>
+        <a href="#" class="delete_row"><img src="{% static '/icons/svg/circle-x.svg' %}" alt="Delete"></a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div id="delete_alerts">
+</div>
+
+<div class="row">
+  <button type="submit" class="btn btn-primary">Save Billing Periods</button>
+  <button id="add_period_button" type="button" class="btn btn-outline-secondary ml-5">+ Add Billing Period</button>
+</div>
+
+</form>
+
+
+
+
+
+
+
+<div style="display:none">
+  <table>
+    <tr id="new_row">
+      <td scope="row">
+        <input class="form-control form-control-sm" type="text" placeholder="Name - ex:(July Dues)" style="width:165px" value="{{ period.name }}" name="name_new">
+      </td>
+      <td>
+        <input class="form-control form-control-sm needsdatepicker" type="text" placeholder="Start Date" style="width:100px" value="{{ period.start_date|date:"n/j/y" }}" name="start_date_new">
+      </td>
+      <td>
+        <input class="form-control form-control-sm needsdatepicker" type="text" placeholder="End Date" style="width:100px" value="{{ period.end_date|date:"n/j/y" }}" name="end_date_new">
+      </td>
+      <td>
+        <input class="form-control form-control-sm needsdatepicker" type="text" placeholder="Invoice Date" style="width:100px" value="{{ period.invoice_date|date:"n/j/y" }}" name="invoice_date_new">
+      </td>
+      <td>
+        <input class="form-control form-control-sm needsdatepicker" type="text" placeholder="Due Date" style="width:100px" value="{{ period.due_date|date:"n/j/y" }}" name="due_date_new">
+      </td>
+      
+      {% for group in billing_groups %}
+      <td>
+        <div class="input-group mb-0 input-group-sm" style="width:105px">
+          <div class="input-group-prepend">
+            <span class="input-group-text">$</span>
+          </div>
+          <input class="form-control" type="text" placeholder="0.00" style="width:75px" value="{{ group_billing.invoice_amount }}" name="invoice_amount_group{{ group.pk }}_new">
+        </div>
+      </td>
+      {% endfor %}
+      <td>
+        <a href="#" class="delete_row"><img src="{% static '/icons/svg/circle-x.svg' %}" alt="Delete"></a>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div style="display:none">
+  <div class="alert alert-warning" role="alert" id="delete_row_alert">
+    <p></p>
+    <input type="hidden" name="delete" value="delete">
+  </div>
+</div>
 
 
 {% endblock %}

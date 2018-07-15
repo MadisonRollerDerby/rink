@@ -8,6 +8,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
+from decimal import Decimal, InvalidOperation
+from datetime import datetime
 from guardian.shortcuts import get_users_with_perms
 import re
 
@@ -105,9 +107,6 @@ class EventAdminCreate(EventAdminBaseView):
                     try:
                         amount = form.cleaned_data['billinggroup{}'.format(group.pk)]
                     except KeyError:
-                        print(cleaned_data)
-                        print(dir(form.cleaned_data))
-                        print("NO GROUP billinggroup{}".format(group.pk))
                         continue
 
                     for period in billing_periods:
@@ -367,7 +366,6 @@ class EventAdminInviteUsers(EventAdminBaseView):
         })
 
     def post(self, request, *args, **kwargs):
-
         pass
 
 
@@ -376,8 +374,298 @@ class EventAdminBillingPeriods(EventAdminBaseView):
     event_menu_selected = "billingperiods"
 
     def get(self, request, *args, **kwargs):
-        return self.render(request, {})
+        # Validate that we have already all the entries for the group/periods table
+        # This all is pretty sloppy
+        periods = BillingPeriod.objects.filter(event=self.event).prefetch_related('billingperiodcustompaymentamount_set')
+        groups = BillingGroup.objects.filter(league=self.league)
+
+        group_ids = []
+        for group in groups:
+            group_ids.append(group.pk)
+
+        updated = False
+        for period in periods:
+            # Check for groups that do not exist, but SHOULD exist.
+            not_existing_groups = group_ids
+            for bpcpa in period.billingperiodcustompaymentamount_set.prefetch_related('group').all():
+                if bpcpa.group.pk in not_existing_groups:
+                    not_existing_groups.remove(bpcpa.group.pk)
+
+            for group_id in not_existing_groups:
+                BillingPeriodCustomPaymentAmount.objects.create(
+                    group=BillingGroup.objects.get(pk=group_id),
+                    period=period,
+                    invoice_amount=0
+                )
+                updated = True
+
+        if updated:
+            # let's just repeat ourselves again, eh?
+            periods = BillingPeriod.objects.filter(event=self.event).prefetch_related('billingperiodcustompaymentamount_set')
+
+
+        return self.render(request, {
+            'billing_groups': groups,
+            'billing_periods': periods,
+        })
 
     def post(self, request, *args, **kwargs):
-        pass
+        """
+        Expected data submitted from the form:
+
+        1) New billing periods have field names ending in a matching number.
+            - '<field>_new(\d+)' for BillingPeriod fields
+            - 'invoice_amount_group(<pk of group>)_new(\d+)'
+
+        2) Existing billing periods have field names formatted as:
+            - '<field>(<pk of BillingPeriod>)' for BillingPeriod fields
+            - 'invoice_amount_group(<pk of group>)_(<pk of BillingPeriod>)'
+            - NOTE: You can change the due_date of all associated invoices by updating the date here.
+
+        3) Deleted billing periods show up as hidden inputs:
+            - 'delete(<pk of BillingPeriod>)'
+            - NOTE: You cannot delete any billing periods with invoices already generated
+        """
+        new_regex = re.compile('^name_new(\d+)$')
+        existing_regex = re.compile('^name(\d+)$')
+        delete_regex = re.compile('^delete(\d+)$')
+
+        billing_groups = BillingGroup.objects.filter(league=self.league)
+
+        error_messages = []
+        alert_messages = []
+        new_periods = []
+        updated_periods = []
+        deleted_periods = []
+
+        post = request.POST
+        for key, value in post.items():
+
+            new_match = new_regex.match(key)
+            existing_match = existing_regex.match(key)
+            delete_match = delete_regex.match(key)
+
+            print("{} {}".format(key,new_match))
+            if new_match:
+                # Add a NEW billing period
+                bp_id = '_new{}'.format(new_match.group(1))
+
+                bp = BillingPeriod()
+                bp.event = self.event
+                bp.league = self.league
+                try:
+                    bp.name = post['name{}'.format(bp_id)]
+                    bp.start_date = datetime.strptime(
+                        post['start_date{}'.format(bp_id)],
+                        '%m/%d/%y'
+                    )
+                    bp.end_date = datetime.strptime(
+                        post['end_date{}'.format(bp_id)],
+                        '%m/%d/%y'
+                    )
+                    bp.invoice_date = datetime.strptime(
+                        post['invoice_date{}'.format(bp_id)],
+                        '%m/%d/%y'
+                    )
+                    bp.due_date = datetime.strptime(
+                        post['due_date{}'.format(bp_id)],
+                        '%m/%d/%y'
+                    )
+                except KeyError as e:
+                    alert_messages.append("Field not found for NEW billing period. Error: {}".format(str(e)))
+                    continue
+                except ValueError as e:
+                    error_messages.append("Invalid date specified for new due date for '{}'. Error: {}".format(bp.name, str(e)))
+
+                try:
+                    bp.full_clean()
+                except ValidationError as e:
+                    error_messages.append("Invalid data in new row. Please try again. Error: {}".format(str(e)))
+                else:
+                    bp.save()
+                    new_periods.append(bp)
+
+                for group in billing_groups:
+                    bpcpa = BillingPeriodCustomPaymentAmount()
+                    bpcpa.group = group
+                    bpcpa.period = bp
+                    try:
+                        bpcpa.invoice_amount = post['invoice_amount_group{}{}'.format(group.pk, bp_id)]
+                    except KeyError as e:
+                        alert_messages.append("Field not found for NEW billing period. Error: {}".format(str(e)))
+                        continue
+
+                    try:
+                        bpcpa.full_clean()
+                    except ValidationError as e:
+                        error_messages.append("Invalid data in new row, for group amount set for '{}' price. Please try again. Error: {}".format(group.name, str(e)))
+                    else:
+                        bpcpa.save()
+
+            elif existing_match:
+                # Update an EXISTING billing period
+                # If there are attached invoices you can update the due_date by
+                #   just changing it here.
+                bp_id = '{}'.format(existing_match.group(1))
+                bp_pk = existing_match.group(1)
+                changed = False
+
+                try:
+                    bp = BillingPeriod.objects.get(pk=bp_pk)
+                except BillingPeriod.DoesNotExist as e:
+                    error_messages.append("Not able to find Billing Period with ID #{}. Error: {}".format(bp_pk, str(e)))
+
+                # Check if user currently has access to this billing period.
+                # If the current viewing league matches (already checked),
+                # allow them access.
+                # If they don't have access then just continue silently, I guess.
+                # TODO: do something else if there's a permissions issue?
+                if bp.league.pk != self.league.pk:
+                    error_messages.append("You don't seem to have permission to access a Billing Period in this form. Not sure how that happened. I can't save it.")
+
+                try:
+                    new_invoice_date = datetime.strptime(
+                        post['invoice_date{}'.format(bp_id)],
+                        '%m/%d/%y'
+                    )
+                except KeyError as e:
+                    alert_messages.append("Field not found for '{}' when saving billing period. Field was 'invoice_date{}'' . Error: {}".format(bp, bp_id, str(e)))
+                except ValueError as e:
+                    error_messages.append("Invalid date specified for invoice date for '{}'. Value was '{}'. Error: {}".format(bp, post['invoice_date{}'.format(bp_id)], str(e)))
+                if new_invoice_date.date() != bp.invoice_date:
+                    # If the invoice date has already passed, do not allow them to update it.
+                    if timezone.now().date() < bp.invoice_date:
+                        changed = True
+                        bp.invoice_date = new_invoice_date
+                    else:
+                        alert_messages.append("You cannot update invoice date for '{}'. The date has already passed.".format(bp))
+
+                try:
+                    new_due_date = datetime.strptime(
+                        post['due_date{}'.format(bp_id)],
+                        '%m/%d/%y'
+                    )
+                except KeyError as e:
+                    alert_messages.append("Field not found for '{}' when saving billing period. Field was 'invoice_date{}'' . Error: {}".format(bp, bp_id, str(e)))
+                except ValueError as e:
+                    error_messages.append("Invalid date specified for due date for '{}'. Value was '{}'. Error: {}".format(bp, post['invoice_date{}'.format(bp_id)], str(e)))
+                if new_due_date.date() != bp.due_date:
+                    # If the due date has already passed, do not allow them to update it.
+                    if timezone.now().date() < bp.due_date:
+                        changed = True
+                        bp.due_date = new_due_date
+                    else:
+                        alert_messages.append("You cannot update due date for '{}'. The date has already passed.".format(bp))
+
+                try:
+                    new_start_date = datetime.strptime(
+                            post['start_date{}'.format(bp_id)],
+                            '%m/%d/%y'
+                        )
+                    new_end_date = datetime.strptime(
+                            post['end_date{}'.format(bp_id)],
+                            '%m/%d/%y'
+                        )
+                    new_name = post['name{}'.format(bp_id)]
+                except KeyError as e:
+                    alert_messages.append("Field not found for '{}' when saving billing period. Error: {}".format(bp, str(e)))
+                
+                if new_start_date.date() != bp.start_date:
+                    changed = True
+                    bp.start_date = new_start_date
+                if new_end_date.date() != bp.end_date:
+                    changed = True
+                    bp.end_date = new_end_date
+                if new_name != bp.name:
+                    changed = True
+                    bp.name = new_name
+
+                try:
+                    bp.full_clean()
+                except ValidationError as e:
+                    error_messages.append("Unable to validate and save billing period '{}'. Error: {}".format(bp, str(e)))
+                else:
+                    if changed:
+                        bp.save()
+
+                for group in billing_groups:
+                    bpcpa_id = 'invoice_amount_group{}{}'.format(group.pk, bp_id)
+                    try:
+                        bpcpa = BillingPeriodCustomPaymentAmount.objects.get(
+                            group=group.pk,
+                            period=bp,
+                        )
+                    except BillingPeriodCustomPaymentAmount.DoesNotExist:
+                        bpcpa = BillingPeriodCustomPaymentAmount()
+                        bpcpa.group = group
+                        bpcpa.period = bp
+                    try:
+                        new_invoice_amount = Decimal(post['invoice_amount_group{}_{}'.format(group.pk, bp_id)])
+                    except KeyError as e:
+                        alert_messages.append("Field not found saving invoice amount for group '{}' in billing period '{}'. Field was supposed to be '{}'. Error: {}".format(group.name, bp.name, 'invoice_amount_group{}_{}'.format(group.pk, bp_id), str(e)))
+                        continue
+                    except InvalidOperation as e:
+                        error_messages.append("Invalid decimal value found when saving invoice amount for group '{}' in billing period '{}'. Please check it and fix it. Error: {}".format(group.name, bp.name, 'invoice_amount_group{}_{}'.format(group, bp), str(e)))
+                        continue
+
+                    # It has not changed, lets just move on from here...
+
+                    if new_invoice_amount == bpcpa.invoice_amount:
+                        continue
+
+                    changed = True
+                    bpcpa.invoice_amount = new_invoice_amount
+
+                    try:
+                        bpcpa.full_clean()
+                    except ValidationError as e:
+                        error_messages.append("Unable to validate and save invoice amount for group '{}' in billing period '{}'. Error: {}".format(group.name, bp, str(e)))
+                    else:
+                        bpcpa.save()
+
+                if changed:
+                    updated_periods.append(bp)
+
+            elif delete_match:
+                # Delete an EXISTING billing period
+                # But only if there are no invoices attached.
+                # Verify user has access to this billing period
+                bp_pk = delete_match.group(1)
+
+                try:
+                    bp = BillingPeriod.objects.get(pk=bp_pk)
+                except BillingPeriod.DoesNotExist as e:
+                    error_messages.append("Not able to find Billing Period with ID #{}. Error: {}".format(bp_pk, str(e)))
+
+                if bp.league.pk != self.league.pk:
+                    error_messages.append("You don't seem to have permission to delete a Billing Period in this form. Not sure how that happened. I can't delete it.")
+
+                # TODO verify no invoices (haven't dev'd the model yet...)
+
+                bp.delete()
+                deleted_periods.append(bp)
+
+        success_message = []
+        if new_periods:
+            success_message.append("Added {} new billing periods.".format(len(new_periods)))
+        if updated_periods:
+            success_message.append("Updated {} billing periods.".format(len(updated_periods)))
+        if deleted_periods:
+            success_message.append("Deleted {} billing periods.".format(len(deleted_periods)))
+
+        if success_message:
+            messages.success(request, "<h2>Saved Form</h2><p>{}</p>".format("</p><p>".join(success_message)))
+            print(success_message)
+        if error_messages:
+            messages.error(request, "<h2>Errors</h2><ul><li>{}</li></ul>".format("</li><li>".join(error_messages)))
+            print (error_messages)
+        if alert_messages:
+            messages.warning(request, "<h2>Errors</h2><ul><li>{}</li></ul>".format("</li><li>".join(alert_messages)))
+            print(alert_messages)
+
+        print(success_message)
+        return HttpResponseRedirect(
+            reverse("registration:event_admin_billing_periods", kwargs={'event_slug':self.event.slug }))
+
+
 

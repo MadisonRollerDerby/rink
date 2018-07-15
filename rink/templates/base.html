@@ -14,7 +14,7 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
     <![endif]-->
 
-    {% block css %}
+    
     
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     
@@ -25,7 +25,7 @@
     
     <link href="{% static 'css/project.min.css' %}" rel="stylesheet">
     
-    
+    {% block css %}
     {% endblock %}
 
   </head>
@@ -120,8 +120,7 @@
     <!-- Le javascript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    {% block javascript %}
-      
+    
       <script
       src="https://code.jquery.com/jquery-3.3.1.min.js"
       integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -136,7 +135,7 @@
       
       <script src="{% static 'js/project.js' %}"></script>
       
-
+    {% block javascript %}
     {% endblock javascript %}
   </body>
 </html>
