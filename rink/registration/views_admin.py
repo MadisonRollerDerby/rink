@@ -133,7 +133,7 @@ class EventAdminSettings(EventAdminBaseView):
 
     def get(self, request, *args, **kwargs):
         return self.render(request, {
-            'event_form':  RegistrationAdminEventForm(event=self.event, instance=self.event),
+            'event_form':  RegistrationAdminEventForm(league=self.league, instance=self.event),
         })
 
     def post(self, request, *args, **kwargs):
@@ -261,15 +261,16 @@ class EventAdminInviteEmails(EventAdminBaseView):
 
     def get(self, request, *args, **kwargs):
         return self.render(request, {
-            'form': EventInviteEmailForm(),
+            'form': EventInviteEmailForm(league=self.league),
             'event_admin_template_include': 'registration/event_admin_invites_emails.html',
         })
 
     def post(self, request, *args, **kwargs):
-        form = EventInviteEmailForm(request.POST)
+        form = EventInviteEmailForm(league=self.league, data=request.POST)
         if form.is_valid():
             error = False
             emails = form.cleaned_data['emails'].splitlines()
+            billing_group = form.cleaned_data['billing_group']
             for email in emails:
                 try:
                     validate_email(email)
@@ -294,7 +295,8 @@ class EventAdminInviteEmails(EventAdminBaseView):
 
                     invite = RegistrationInvite.objects.create(
                         email=email,
-                        event=self.event
+                        event=self.event,
+                        billing_group=billing_group,
                     )
 
                     # Attempt to match existing user to the email address
@@ -314,7 +316,7 @@ class EventAdminInviteEmails(EventAdminBaseView):
                     reverse("registration:event_admin_invite_emails", kwargs={'event_slug':self.event.slug }))
 
         return self.render(request, {
-            'form': EventInviteEmailForm(),
+            'form': EventInviteEmailForm(league=self.league),
             'event_admin_template_include': 'registration/event_admin_invites_emails.html',
         })
 
@@ -455,6 +457,8 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                 bp.league = self.league
                 try:
                     bp.name = post['name{}'.format(bp_id)]
+                    if bp.name == "": # Ignore anything with a blank name.
+                        continue
                     bp.start_date = datetime.strptime(
                         post['start_date{}'.format(bp_id)],
                         '%m/%d/%y'
@@ -476,6 +480,8 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                     continue
                 except ValueError as e:
                     error_messages.append("Invalid date specified for new due date for '{}'. Error: {}".format(bp.name, str(e)))
+
+
 
                 try:
                     bp.full_clean()

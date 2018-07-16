@@ -5,7 +5,7 @@
 
 {% include "registration/event_admin_menu.html" %}
 
-<div class="container">
+<div class="container mt-2 mb-4">
     <div class="row">
         <nav class="nav nav-pills flex-column flex-sm-row">
           <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "invites" %}active{%endif%}" href="{% url 'registration:event_admin_invites' event_slug=event_slug %}">View Invites</a>

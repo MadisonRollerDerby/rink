@@ -54,14 +54,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         'league.Organization',
         "Organization",
         blank = True,
-        default = 1,
+        null = True,
+        #default = ???
     )
 
     league = models.ForeignKey(
         'league.League',
         "League",
         blank = True,
-        default = 1,
+        null = True,
+        #default = ???,
     )
 
     derby_name = models.CharField(_('Derby Name'), blank=True, max_length=255)
@@ -116,13 +118,23 @@ def set_rink_session_data(sender, user, request, **kwargs):
     # Assist in figuring out which sections of the nav to show for admins
     # This pretty much just makes the permissions pretty and caches them for
     # future use.
-    request.session['view_organization'] = user.organization.pk
-    request.session['view_organization_slug'] = user.organization.slug
-    request.session['view_league'] = user.league.pk
-    request.session['view_league_slug'] = user.league.slug
-
-    request.session['organization_permissions'] = get_perms(user, user.organization)
-    request.session['league_permissions'] = get_perms(user, user.league)
+    try:
+        request.session['view_organization'] = user.organization.pk
+        request.session['view_organization_slug'] = user.organization.slug
+        request.session['organization_permissions'] = get_perms(user, user.organization)
+    except AttributeError:
+        request.session['view_organization'] = None
+        request.session['view_organization_slug'] = ""
+        request.session['organization_permissions'] = []
+        
+    try:
+        request.session['view_league'] = user.league.pk
+        request.session['view_league_slug'] = user.league.slug
+        request.session['league_permissions'] = get_perms(user, user.league)
+    except AttributeError:
+        request.session['view_league'] = None
+        request.session['view_league_slug'] = None
+        request.session['league_permissions'] = []
 
     request.session['organization_admin'] = False
     request.session['league_admin'] = False
@@ -135,8 +147,9 @@ def set_rink_session_data(sender, user, request, **kwargs):
         # If we are an org or league admin, set all league permissions.
         request.session['league_admin'] = True
         request.session['league_permissions'] = []
-        for perm in get_perms_for_model(user.league):
-            request.session['league_permissions'].append(perm.codename)
+        if user.league:
+            for perm in get_perms_for_model(user.league):
+                request.session['league_permissions'].append(perm.codename)
             
 # Attach the signal
 user_logged_in.connect(set_rink_session_data)

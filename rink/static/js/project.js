@@ -63,7 +63,7 @@ $(document).ready(function() {
         var elem = this;
         if(!$(this).hasClass('disabled')) {
             $(this).addClass('disabled').html("Sending...");
-            var req = $.post("/registration/test-event/invites", 
+            var req = $.post(invite_ajax_url, 
                 { user_or_invite_id: $(this).attr("id") }
             ).done(function( data ) {
                 jQuery(elem).html("Invite Sent");

@@ -1,9 +1,15 @@
+<script>
+invite_ajax_url = '{% url "registration:event_admin_invites" event_slug=event.slug %}';
+</script>
+
+
 <h5>Invite Users to Register</h5>
+
 
 
 {% if users %}
 
-<div class="table-responsive">
+<div class="table-responsive table-striped">
     <table class="table table-hover">
       <thead>
         <tr>
@@ -15,7 +21,7 @@
       </thead>
       <tbody>
         {% for user in users %}
-        <tr class="{% if user.row_class %}table-{{ user.row_class }}{% endif %}">
+        <tr class="">
           <th scope="row">{{ user.first_name }} {{ user.last_name }}</th>
           <td>{{ user.derby_name }}</td>
           <td><a href="malto:{{user.email}}">{{ user.email }}</a></td>

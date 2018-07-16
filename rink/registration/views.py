@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
@@ -30,17 +30,17 @@ class RegistrationView(View):
 
 
 class RegisterBegin(RegistrationView):
-    def get(self, request, event_slug, uuid=None):
+    def get(self, request, event_slug, invite_key=None):
         invite = None
 
-        if uuid:
-            invite = get_object_or_404(RegistrationInvite, uuid=uuid)
+        if invite_key:
+            invite = get_object_or_404(RegistrationInvite, uuid=invite_key)
 
             if invite.user:
                 # User attached to this invite, require login
 
                 if not request.user.is_authenticated:
-                    return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+                    return redirect('{}?next={}'.format(reverse('account_login'), request.path))
                 
                 if invite.user != request.user:
                     # Different user is attached to this invite compared to whom is logged in
@@ -63,8 +63,6 @@ class RegisterBegin(RegistrationView):
         request.session['register_event_id'] = self.event.pk
         if invite:
             request.session['register_invite_id'] = invite.pk
-        if uuid:
-            request.session['register_invite_uuid'] = uuid
         
         if request.user.is_authenticated:
             # If logged in, go to the registration form
@@ -127,11 +125,29 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         else:
             return registration_error(request, self.event, "already_registered")
 
-        form = RegistrationDataForm(initial={
-            'contact_email': request.user.email,
-            'contact_state': self.event.league.default_address_state,
-            'derby_insurance_type': self.event.league.default_insurance_type,
-        })
+        # Check if user has some registration data we can already use
+        try:
+            existing_registration = RegistrationData.objects.filter(
+                    user=request.user,
+                    organization=self.event.league.organization,
+                ).order_by('-registration_date').get()
+        except RegistrationData.DoesNotExist:
+            existing_registration = None
+
+        if existing_registration:
+            existing_registration.id = None
+            existing_registration.invite = None
+            existing_registration.event = None
+            existing_registration.registration_date = None
+            existing_registration.email = request.user.email
+
+            form = RegistrationDataForm(instance=existing_registration)
+        else:
+            form = RegistrationDataForm(initial={
+                'contact_email': request.user.email,
+                'contact_state': self.event.league.default_address_state,
+                'derby_insurance_type': self.event.league.default_insurance_type,
+            })
 
         legal_form = LegalDocumentAgreeForm(event=self.event)
 
@@ -144,18 +160,14 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
     def post(self, request, event_slug):
         form = RegistrationDataForm(data=request.POST)
         legal_form = LegalDocumentAgreeForm(event=self.event, data=request.POST)
-        if not form.is_valid():
-            print(form.errors)
-        else:
-            print ("valid")
 
-        print(request.POST)
         if form.is_valid() and legal_form.is_valid():
             # Save registration data
             registration_data = form.save(commit=False)
             registration_data.user = request.user
             registration_data.event = self.event
             registration_data.league = self.event.league
+            registration_data.organization = self.event.league.organization
 
             try:
                 registration_data.invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])

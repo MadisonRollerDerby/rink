@@ -2,11 +2,11 @@
 
 {% block content %}
 
-<div class="container">
+<div class="container mb-5">
     <div class="row">
-        <h1>Manage Registration Events</h1>
+        <h3>Manage Registration Events</h3>
     </div>
-    <div class="row">
+    <div class="row mt-3 mb-3">
         <a href="{% url 'registration:event_admin_create' %}">
             <button type="button" class="btn btn-primary btn-sm">Create Registration Event</button>
         </a>
@@ -21,7 +21,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            No Events found. Maybe you should create one?
+            No current registration events found.
         {% endif %}
     </div>
 
@@ -30,14 +30,14 @@
 
 
 {% if past_events %}
-<div class="container">
+<div class="container mt-5">
     <div class="row">
         <h3>Past Registration Events</h3>
     </div>
     <div class="row">
         <div class="list-group">
             {% for event in past_events %}
-                <a href="{% url 'registration:even_admin_roster' event_slug=event.slug %}" class="list-group-item list-group-item-action">
+                <a href="{% url 'registration:event_admin_roster' event_slug=event.slug %}" class="list-group-item list-group-item-action">
                     {{ event.name }}
                 </a>
             {% endfor %}

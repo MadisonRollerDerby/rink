@@ -71,7 +71,7 @@ class MyUserAdmin(AuthUserAdmin):
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        (_('Personal info'), {'fields': ('first_name', 'last_name', 'derby_name', 'derby_number', 'organization')}),
+        (_('Personal info'), {'fields': ('first_name', 'last_name', 'derby_name', 'derby_number', 'organization', 'league')}),
 
 
         #(_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',

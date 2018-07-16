@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from localflavor.us.forms import USZipCodeField
 from localflavor.us.us_states import STATE_CHOICES
 
-from billing.models import BillingPeriod
+from billing.models import BillingPeriod, BillingGroup
 from league.models import Organization , League
 from users.models import User
 
@@ -173,10 +173,16 @@ class RegistrationInvite(models.Model):
         on_delete=models.CASCADE,
     )
 
+    billing_group = models.ForeignKey(
+        "billing.BillingGroup",
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+
     uuid = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4, 
-        editable=False
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
     )
 
     sent_date = models.DateTimeField(
@@ -200,8 +206,11 @@ class RegistrationInvite(models.Model):
     def __str__(self):
         return "{}".format(self.email)
 
-
-
+    def get_invite_url(self):
+        return reverse("register:register_event_uuid", kwargs={
+            'event_slug': self.event.slug,
+            'invite_key': self.uuid,
+        })
 
 
 class RegistrationData(models.Model):
@@ -223,6 +232,11 @@ class RegistrationData(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
+    )
+
+    organization = models.ForeignKey(
+        "league.Organization",
+        on_delete=models.CASCADE,
     )
     
     contact_email = models.EmailField("Email Address")
@@ -294,14 +308,13 @@ class RegistrationData(models.Model):
         #help_text="If you have none, please write 'none'.",
     )
 
-    registration_date = models.DateTimeField(
-        "Registration Date",
-        auto_now_add=True,
-    )
-
     legal_forms = models.ManyToManyField(
         'legal.LegalDocument',
     )
 
+    registration_date = models.DateTimeField(
+        "Registration Date",
+        auto_now_add=True,
+    )
 
 

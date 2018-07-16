@@ -4,7 +4,7 @@
 
 <div class="container">
     <div class="row">
-        <h1>Organization Admins</h1>
+        <h3>Organization Admins</h3>
     </div>
 </div>
 
@@ -26,12 +26,12 @@ No organization admins have been set. Which is weird. How are you here?
 
 
 {% for league in leagues %}
-<div class="container">
+<div class="container mt-5">
     <div class="row">
-        <h1>
+        <h3>
             <img src="{{ league.logo_thumbnail.url }}" alt="{{ league.name }} logo" class="img-thumbnail">
                         {{ league.name }}
-        </h1>
+        </h3>
     </div>
 </div>
 

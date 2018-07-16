@@ -41,7 +41,7 @@ def send_registration_confirmation(user, registration_data):
         template="registration_confirmation",
         context={
             'user': user,
-            'event': registration.event,
-            'registration': registration,
+            'event': registration_data.event,
+            'registration': registration_data,
         },
     )

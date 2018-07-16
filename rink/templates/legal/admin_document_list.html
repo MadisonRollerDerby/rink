@@ -3,14 +3,15 @@
 
 {% block content %}
 
-<h2>Legal Documents</h2>
+<h3>Legal Documents</h3>
 
 {% include 'utils/messages.html' %}
 
-<a href="{% url 'legal:admin_document_create_update' %}">
-    <button type="button" class="btn btn-primary">Create Legal Document</button>
-</a>
-<br/>
+<div class="mt-3 mb-3">
+    <a href="{% url 'legal:admin_document_create_update' %}">
+        <button type="button" class="btn btn-primary">Create Legal Document</button>
+    </a>
+</div>
 
 <ul class="list-group">
 {% for document in object_list %}

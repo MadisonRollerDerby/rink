@@ -83,6 +83,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
                 decimal_places=2,
                 max_digits=10,
                 label="{} Invoice Amount".format(group.name),
+                initial=group.invoice_amount,
             )
             self.fields[field_name].widget.attrs.update({'placeholder': "0.00"})
 
@@ -130,6 +131,13 @@ class BillingPeriodInlineForm(forms.ModelForm):
         ]
 
 
+class BillingGroupModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        default = ""
+        if obj.default_group_for_league:
+            default = "*"
+        return "{}{}".format(obj.name, default)
+
 class EventInviteEmailForm(forms.Form):
     emails = forms.CharField(
         widget=forms.Textarea,
@@ -138,13 +146,28 @@ class EventInviteEmailForm(forms.Form):
         required=True,
     )
 
-    def __init__(self, *args, **kwargs):
-        
+    def __init__(self, league, *args, **kwargs):
         super(EventInviteEmailForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
 
+        initial_value = 0
+        try:
+            initial_value = BillingGroup.objects.filter(
+                league=league, default_group_for_league=True).get().pk
+        except BillingGroup.DoesNotExist:
+            pass
+
+        self.fields['billing_group'] = BillingGroupModelChoiceField(
+            queryset=BillingGroup.objects.filter(league=league),
+            empty_label="Select a Billing Group",
+            label="Billing Group",
+            required=True,
+            initial=initial_value,
+        )
+
         self.helper.layout = Layout(
             'emails',
+            'billing_group',
             ButtonHolder(
                 Submit('submit', 'Send Invites', css_class='button white')
             )

@@ -149,9 +149,249 @@ class BillingPeriodCustomPaymentAmount(models.Model):
 
 
 
-#class Payment(models.Model):
 
-#class Invoice(models.Model):
+
+INVOICE_STATUS_CHOICES = [
+    ('unpaid', 'Unpaid'),
+    ('paid', 'Paid'),
+    ('canceled', 'Canceled'),
+]
+
+class Invoice(models.Model):
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    billing_period = models.ForeignKey(
+        'billing.BillingPeriod',
+        on_delete=models.CASCADE,
+    )
+
+    description = models.CharField(
+        "Invoice Description",
+        max_length=200,
+        blank=True,
+    )
+
+    amount_invoiced = models.DecimalField(
+        "Amount Invoiced",
+        max_digits=10,
+        decimal_places=2,
+        help_text="Total amount to invoice",
+        validators=[MinValueValidator(Decimal('0.00'))],
+    )
+
+    amount_paid = models.DecimalField(
+        "Amount Paid",
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Total amount paid on this invoice",
+        validators=[MinValueValidator(Decimal('0.00'))],
+    )
+
+    status = models.CharField(
+        "Invoice Status",
+        max_length=50,
+        choices=INVOICE_STATUS_CHOICES,
+        default="unpaid",
+    )
+
+    payment = models.ForeignKey(
+        'billing.Payment',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
+    invoice_date = models.DateField(
+        "Invoice Date",
+        help_text="The date this invoice was sent or generated",
+    )
+
+    invoice_date = models.DateField(
+        "Due Date",
+        help_text="The date this invoice is due for payment or will be collected for auto payment.",
+    )
+
+    paid_date = models.DateTimeField(
+        "Payment Date",
+        help_text="The date this invoice was marked as paid",
+        blank=True,
+    )
+
+    class Meta:
+        unique_together = ['user', 'league', 'billing_period']
+        ordering = ['invoice_date']
+
+    def __str__(self):
+        #1234 - Billing Period - Event Name - League Name - $AMOUNT (STATUS)
+        return "#{} - {} - {} - {} - ${} ({})".format(
+            self.pk,
+            self.billing_period.name,
+            self.billing_period.event.name,
+            self.league.name,
+            self.invoice_date,
+            self.status
+        )
+
+
+
+class Payment(models.Model):
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    processor = models.CharField(
+        "Payment Processor",
+        max_length=50,
+        help_text="Name of the payment processor, or possibly Cash or Check."
+    )
+
+    transaction_id = models.CharField(
+        "Transaction ID",
+        max_length=100,
+        blank=True,
+    )
+
+    amount = models.DecimalField(
+        "Amount Paid",
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Total amount paid for this transaction",
+        validators=[MinValueValidator(Decimal('0.00'))],
+    )
+
+    fee = models.DecimalField(
+        "Payment Processor Fee",
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Total fee paid to process this transaction",
+        validators=[MinValueValidator(Decimal('0.00'))],
+    )
+
+    card_type = models.CharField(
+        "Credit/Debit Card Type",
+        max_length=50,
+        blank=True,
+    )
+
+    card_last4 = models.CharField(
+        "Credit/Debit Card Last 4 Digits",
+        max_length=4,
+        blank=True,
+    )
+
+    card_expire_month = models.IntegerField(
+        "Credit/Debit Card Expiration Month",
+        blank=True,
+    )
+
+    card_expire_year = models.IntegerField(
+        "Credit/Debit Card Expiration Year",
+        blank=True,
+    )
+
+    payment_date = models.DateTimeField(
+        "Payment Date",
+    )
+
+    @property
+    def get_card(self):
+        if not self.card_type:
+            return None
+        return "{} ending {}, expires {}/{}".format(
+            self.card_type,
+            self.card_last4,
+            self.card_expire_month,
+            self.card_expire_year
+        )
+
+    def __str__(self):
+        # MM/DD/YY - User - Processor - $AMOUNT - Transaction ID - Card Details
+        card_details = ""
+        if self.get_card:
+            card_details = " - {}".self.get_card
+        transaction_id = ""
+        if self.transaction_id:
+            transaction_id = " - {}".format(transaction_id)
+
+        return "{} - {} - {} - ${}{}{}".format(
+            self.payment_date.date(),
+            self.user,
+            self.processor,
+            self.payment_amount,
+            transaction_id,
+            card_details,
+        )
+
+
+class UserPaymentTokenizedCard(models.Model):
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    token = models.CharField(
+        "Customer ID at Payment Processor",
+        max_length=50,
+    )
+
+    card_type = models.CharField(
+        "Credit/Debit Card Type",
+        max_length=50,
+        blank=True,
+    )
+
+    card_last4 = models.CharField(
+        "Credit/Debit Card Last 4 Digits",
+        max_length=4,
+        blank=True,
+    )
+
+    card_expire_month = models.IntegerField(
+        "Credit/Debit Card Expiration Month",
+        blank=True,
+    )
+
+    card_expire_year = models.IntegerField(
+        "Credit/Debit Card Expiration Year",
+        blank=True,
+    )
+
+    @property 
+    def get_card(self):
+        if not self.card_type:
+            return None
+        return "{} ending {}, expires {}/{}".format(
+            self.card_type,
+            self.card_last4,
+            self.card_expire_month,
+            self.card_expire_year
+        )
+
+    class Meta:
+        unique_together = ['user', 'league']
+
 
 
 @receiver(pre_delete, sender=BillingGroup)
