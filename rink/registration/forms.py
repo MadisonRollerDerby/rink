@@ -104,6 +104,10 @@ class RegistrationDataForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             field.widget.attrs['placeholder'] = field.label
 
+        self.fields['stripe_token'] = forms.CharField(
+            widget=forms.HiddenInput(),
+            required=False,
+        )
 
         self.helper.form_show_labels = False
         self.helper.form_tag = False
@@ -131,11 +135,13 @@ class RegistrationDataForm(forms.ModelForm):
             Fieldset(
                 'Emergency Details',
                 'emergency_date_of_birth',
+                'emergency_contact',
                 'emergency_phone',
                 'emergency_relationship',
                 'emergency_hospital',
                 'emergency_allergies',
             ),
+            'stripe_token',
         )
 
     class Meta:
@@ -158,6 +164,7 @@ class RegistrationDataForm(forms.ModelForm):
             'derby_pronoun',
 
             'emergency_date_of_birth',
+            'emergency_contact',
             'emergency_phone',
             'emergency_relationship',
             'emergency_hospital',

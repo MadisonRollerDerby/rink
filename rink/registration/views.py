@@ -10,9 +10,12 @@ from django.views import View
 from guardian.shortcuts import assign_perm
 from guardian.mixins import LoginRequiredMixin
 import re
+import stripe
 
 from .forms import RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
 from .models import RegistrationEvent, RegistrationInvite, RegistrationData
+from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, \
+    UserPaymentTokenizedCard
 from legal.models import LegalDocument, LegalSignature
 
 from registration.tasks import send_registration_confirmation
@@ -115,6 +118,61 @@ class RegisterCreateAccount(RegistrationView):
 
 class RegisterShowForm(RegistrationView, LoginRequiredMixin):
     template = 'registration/register_form.html'
+
+    def get_billing_period(self):
+        billing_period = None
+
+        # If we are inside a billing period already, use that one to register
+        billing_period_query = BillingPeriod.objects.filter(
+            event=self.event,
+            start_date__lte=timezone.now(),
+            end_date__gte=timezone.now(),
+        )
+        if billing_period_query.count() != 1:
+            # If we are registering early, use the first period available
+            billing_period_query = BillingPeriod.objects.filter(
+                event=self.event,
+                start_date__gte=timezone.now(),
+            ).all()[:1]
+        if billing_period_query.count() == 1:
+            billing_period = billing_period_query.get()
+        return billing_period
+
+    def get_invoice_amount(self, billing_period, billing_group=None):
+        if billing_period and billing_group:
+            try:
+                billing_schedule_obj = BillingPeriodCustomPaymentAmount.objects.get(
+                        group=billing_group,
+                        period=billing_period,
+                    )
+            except BillingPeriodCustomPaymentAmount.DoesNotExist:
+                pass
+            else:
+                return billing_schedule_obj.invoice_amount
+
+        # If we're still here, use the default amount in the billing_group
+        if billing_group:
+            return billing_group.invoice_amount
+
+        # If for some reason no group was sent, but we have a billing period
+        # use the default group for the league.
+        try:
+            default_group_for_league = BillingGroup.objects.get(
+                league=self.event.league,
+                default_group_for_league=True,
+            )
+        except BillingGroup.DoesNotExist:
+            pass
+        else:
+            return default_group_for_league.invoice_amount
+
+        # If we are STILL here, that means NO valid billing group set and 
+        # the billing period/group through table doesn't have an entry.
+        # I guess give them a free ride?
+        return 0
+
+
+
     def get(self, request, event_slug):
 
         # Check if the user has already registered
@@ -149,12 +207,36 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
                 'derby_insurance_type': self.event.league.default_insurance_type,
             })
 
+        # Legal documents that need to be agreed to
         legal_form = LegalDocumentAgreeForm(event=self.event)
+
+        # Get Billing Period 
+        invite_billing_group = None
+        try:
+            invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
+        except KeyError:
+            pass
+        except RegistrationInvite.DoesNotExist:
+            pass
+        else:
+            invite_billing_group = invite.billing_group
+
+        num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
+        billing_period = self.get_billing_period()
+        billing_amount = self.get_invoice_amount(billing_period, invite_billing_group)
+
+
+
+        # If there are no billing periods available... I guess don't include it.
+
 
         return render(request, self.template, {
             'form': form,
             'legal_form': legal_form,
             'event': self.event,
+            'billing_period': billing_period,
+            'billing_amount': billing_amount,
+            'num_billing_periods': num_billing_periods,
         })
 
     def post(self, request, event_slug):
@@ -162,6 +244,41 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         legal_form = LegalDocumentAgreeForm(event=self.event, data=request.POST)
 
         if form.is_valid() and legal_form.is_valid():
+
+            """
+            # Attempt to charge the card
+            stripe.api_key = self.event.league.stripe_private_key
+            billing_period = self.get_billing_period()
+            billing_amount = self.get_invoice_amount(billing_period, invite_billing_group)
+
+            # Create or Update Payment Method
+            try:
+                payment_method = UserPaymentTokenizedCard.objects.filter(user=request.user, league=self.event.league)
+            except PaymentMethod.DoesNotExist:
+                payment_method = UserPaymentTokenizedCard.objects.create(
+                    user=request.user,
+                    league=self.event.league,
+
+                )
+            if 
+
+
+            if billing_amount > 0:
+                # Create or Get Invoice
+
+                # Attempt to Charge Invoice
+
+                # Errors?
+
+
+                stripe.Charge.create(
+                  amount=billing_amount * 100,
+                  currency="usd",
+                  source=form.cleaned_data['stripe_token']
+                  description="Charge for jacob.martinez@example.com"
+                )
+            """
+
             # Save registration data
             registration_data = form.save(commit=False)
             registration_data.user = request.user

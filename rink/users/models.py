@@ -69,7 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     derby_name = models.CharField(_('Derby Name'), blank=True, max_length=255)
 
     # Derby Name can be a maximum of 4 characters
-    derby_number = models.CharField(_('Derby Number'), blank=True, max_length=4)
+    derby_number = models.CharField(_('Derby Number'), blank=True, max_length=50)
 
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)

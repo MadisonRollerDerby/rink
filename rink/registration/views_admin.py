@@ -137,7 +137,7 @@ class EventAdminSettings(EventAdminBaseView):
         })
 
     def post(self, request, *args, **kwargs):
-        form = RegistrationAdminEventForm(event=self.event, data=request.POST)
+        form = RegistrationAdminEventForm(league=self.league, instance=self.event, data=request.POST)
         if form.is_valid():
             event = form.save()
 

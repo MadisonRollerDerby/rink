@@ -9,6 +9,7 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from localflavor.us.forms import USZipCodeField
 from localflavor.us.us_states import STATE_CHOICES
+from markdownx.utils import markdownify
 
 from billing.models import BillingPeriod, BillingGroup
 from league.models import Organization , League
@@ -32,6 +33,16 @@ class RegistrationEvent(models.Model):
         'league.League',
         on_delete=models.CASCADE,
     )
+
+    description = models.TextField(
+        "Event Description",
+        blank=True,
+        help_text="Blurb of text shown at the top of the registration form."
+    )
+
+    @property
+    def description_html(self):
+        return markdownify(self.description)
 
     start_date = models.DateField(
         "Start Date",

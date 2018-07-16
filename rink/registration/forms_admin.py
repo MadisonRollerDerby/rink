@@ -52,6 +52,8 @@ class RegistrationAdminEventForm(forms.ModelForm):
                 'automatic_billing_dates',
             ),
             HTML('<hr>'),
+            'description',
+            HTML('<hr>'),
             Fieldset(
                 'Legal Forms Required',
                 'legal_forms',
@@ -99,6 +101,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
             'name',
             'start_date',
             'end_date',
+            'description',
             'public_registration_open_date',
             'public_registration_closes_date',
             'invite_expiration_date',
