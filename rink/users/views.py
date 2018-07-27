@@ -1,9 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.urls import reverse
-from django.views.generic import DetailView, ListView, RedirectView, UpdateView
 from django.views import View
 
 from league.models import League
@@ -15,8 +14,9 @@ from users.tasks import notify_admin_of_user_changes
 from guardian.shortcuts import get_objects_for_user
 
 
-class UserProfileView(View):
+class UserProfileView(LoginRequiredMixin, View):
     template_name = "users/rink_profile_update.html"
+
     def get(self, request):
         return render(request, self.template_name, {
             'form': UserProfileForm(instance=User.objects.get(pk=request.user.pk))
@@ -28,8 +28,8 @@ class UserProfileView(View):
             initial=User.objects.get(pk=request.user.pk)
             updated = form.save()
 
-
-            leagues = get_objects_for_user(request.user, 
+            leagues = get_objects_for_user(
+                request.user,
                 'league_member',
                 klass=League.objects.all(),
                 accept_global_perms=False)
@@ -43,10 +43,4 @@ class UserProfileView(View):
         else:
             return render(request, self.template_name, {
                 'form': form
-            })    
-
-
-
-
-
-
+            })

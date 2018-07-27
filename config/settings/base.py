@@ -66,7 +66,7 @@ THIRD_PARTY_APPS = [
     'crispy_forms',
     'guardian',
     'imagekit',
-    'stronghold',
+    #'stronghold',
     'markdownx',
 
     'allauth',

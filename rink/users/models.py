@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.signals import user_logged_in
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from guardian.shortcuts import get_perms, get_perms_for_model
+from guardian.shortcuts import assign_perm, get_perms, get_perms_for_model
 
 
 class RinkUserManager(BaseUserManager):
@@ -13,14 +15,20 @@ class RinkUserManager(BaseUserManager):
         """
         Creates and saves a User with the given email and password.
         """
-        if not email:
-            raise ValueError('Users must have an email address')
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise ValueError('Invalid email address, please try again.')
 
         user = self.model(
             email=self.normalize_email(email),
         )
 
-        user.set_password(password)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+
         user.save(using=self._db)
         return user
 
@@ -34,9 +42,8 @@ class RinkUserManager(BaseUserManager):
         )
         user.is_admin = True
         user.save(using=self._db)
+
         return user
-
-
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -100,6 +107,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         # Simplest possible answer: All admins are staff
         return self.is_admin
 
+    """
+    def set_default_perms(self):
+        # If league or organization is set and somehow we are out of sync
+        # add this user to the correct permissions
+        if self.is_admin and self.organization:
+            assign_perm("org_admin", self.organization)
+        elif self.league:
+            assign_perm("league_member", self.league)
+    """
+
+    """
     def has_perm(self, perm, obj=None):
         "Does the user have a specific permission?"
         # Simplest possible answer: Yes, always
@@ -109,9 +127,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
-
-    def get_absolute_url(self):
-        return reverse('users:detail', kwargs={'id': self.id})
+    """
 
 
 def set_rink_session_data(sender, user, request, **kwargs):
