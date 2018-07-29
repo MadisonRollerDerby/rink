@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -7,6 +8,8 @@ from django.utils.text import slugify
 
 from markdownx.models import MarkdownxField
 from markdownx.utils import markdownify
+
+import itertools
 
 
 class LegalDocument(models.Model):
@@ -92,8 +95,9 @@ class LegalSignature(models.Model):
 
 @receiver(pre_save, sender=LegalDocument)
 def slugify_legal_document(sender, instance, *args, **kwargs):
-    instance.slug = slugify("{} {}".format(instance.name, instance.date))
+    instance.slug = original_slug = slugify("{} {}".format(instance.name, instance.date))
 
+    obj = None
     try:
         obj = sender.objects.get(pk=instance.pk)
     except sender.DoesNotExist:
@@ -102,3 +106,22 @@ def slugify_legal_document(sender, instance, *args, **kwargs):
         has_signatures = LegalSignature.objects.filter(document=obj)
         if has_signatures and (not obj.content == instance.content or not obj.date == instance.date):
             raise ValidationError("You cannot change the content or date of this legal document, as {} have signed it. Create a new legal document.".format(has_signatures.count()))
+
+    # Check for uniqueness in the slug and resolve issues here
+    # I suppose we could create thousands of the same slug here and have some
+    # of issues resolving it, possibly outside of the max length of the slug
+    # field and such.
+    for slug_counter in itertools.count(1):
+        search = LegalDocument.objects.filter(
+            league=instance.league,
+            slug=instance.slug
+        )
+        if obj:
+            search.exclude(pk=obj.pk)
+
+        if not search.exists():
+            break
+        instance.slug = '%s-%d' % (original_slug, slug_counter)
+
+        if slug_counter >= settings.SLUG_RESOLVE_DUPLICATES_LIMIT:
+            raise ValidationError("It looks like you have created {} of the same documents with the same name and date. Please remove those or use a different name or date on this one.".format(settings.SLUG_RESOLVE_DUPLICATES_LIMIT))

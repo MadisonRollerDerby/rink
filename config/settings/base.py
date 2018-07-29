@@ -293,3 +293,6 @@ RINK_PERMISSIONS_IGNORE = (
     'delete_organization',
     'league_member',
 )
+
+# The number of times we should try to resolve duplicate slugs
+SLUG_RESOLVE_DUPLICATES_LIMIT = 10
