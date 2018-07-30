@@ -12,7 +12,7 @@ from localflavor.us.us_states import STATE_CHOICES
 from markdownx.utils import markdownify
 
 from billing.models import BillingPeriod, BillingGroup
-from league.models import Organization , League
+from league.models import Organization, League
 from users.models import User
 
 
@@ -20,13 +20,14 @@ class RegistrationEvent(models.Model):
     name = models.CharField(
         "Event Name",
         max_length=50,
-        help_text = "Example: 'Summer Skating', 'MRD 2018 Registration'",
+        help_text="Example: 'Summer Skating', 'MRD 2018 Registration'",
     )
 
     slug = models.SlugField(
         "Event Slug",
         max_length=50,
-        help_text = "Example: 'summer-skating-2018', is used for the registration URL.",
+        help_text="Example: 'summer-skating-2018', is used for the registration URL.",
+        blank=True,
     )
 
     league = models.ForeignKey(
@@ -46,47 +47,47 @@ class RegistrationEvent(models.Model):
 
     start_date = models.DateField(
         "Start Date",
-        help_text = "First day of this session.",
+        help_text="First day of this session.",
     )
 
     end_date = models.DateField(
         "End Date",
-        help_text = "Last day of this session.",
+        help_text="Last day of this session.",
     )
 
     public_registration_open_date = models.DateTimeField(
         "Registration Opens On",
-        blank = True,
-        null = True,
-        help_text = "The date/time that the registration form becomes available. If you set it to blank, registration is open now.",
+        blank=True,
+        null=True,
+        help_text="The date/time that the registration form becomes available. If you set it to blank, registration is open now.",
     )
 
     public_registration_closes_date = models.DateTimeField(
         "Registration Closes On",
-        blank = True,
-        null = True,
-        help_text = "The date/time that the registration form becomes available. If you set it to blank, registration will never close.",
+        blank=True,
+        null=True,
+        help_text="The date/time that the registration form becomes available. If you set it to blank, registration will never close.",
     )
 
     invite_expiration_date = models.DateTimeField(
         "Invites Expire On",
-        blank = True,
-        null = True,
-        help_text = "People who are invited must register before this date. Invites will no longer work after this date. If you set this to blank, invites will always work.",
+        blank=True,
+        null=True,
+        help_text="People who are invited must register before this date. Invites will no longer work after this date. If you set this to blank, invites will always work.",
     )
 
     minimum_registration_age = models.IntegerField(
         "Minimum Age (Years)",
-        blank = True,
-        null = True,
-        help_text = "The minimum age someone can register for this event. Calculated based on the Start Date. Leave blank to disable this check.",
+        blank=True,
+        null=True,
+        help_text="The minimum age someone can register for this event. Calculated based on the Start Date. Leave blank to disable this check.",
     )
 
     maximum_registration_age = models.IntegerField(
         "Maximum Age (Years)",
-        blank = True,
-        null = True,
-        help_text = "The maximum age someone can register for this event. Calculated based on the Start Date. Leave blank to disable this check.",
+        blank=True,
+        null=True,
+        help_text="The maximum age someone can register for this event. Calculated based on the Start Date. Leave blank to disable this check.",
     )
 
     legal_forms = models.ManyToManyField(
@@ -100,14 +101,12 @@ class RegistrationEvent(models.Model):
         return "{}".format(self.name)
 
     def create_billing_period(self, name=None, start_date=None, end_date=None):
-        
         if not name:
-            name = "{} - One Time Dues".format(self.name)
+            name = "{} - Registration Dues".format(self.name)
         if not start_date:
             start_date = self.start_date
         if not end_date:
             end_date = self.end_date
-
 
         invoice_date = start_date - relativedelta(days=self.league.default_invoice_day_diff)
         due_date = start_date
@@ -122,20 +121,19 @@ class RegistrationEvent(models.Model):
             due_date=due_date,
         )
 
-    def create_monthly_biling_periods(self):
+    def create_monthly_billing_periods(self):
         periods = []
         for dt in rrule.rrule(rrule.MONTHLY, dtstart=self.start_date, until=self.end_date):
             month_start = dt
             month_end = dt + relativedelta(months=1) - relativedelta(days=1)
             period = self.create_billing_period(
-                name = "{} Dues".format(dt.strftime('%B')),
+                name="{} Dues".format(dt.strftime('%B')),
                 start_date=month_start,
                 end_date=month_end,
             )
             periods.append(period)
 
         return periods
-
 
     def get_kwargs_for_url(self):
         return {
@@ -156,17 +154,15 @@ class RegistrationEvent(models.Model):
     def get_billing_periods_url(self):
         return reverse('registration:event_admin_billing_periods', kwargs=self.get_kwargs_for_url())
 
-    #def get_absolute_url(self):
-        
+    # def get_absolute_url(self):
+
 
 @receiver(pre_save, sender=RegistrationEvent)
-def my_callback(sender, instance, *args, **kwargs):
+def set_registration_event_slug(sender, instance, *args, **kwargs):
     if not instance.slug:
         instance.slug = slugify(instance.name)
 
 
-
- 
 class RegistrationInvite(models.Model):
     user = models.ForeignKey(
         "users.User",

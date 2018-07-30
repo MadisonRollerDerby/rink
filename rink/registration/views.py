@@ -22,8 +22,10 @@ from registration.tasks import send_registration_confirmation
 
 
 def registration_error(request, event, error_code):
-    return render(request, 'registration/register_error.html', 
-        {'event': event, 'error_code': error_code })
+    return render(request, 'registration/register_error.html', {
+            'event': event,
+            'error_code': error_code
+        })
 
 
 class RegistrationView(View):
@@ -62,7 +64,6 @@ class RegisterBegin(RegistrationView):
                 # TODO helpful message here?
                 return HttpResponse(status=404)
 
-        
         request.session['register_event_id'] = self.event.pk
         if invite:
             request.session['register_invite_id'] = invite.pk
@@ -82,6 +83,7 @@ class RegisterBegin(RegistrationView):
 
 class RegisterCreateAccount(RegistrationView):
     template = 'registration/register_create_account.html'
+
     def get(self, request, event_slug):
         form = RegistrationSignupForm()
         return render(request, self.template, {'form': form, 'event': self.event })
@@ -113,7 +115,6 @@ class RegisterCreateAccount(RegistrationView):
             return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug':self.event.slug}))
 
         return render(request, self.template, {'form': form, 'event': self.event })
-
 
 
 class RegisterShowForm(RegistrationView, LoginRequiredMixin):
@@ -170,8 +171,6 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         # the billing period/group through table doesn't have an entry.
         # I guess give them a free ride?
         return 0
-
-
 
     def get(self, request, event_slug):
 
@@ -314,11 +313,11 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
                 match = regex.match(str(field))
                 if match:
                     LegalSignature.objects.create(
-                        user = user,
-                        document = LegalDocument.objects.get(pk=match.group(1)),
-                        league = self.event.league,
-                        event = self.event,
-                        registration = registration_data,
+                        user=user,
+                        document=LegalDocument.objects.get(pk=match.group(1)),
+                        league=self.event.league,
+                        event=self.event,
+                        registration=registration_data,
                     )
                 # else:
                 #   I suppose the document could go away or not be found?
@@ -352,7 +351,6 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
 
 class RegisterDone(RegistrationView, LoginRequiredMixin):
     template = 'registration/register_done.html'
-    def get(self, request, event_slug):
-        return render(request, self.template, {'event': self.event })
 
-        
+    def get(self, request, event_slug):
+        return render(request, self.template, {'event': self.event})

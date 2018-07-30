@@ -93,10 +93,9 @@ class RegistrationAdminEventForm(forms.ModelForm):
                 field_name
             )
 
-
     class Meta:
         model = RegistrationEvent
-        
+
         fields = [
             'name',
             'start_date',
@@ -110,11 +109,11 @@ class RegistrationAdminEventForm(forms.ModelForm):
             'legal_forms',
         ]
         widgets = {
-            'start_date': TextInput(attrs={'type':'date'}),
-            'end_date': TextInput(attrs={'type':'date'}),
-            'public_registration_open_date': TextInput(attrs={'type':'date'}),
-            'public_registration_closes_date': TextInput(attrs={'type':'date'}),
-            'invite_expiration_date': TextInput(attrs={'type':'date'}),
+            'start_date': TextInput(attrs={'type': 'date'}),
+            'end_date': TextInput(attrs={'type': 'date'}),
+            'public_registration_open_date': TextInput(attrs={'type': 'date'}),
+            'public_registration_closes_date': TextInput(attrs={'type': 'date'}),
+            'invite_expiration_date': TextInput(attrs={'type': 'date'}),
         }
 
 
@@ -140,6 +139,7 @@ class BillingGroupModelChoiceField(forms.ModelChoiceField):
         if obj.default_group_for_league:
             default = "*"
         return "{}{}".format(obj.name, default)
+
 
 class EventInviteEmailForm(forms.Form):
     emails = forms.CharField(
@@ -177,10 +177,12 @@ class EventInviteEmailForm(forms.Form):
         )
 
     class Meta:
-        fields = [ 'emails', ]
-        
+        fields = ['emails', ]
+
 
 invite_or_user_validator = RegexValidator(r"^(invite|user)-(\d+)$", "Invalid invite or user ID")
+
+
 class EventInviteAjaxForm(forms.Form):
     user_or_invite_id = forms.CharField(
         label="Invite or User ID",

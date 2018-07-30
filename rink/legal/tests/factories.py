@@ -5,6 +5,7 @@ import factory
 from league.tests.factories import LeagueFactory
 from users.tests.factories import UserFactory
 
+
 class LegalDocumentFactory(factory.django.DjangoModelFactory):
     league = factory.SubFactory(LeagueFactory)
     name = factory.Sequence(lambda n: f'Legal Document Test {n}')

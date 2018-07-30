@@ -96,7 +96,7 @@ class EventAdminCreate(EventAdminBaseView):
             auto_create = form.cleaned_data['automatic_billing_dates']
 
             if auto_create == "monthly":
-                billing_periods = event.create_monthly_biling_periods()
+                billing_periods = event.create_monthly_billing_periods()
             elif auto_create == "once":
                 billing_periods = [event.create_billing_period()]
             else:
@@ -111,9 +111,9 @@ class EventAdminCreate(EventAdminBaseView):
 
                     for period in billing_periods:
                         BillingPeriodCustomPaymentAmount.objects.create(
-                            invoice_amount = amount,
-                            group = group,
-                            period = period,
+                            invoice_amount=amount,
+                            group=group,
+                            period=period,
                         )
 
             return HttpResponseRedirect(

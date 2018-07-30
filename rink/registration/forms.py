@@ -86,14 +86,13 @@ class RegistrationSignupForm(forms.ModelForm):
         return user
 
 
-
 class LegalCheckboxSelectMultiple(CheckboxSelectMultiple):
     template_name = 'registration/legal_checkbox_select.html'
     option_template_name = 'registration/legal_checkbox_option.html'
+
     def use_required_attribute(self, initial):
         # Require all fields to be selected
         return True
-
 
 
 class RegistrationDataForm(forms.ModelForm):

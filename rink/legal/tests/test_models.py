@@ -17,11 +17,11 @@ class TestLegalDocumentModel(TestCase):
 
     def test_required_fields(self):
         # all fields are required, just try a blank object here.
-        x = LegalDocument()
+        doc = LegalDocument()
 
         with self.assertRaises(ValidationError):
-            x.full_clean()
-            x.save()
+            doc.full_clean()
+            doc.save()
 
     def test_can_create_document(self):
         # Check that we can actually create an object with sane attributes here
@@ -105,6 +105,8 @@ class TestLegalDocumentModel(TestCase):
 
         with self.assertRaises(LegalDocument.DoesNotExist):
             document = LegalDocument.objects.get(pk=doc_pk)
+
+    # def test_disable_delete_if_signed
 
 
 #class TestLegalSignatureModel(TestCase):

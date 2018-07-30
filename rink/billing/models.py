@@ -55,7 +55,7 @@ class BillingPeriod(models.Model):
     name = models.CharField(
         "Billing Period Name",
         max_length=50,
-        help_text = "Example: 'July Dues''",
+        help_text="Example: 'July Dues''",
     )
 
     event = models.ForeignKey(
@@ -70,22 +70,22 @@ class BillingPeriod(models.Model):
 
     start_date = models.DateField(
         "Start Date",
-        help_text = "First day of this billing period."
+        help_text="First day of this billing period."
     )
 
     end_date = models.DateField(
         "End Date",
-        help_text = "Last day of this billing period."
+        help_text="Last day of this billing period."
     )
 
     invoice_date = models.DateField(
         "Invoice Date",
-        help_text = "The date invoices will be sent out for this billing period."
+        help_text="The date invoices will be sent out for this billing period."
     )
 
     due_date = models.DateField(
         "Due Date",
-        help_text = "The date payments are due. Automatic credit card billing will also occur on this day."
+        help_text="The date payments are due. Automatic credit card billing will also occur on this day."
     )
 
     dues_amounts = models.ManyToManyField(
@@ -106,13 +106,15 @@ class BillingPeriod(models.Model):
         )
 
     def clean(self):
+        if not self.start_date or not self.end_date:
+            raise ValidationError("Start and End Dates are required.")
+            
         # Start date needs to come before End date
         if self.start_date > self.end_date:
             raise ValidationError("End date invalid, should be a date after Start Date. Did you switch start and end dates?")
         # Invoice date needs to come before due date
         if self.invoice_date > self.due_date:
             raise ValidationError("Invoice date needs occur before Due date. We cannot process payments before they are actually billed. Did you swap the invoice and due dates?")
-
 
 
 class BillingPeriodCustomPaymentAmount(models.Model):
@@ -125,7 +127,7 @@ class BillingPeriodCustomPaymentAmount(models.Model):
         "Custom Dues Amount",
         max_digits=10,
         decimal_places=2,
-        help_text = "The amount we should bill a user matching this status for the billing period specified above.",
+        help_text="The amount we should bill a user matching this status for the billing period specified above.",
     )
 
     period = models.ForeignKey(
@@ -147,15 +149,12 @@ class BillingPeriodCustomPaymentAmount(models.Model):
             raise ValidationError("Invoice amount must be a positive number.")
 
 
-
-
-
-
 INVOICE_STATUS_CHOICES = [
     ('unpaid', 'Unpaid'),
     ('paid', 'Paid'),
     ('canceled', 'Canceled'),
 ]
+
 
 class Invoice(models.Model):
     user = models.ForeignKey(
@@ -240,7 +239,6 @@ class Invoice(models.Model):
             self.invoice_date,
             self.status
         )
-
 
 
 class Payment(models.Model):
@@ -393,11 +391,11 @@ class UserPaymentTokenizedCard(models.Model):
         unique_together = ['user', 'league']
 
 
-
 @receiver(pre_delete, sender=BillingGroup)
 def delete_default_billing_group_for_league(sender, instance, *args, **kwargs):
     if instance.default_group_for_league:
         raise ValidationError("You cannot delete the default Billing Group for a league. Please set another group as the default one first.")
+
 
 @receiver(pre_save, sender=BillingGroup)
 def update_default_billing_group_for_league(sender, instance, *args, **kwargs):
@@ -429,5 +427,5 @@ def update_default_billing_group_for_league(sender, instance, *args, **kwargs):
         all_others = BillingGroup.objects.filter(league=instance.league)
         if instance.id:
             all_others.exclude(pk=instance.id)
-        
+
         all_others.update(default_group_for_league=False)
