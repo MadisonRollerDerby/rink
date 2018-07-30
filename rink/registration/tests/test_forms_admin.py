@@ -214,7 +214,7 @@ class TestEventInviteEmailForm(TestCase):
         # There should no longer be a default group set.
         with self.assertRaises(BillingGroup.DoesNotExist):
             BillingGroup.objects.filter(league=league, default_group_for_league=True).get()
-        
+
         # Try to create the form with no default group set.
         form = EventInviteEmailForm(league=league)
 
@@ -223,7 +223,7 @@ class TestEventInviteEmailForm(TestCase):
         self.assertFalse(any(bg2.pk == c.data['value'] and c.data['selected'] for c in form['billing_group']))
 
 
-class TestEventInviteAjaxForm( SimpleTestCase):
+class TestEventInviteAjaxForm(SimpleTestCase):
     def test_event_invite_ajax_form(self):
         # No data sent, should fail
         form = EventInviteAjaxForm(data={})

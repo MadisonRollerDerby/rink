@@ -108,7 +108,7 @@ class BillingPeriod(models.Model):
     def clean(self):
         if not self.start_date or not self.end_date:
             raise ValidationError("Start and End Dates are required.")
-            
+
         # Start date needs to come before End date
         if self.start_date > self.end_date:
             raise ValidationError("End date invalid, should be a date after Start Date. Did you switch start and end dates?")
@@ -401,7 +401,7 @@ def delete_default_billing_group_for_league(sender, instance, *args, **kwargs):
 def update_default_billing_group_for_league(sender, instance, *args, **kwargs):
     # Force only one item per league to be set as the default item
 
-    if not instance.league: # not sure why this would happen....
+    if not instance.league:  # not sure why this would happen....
         return
 
     # First check and see if this is the first billing group in the league.

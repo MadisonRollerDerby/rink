@@ -57,10 +57,7 @@ class RegistrationSignupForm(forms.ModelForm):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
-            raise forms.ValidationError(
-                self.error_messages['password_mismatch'],
-                code='password_mismatch',
-            )
+            raise forms.ValidationError("The two password fields didn't match.")
         return password2
 
     def _post_clean(self):
@@ -74,15 +71,13 @@ class RegistrationSignupForm(forms.ModelForm):
             except forms.ValidationError as error:
                 self.add_error('password2', error)
 
-    def save(self, league,  commit=True):
+    def save(self, league, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         user.league = league
         user.organization = league.organization
         if commit:
             user.save()
-            #assign_perm('league_member', user, league)
-
         return user
 
 
@@ -92,7 +87,7 @@ class LegalCheckboxSelectMultiple(CheckboxSelectMultiple):
 
     def use_required_attribute(self, initial):
         # Require all fields to be selected
-        return True
+        return True  # pragma: no cover
 
 
 class RegistrationDataForm(forms.ModelForm):
@@ -171,15 +166,15 @@ class RegistrationDataForm(forms.ModelForm):
         ]
 
         widgets = {
-            'emergency_date_of_birth': forms.TextInput(attrs={'type':'date'}),
+            'emergency_date_of_birth': forms.TextInput(attrs={'type': 'date'}),
         }
 
 
 class LegalDocumentAgreeForm(forms.Form):
-    def __init__(self, event, *args, **kwargs):
+    def __init__(self, league, *args, **kwargs):
         super(LegalDocumentAgreeForm, self).__init__(*args, **kwargs)
 
-        for document in LegalDocument.objects.filter(league=event.league):
+        for document in LegalDocument.objects.filter(league=league):
             doc_key = "{}{}".format("Legal", document.pk)
 
             self.fields[doc_key] = forms.BooleanField(

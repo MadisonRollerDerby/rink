@@ -207,7 +207,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
             })
 
         # Legal documents that need to be agreed to
-        legal_form = LegalDocumentAgreeForm(event=self.event)
+        legal_form = LegalDocumentAgreeForm(league=self.event.league)
 
         # Get Billing Period 
         invite_billing_group = None
@@ -240,7 +240,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
 
     def post(self, request, event_slug):
         form = RegistrationDataForm(data=request.POST)
-        legal_form = LegalDocumentAgreeForm(event=self.event, data=request.POST)
+        legal_form = LegalDocumentAgreeForm(league=self.event.league, data=request.POST)
 
         if form.is_valid() and legal_form.is_valid():
 
