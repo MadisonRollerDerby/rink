@@ -30,9 +30,8 @@ class RegistrationAdminEventForm(forms.ModelForm):
         self.helper = FormHelper(self)
 
         self.fields['legal_forms'] = forms.ModelMultipleChoiceField(
-            widget=forms.CheckboxSelectMultiple, 
+            widget=forms.CheckboxSelectMultiple,
             queryset=LegalDocument.objects.filter(league=league),
-            #empty_label=None,
             label="",
             required=False,
         )
@@ -87,7 +86,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
                 label="{} Invoice Amount".format(group.name),
                 initial=group.invoice_amount,
             )
-            self.fields[field_name].widget.attrs.update({'placeholder': "0.00"})
+            #self.fields[field_name].widget.attrs.update({'placeholder': "0.00"})
 
             self.helper.layout[3].append(
                 field_name
