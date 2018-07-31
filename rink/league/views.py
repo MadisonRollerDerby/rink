@@ -12,12 +12,12 @@ from users.models import User
 
 from .forms import LeagueForm, PermissionsForm, CreateRinkUserForm
 from .models import League, Organization
-from .mixins import OrganizationAdminRequiredMixIn, LeagueAdminRequiredMixIn
+from .mixins import RinkOrgAdminPermissionRequired, RinkLeagueAdminPermissionRequired
 from league.utils import send_email
 from users.models import User
 
 
-class LeagueAdminList(OrganizationAdminRequiredMixIn, View):
+class LeagueAdminList(RinkOrgAdminPermissionRequired, View):
     def get(self, request, organization_slug):
         return render(request, 'league/league_list.html', {
                 # Filter by the current organization to ensure we have permission
@@ -26,7 +26,7 @@ class LeagueAdminList(OrganizationAdminRequiredMixIn, View):
         )  
 
 
-class LeagueAdminCreate(OrganizationAdminRequiredMixIn, CreateView):
+class LeagueAdminCreate(RinkOrgAdminPermissionRequired, CreateView):
     model = League
     form_class = LeagueForm
     template_name = 'league/league_detail.html'
@@ -36,14 +36,14 @@ class LeagueAdminCreate(OrganizationAdminRequiredMixIn, CreateView):
         return super().form_valid(form)
 
 
-class LeagueAdminUpdate(LeagueAdminRequiredMixIn, UpdateView):
+class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, UpdateView):
     model = League
     form_class = LeagueForm
     template_name = 'league/league_detail.html'
 
 
 
-class OrganizationPermissionsView(OrganizationAdminRequiredMixIn, View):
+class OrganizationPermissionsView(RinkOrgAdminPermissionRequired, View):
     def get(self, request, organization_slug):
         organization = get_object_or_404(Organization, slug=organization_slug)
         leagues = League.objects.filter(organization=request.user.organization)
@@ -83,7 +83,7 @@ class OrganizationPermissionsView(OrganizationAdminRequiredMixIn, View):
         )
 
 
-class OrganizationPermissionsChange(OrganizationAdminRequiredMixIn, View):
+class OrganizationPermissionsChange(RinkOrgAdminPermissionRequired, View):
     def get(self, request, organization_slug, user_id):
         organization = get_object_or_404(Organization, slug=organization_slug)
         user = get_object_or_404(User, pk=user_id)
@@ -119,7 +119,7 @@ class OrganizationPermissionsChange(OrganizationAdminRequiredMixIn, View):
         #    print(form.non_field_errors())
 
 
-class CreateUserView(OrganizationAdminRequiredMixIn, View):
+class CreateUserView(RinkOrgAdminPermissionRequired, View):
     template = "league/create_rink_user.html"
     def get(self, request, organization_slug):
         return render(request, self.template, {'form': CreateRinkUserForm()})

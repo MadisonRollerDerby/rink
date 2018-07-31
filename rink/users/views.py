@@ -25,7 +25,7 @@ class UserProfileView(LoginRequiredMixin, View):
     def post(self, request):
         form = UserProfileForm(request.POST, instance=User.objects.get(pk=request.user.pk))
         if form.is_valid() and form.has_changed():
-            initial=User.objects.get(pk=request.user.pk)
+            initial = User.objects.get(pk=request.user.pk)
             updated = form.save()
 
             leagues = get_objects_for_user(

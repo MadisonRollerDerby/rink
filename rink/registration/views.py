@@ -23,9 +23,9 @@ from registration.tasks import send_registration_confirmation
 
 def registration_error(request, event, error_code):
     return render(request, 'registration/register_error.html', {
-            'event': event,
-            'error_code': error_code
-        })
+        'event': event,
+        'error_code': error_code,
+    })
 
 
 class RegistrationView(View):
@@ -54,11 +54,11 @@ class RegisterBegin(RegistrationView):
 
         else:
             # Check if event is available to be registered by the public
-            if (self.event.public_registration_open_date and \
-                self.event.public_registration_open_date >= timezone.now()) \
+            if (self.event.public_registration_open_date and
+                    self.event.public_registration_open_date >= timezone.now()) \
                 or \
-                (self.event.public_registration_closes_date and \
-                self.event.public_registration_closes_date <= timezone.now()):
+                (self.event.public_registration_closes_date and
+                    self.event.public_registration_closes_date <= timezone.now()):
 
                 # Registration closed to the public currently
                 # TODO helpful message here?
@@ -67,10 +67,10 @@ class RegisterBegin(RegistrationView):
         request.session['register_event_id'] = self.event.pk
         if invite:
             request.session['register_invite_id'] = invite.pk
-        
+
         if request.user.is_authenticated:
             # If logged in, go to the registration form
-            return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug':self.event.slug}))
+            return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug': self.event.slug}))
         elif invite and invite.user:
             # No user attached to this invite, they need to register for an account
             messages.info(request, "Please login to register for '{}'".format(self.event.name))
@@ -78,7 +78,7 @@ class RegisterBegin(RegistrationView):
         else:
             # If not logged in, user needs to create an account
             messages.info(request, "Please create an account to register for '{}'".format(self.event.name))
-            return HttpResponseRedirect(reverse("register:create_account", kwargs={'event_slug':self.event.slug}))
+            return HttpResponseRedirect(reverse("register:create_account", kwargs={'event_slug': self.event.slug}))
 
 
 class RegisterCreateAccount(RegistrationView):
@@ -86,7 +86,7 @@ class RegisterCreateAccount(RegistrationView):
 
     def get(self, request, event_slug):
         form = RegistrationSignupForm()
-        return render(request, self.template, {'form': form, 'event': self.event })
+        return render(request, self.template, {'form': form, 'event': self.event})
 
     def post(self, request, event_slug):
         form = RegistrationSignupForm(request.POST)
@@ -112,9 +112,9 @@ class RegisterCreateAccount(RegistrationView):
                 invite.user = user
                 invite.save()
 
-            return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug':self.event.slug}))
+            return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug': self.event.slug}))
 
-        return render(request, self.template, {'form': form, 'event': self.event })
+        return render(request, self.template, {'form': form, 'event': self.event})
 
 
 class RegisterShowForm(RegistrationView, LoginRequiredMixin):
@@ -143,9 +143,9 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         if billing_period and billing_group:
             try:
                 billing_schedule_obj = BillingPeriodCustomPaymentAmount.objects.get(
-                        group=billing_group,
-                        period=billing_period,
-                    )
+                    group=billing_group,
+                    period=billing_period,
+                )
             except BillingPeriodCustomPaymentAmount.DoesNotExist:
                 pass
             else:
@@ -167,7 +167,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         else:
             return default_group_for_league.invoice_amount
 
-        # If we are STILL here, that means NO valid billing group set and 
+        # If we are STILL here, that means NO valid billing group set and
         # the billing period/group through table doesn't have an entry.
         # I guess give them a free ride?
         return 0
@@ -185,9 +185,9 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         # Check if user has some registration data we can already use
         try:
             existing_registration = RegistrationData.objects.filter(
-                    user=request.user,
-                    organization=self.event.league.organization,
-                ).order_by('-registration_date').get()
+                user=request.user,
+                organization=self.event.league.organization,
+            ).order_by('-registration_date').get()
         except RegistrationData.DoesNotExist:
             existing_registration = None
 
@@ -209,7 +209,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         # Legal documents that need to be agreed to
         legal_form = LegalDocumentAgreeForm(league=self.event.league)
 
-        # Get Billing Period 
+        # Get Billing Period
         invite_billing_group = None
         try:
             invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
@@ -224,11 +224,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         billing_period = self.get_billing_period()
         billing_amount = self.get_invoice_amount(billing_period, invite_billing_group)
 
-
-
-        # If there are no billing periods available... I guess don't include it.
-
-
+        #  If there are no billing periods available... I guess don't include it.
         return render(request, self.template, {
             'form': form,
             'legal_form': legal_form,
@@ -344,9 +340,13 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
                 registration_data=registration_data,
             )
 
-            return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug':self.event.slug}))
+            return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug': self.event.slug}))
 
-        return render(request, self.template, {'form': form, 'legal_form': legal_form, 'event': self.event })
+        return render(
+            request, 
+            self.template, 
+            {'form': form, 'legal_form': legal_form, 'event': self.event}
+        )
 
 
 class RegisterDone(RegistrationView, LoginRequiredMixin):

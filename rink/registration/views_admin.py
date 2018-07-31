@@ -1,4 +1,4 @@
-from django.contrib import messages 
+from django.contrib import messages
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
@@ -14,7 +14,7 @@ from guardian.shortcuts import get_users_with_perms
 import re
 
 from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount
-from league.mixins import LeagueAdminRequiredMixIn
+from league.mixins import RinkLeagueAdminPermissionRequired
 from league.models import Organization, League
 from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
     EventInviteEmailForm, EventInviteAjaxForm
@@ -27,15 +27,13 @@ from registration.tasks import send_registration_invite_email
 # Base class for permission checking and views here.
 # saves org, league and event.
 # Does some magic for making it easier to render the UI
-class EventAdminBaseView(LeagueAdminRequiredMixIn, View):
+class EventAdminBaseView(RinkLeagueAdminPermissionRequired, View):
     event = None
     event_slug = None
     event_menu_selected = None
     invites_menu_selected = None
 
     def dispatch(self, request, *args, **kwargs):
-        self.organization = get_object_or_404(Organization, pk=request.session['view_organization'])
-        self.league = get_object_or_404(League, pk=request.session['view_league'])
         try:
             self.event = get_object_or_404(RegistrationEvent, slug=kwargs['event_slug'])
             self.event_slug = self.event.slug
@@ -53,6 +51,7 @@ class EventAdminBaseView(LeagueAdminRequiredMixIn, View):
             'event_menu_selected': self.event_menu_selected,
             'invites_menu_selected': self.invites_menu_selected
         }
+
     def render(self, request, context={}):
         return render(request, self.template, {**context, **self.get_context()})
 
@@ -80,7 +79,7 @@ class EventAdminCreate(EventAdminBaseView):
     def get(self, request, *args, **kwargs):
 
         form = RegistrationAdminEventForm(league=self.league)
-        
+
         return self.render(request, {
             'form': form,
         })
@@ -133,7 +132,7 @@ class EventAdminSettings(EventAdminBaseView):
 
     def get(self, request, *args, **kwargs):
         return self.render(request, {
-            'event_form':  RegistrationAdminEventForm(league=self.league, instance=self.event),
+            'event_form': RegistrationAdminEventForm(league=self.league, instance=self.event),
         })
 
     def post(self, request, *args, **kwargs):
@@ -142,8 +141,8 @@ class EventAdminSettings(EventAdminBaseView):
             event = form.save()
 
             return HttpResponseRedirect(
-                reverse("registration:event_admin_settings", 
-                    kwargs={'event_slug':event.slug })
+                reverse("registration:event_admin_settings",
+                    kwargs={'event_slug': event.slug})
             )
 
         return self.render(request, {'event_form': form})
@@ -321,8 +320,6 @@ class EventAdminInviteEmails(EventAdminBaseView):
         })
 
 
-
-
 class EventAdminInviteUsers(EventAdminBaseView):
     template = 'registration/event_admin_invites.html'
     event_menu_selected = "invites"
@@ -332,9 +329,10 @@ class EventAdminInviteUsers(EventAdminBaseView):
         # Get all users who have permissions to access this league.
         # Pre-cache if they have an attached invite to this league.
         league_users = get_users_with_perms(self.league).prefetch_related(
-            Prefetch('registrationinvite_set',
-            queryset=RegistrationInvite.objects.filter(event__slug='test-event'),
-                to_attr='cached_invites'
+            Prefetch(
+                'registrationinvite_set',
+                queryset=RegistrationInvite.objects.filter(event__slug='test-event'),
+                to_attr='cached_invites',
             )
         )
 
@@ -405,7 +403,6 @@ class EventAdminBillingPeriods(EventAdminBaseView):
             # let's just repeat ourselves again, eh?
             periods = BillingPeriod.objects.filter(event=self.event).prefetch_related('billingperiodcustompaymentamount_set')
 
-
         return self.render(request, {
             'billing_groups': groups,
             'billing_periods': periods,
@@ -447,7 +444,7 @@ class EventAdminBillingPeriods(EventAdminBaseView):
             existing_match = existing_regex.match(key)
             delete_match = delete_regex.match(key)
 
-            print("{} {}".format(key,new_match))
+            print("{} {}".format(key, new_match))
             if new_match:
                 # Add a NEW billing period
                 bp_id = '_new{}'.format(new_match.group(1))
@@ -457,7 +454,7 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                 bp.league = self.league
                 try:
                     bp.name = post['name{}'.format(bp_id)]
-                    if bp.name == "": # Ignore anything with a blank name.
+                    if bp.name == "":  # Ignore anything with a blank name.
                         continue
                     bp.start_date = datetime.strptime(
                         post['start_date{}'.format(bp_id)],
@@ -480,8 +477,6 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                     continue
                 except ValueError as e:
                     error_messages.append("Invalid date specified for new due date for '{}'. Error: {}".format(bp.name, str(e)))
-
-
 
                 try:
                     bp.full_clean()
@@ -565,17 +560,17 @@ class EventAdminBillingPeriods(EventAdminBaseView):
 
                 try:
                     new_start_date = datetime.strptime(
-                            post['start_date{}'.format(bp_id)],
-                            '%m/%d/%y'
-                        )
+                        post['start_date{}'.format(bp_id)],
+                        '%m/%d/%y',
+                    )
                     new_end_date = datetime.strptime(
-                            post['end_date{}'.format(bp_id)],
-                            '%m/%d/%y'
-                        )
+                        post['end_date{}'.format(bp_id)],
+                        '%m/%d/%y',
+                    )
                     new_name = post['name{}'.format(bp_id)]
                 except KeyError as e:
                     alert_messages.append("Field not found for '{}' when saving billing period. Error: {}".format(bp, str(e)))
-                
+
                 if new_start_date.date() != bp.start_date:
                     changed = True
                     bp.start_date = new_start_date
@@ -615,7 +610,6 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                         continue
 
                     # It has not changed, lets just move on from here...
-
                     if new_invoice_amount == bpcpa.invoice_amount:
                         continue
 
@@ -664,14 +658,11 @@ class EventAdminBillingPeriods(EventAdminBaseView):
             print(success_message)
         if error_messages:
             messages.error(request, "<h2>Errors</h2><ul><li>{}</li></ul>".format("</li><li>".join(error_messages)))
-            print (error_messages)
+            print(error_messages)
         if alert_messages:
             messages.warning(request, "<h2>Errors</h2><ul><li>{}</li></ul>".format("</li><li>".join(alert_messages)))
             print(alert_messages)
 
         print(success_message)
         return HttpResponseRedirect(
-            reverse("registration:event_admin_billing_periods", kwargs={'event_slug':self.event.slug }))
-
-
-
+            reverse("registration:event_admin_billing_periods", kwargs={'event_slug': self.event.slug}))

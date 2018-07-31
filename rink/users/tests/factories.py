@@ -34,6 +34,10 @@ class RinkUserFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ('email', )
 
 
+class UserFactoryNoPermissions(RinkUserFactory):
+    email = factory.Sequence(lambda n: f'noperms-{n}@madisonrollerderby.org')
+
+
 class UserFactory(RinkUserFactory):
     email = factory.Sequence(lambda n: f'user-{n}@madisonrollerderby.org')
 

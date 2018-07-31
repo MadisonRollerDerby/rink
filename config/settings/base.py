@@ -66,7 +66,6 @@ THIRD_PARTY_APPS = [
     'crispy_forms',
     'guardian',
     'imagekit',
-    #'stronghold',
     'markdownx',
 
     'allauth',
@@ -148,7 +147,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'stronghold.middleware.LoginRequiredMiddleware',
 ]
 
 # STATIC
@@ -266,24 +264,17 @@ SOCIALACCOUNT_ADAPTER = 'rink.users.adapters.SocialAccountAdapter'
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-STRONGHOLD_DEFAULTS = True
-#STRONGHOLD_PUBLIC_URLS = ()
 
-STRONGHOLD_PUBLIC_NAMED_URLS = (
-    'account_login',
-    'account_logout',
-    'account_reset_password',
-    'account_reset_password_done',
-    'password_reset_from_key',
-    'account_reset_password_from_key',
-    'account_reset_password_from_key_done',
-    'account_inactive',
-    'registration_event',
-    'registration_event_uuid'
+# Permissions to ignore for testing purposes
+RINK_PERMISSIONS_IGNORE_TESTING = (
+    'add_league',
+    'change_league',
+    'delete_league',
+    'add_organization',
+    'change_organization',
+    'delete_organization',
 )
-
-
-# Non-admin permissions should get ignored here.
+# Permissions to ignore in the admin UI
 RINK_PERMISSIONS_IGNORE = (
     'add_league',
     'change_league',
