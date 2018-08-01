@@ -117,7 +117,7 @@ class RegisterCreateAccount(RegistrationView):
         return render(request, self.template, {'form': form, 'event': self.event})
 
 
-class RegisterShowForm(RegistrationView, LoginRequiredMixin):
+class RegisterShowForm(LoginRequiredMixin, RegistrationView):
     template = 'registration/register_form.html'
 
     def get_billing_period(self):
@@ -349,7 +349,7 @@ class RegisterShowForm(RegistrationView, LoginRequiredMixin):
         )
 
 
-class RegisterDone(RegistrationView, LoginRequiredMixin):
+class RegisterDone(LoginRequiredMixin, RegistrationView):
     template = 'registration/register_done.html'
 
     def get(self, request, event_slug):

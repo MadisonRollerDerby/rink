@@ -13,23 +13,45 @@ class URLTestCase(object):
 
 
 class RinkViewTest(object):
-    org_perms_required = ['org_admin']
-    league_perms_required = []  # by default we only assume org admins access it
-    url = None
-    url_kwargs = {}
+    organization_permissions_required = ['org_admin']
+    league_permissions_required = []  # by default we only assume org admins access it
+
+    is_public = False  # Access to this view is not restricted
+    skip_permissions_tests = False  # Skip permission checks in the test
+    template = None  # Template file that should be expected by assertTemplateUsed
+    redirect = None  # If this view redirects, this is our final destination
+    url = None  # URL name to request a page from, with namespace
+
+    _url_kwargs = {}
 
     def setUp(self):
         super(RinkViewTest, self).setUp()
         self.league = LeagueFactory()
         self.organization = self.league.organization
 
+    # Additional kwargs to use for reverse lookup below.
+    def url_kwargs(self):
+        super(RinkViewTest, self).url_kwargs()
+        return {}
+
     def _get_url(self):
         if not self.url:
             raise self.fail("URL not set for this test")
-        self.reverse_url = reverse(self.url, kwargs=self.url_kwargs)
+
+        # Custom kwargs can be returned by url_kwargs method
+        try:
+            self._url_kwargs = {**self._url_kwargs, **self.url_kwargs()}
+        except AttributeError:
+            pass
+
+        self.reverse_url = reverse(self.url, kwargs=self._url_kwargs)
         return self.reverse_url
 
     def test_login_required(self):
+        # This test is not required for this view, it is publically accessible.
+        if self.is_public:
+            return
+
         # Always assume login is required on these admin views
         response = self.client.get(self._get_url())
         # Should redirect to /account/login?next=/users/profile or similar
@@ -39,50 +61,70 @@ class RinkViewTest(object):
 
         self.assertRedirects(
             response,
-            '{}?next={}'.format(
-                reverse('account_login'),
-                self.url,
-            )
-        )
+            '{}?next={}'.format(reverse('account_login'), self.reverse_url))
 
-    def test_league_permissions_required(self):
-        # Check that the league manager position has the required permissions.
+    def test_league_permissions_and_template(self):
+        # A combinations of attributes automatically tests some or all of the following:
+        # Test for permissions and access
+        # Test for correct templates or redirects
+        # Test that a user can access the page
 
-        perms_list = []
-        # All league permissions, filtered by the ones we with to ignore.
-        for perm in [perm for perm in get_perms_for_model(self.league)
-                     if perm.codename not in settings.RINK_PERMISSIONS_IGNORE_TESTING]:
-            perms_list.append((perm.codename, self.league))
-        # All organization perms, filtered by the ones we wish to ignore.
-        for perm in [perm for perm in get_perms_for_model(self.organization)
-                     if perm.codename not in settings.RINK_PERMISSIONS_IGNORE_TESTING]:
-            perms_list.append((perm.codename, self.organization))
+        # View should be publically accessable
+        if self.is_public:
+            # Simply check the template returned for now.
+            response = self.client.get(self._get_url())
+            if self.template:
+                self.assertTemplateUsed(response, self.template)
+            if self.redirect:
+                self.assertRedirects(response, self.redirect)
+            if not self.template and not self.redirect:
+                self.fail("Did not check either a template or redirect for this test.")
+            return
 
         user = UserFactoryNoPermissions(organization=self.organization, league=self.league)
-        for codename, obj in perms_list:
-            assign_perm(codename, user, obj)
 
+        if self.skip_permissions_tests:
             self.client.login(email=user.email, password=user_password)
             response = self.client.get(self._get_url())
+            self.assertEqual(response.status_code, 200)
+            self.assertTemplateUsed(response, self.template,
+                "Wrong template being displayed by URL ({})".format(self.reverse_url))
 
-            self.assertIn(response.status_code, [200, 403], "URL {} returned code {} for {}".format(
-                self.reverse_url, response.status_code, codename))
+        else:
+            perms_list = []
+            # All league permissions, filtered by the ones we with to ignore.
+            for perm in [perm for perm in get_perms_for_model(self.league)
+                         if perm.codename not in settings.RINK_PERMISSIONS_IGNORE_TESTING]:
+                perms_list.append((perm.codename, self.league))
+            # All organization perms, filtered by the ones we wish to ignore.
+            for perm in [perm for perm in get_perms_for_model(self.organization)
+                         if perm.codename not in settings.RINK_PERMISSIONS_IGNORE_TESTING]:
+                perms_list.append((perm.codename, self.organization))
 
-            if codename in self.org_perms_required or codename in self.league_perms_required:
-                # Allowed access. Should respond with 200 and the correct template and view.
-                self.assertEqual(response.status_code, 200,
-                                "{} should have access to view and does not: ({}) T:{}".format(
-                                    codename, self.reverse_url, self.template))
-                self.assertTemplateUsed(response, self.template,
-                                        "Wrong template being displayed by URL ({}) for user with permissions of {}".format(
-                                            self.reverse_url, codename))
-            else:
-                # Disallowed access. 403. Should get access denied and use the 403.html template.
-                self.assertEqual(response.status_code, 403,
-                                "{} should not have access to URL: ({}) T:{}".format(
-                                    codename, self.reverse_url, self.template))
+            for codename, obj in perms_list:
+                assign_perm(codename, user, obj)
+                # Assign the permission before we login to ensure session data is set.
+                self.client.login(email=user.email, password=user_password)
+                response = self.client.get(self._get_url())
 
-                self.assertTemplateUsed(response, "403.html")
-            self.client.logout()
+                self.assertIn(response.status_code, [200, 403], "URL {} returned code {} for {}".format(
+                    self.reverse_url, response.status_code, codename))
 
-            remove_perm(codename, user, obj)
+                if codename in self.organization_permissions_required or codename in self.league_permissions_required:
+                    # Allowed access. Should respond with 200 and the correct template and view.
+                    self.assertEqual(response.status_code, 200,
+                        "{} should have access to view and does not: ({}) T:{}".format(
+                            codename, self.reverse_url, self.template))
+                    self.assertTemplateUsed(response, self.template,
+                        "Wrong template being displayed by URL ({}) for user with permissions of {}".format(
+                            self.reverse_url, codename))
+                else:
+                    # Disallowed access. 403. Should get access denied and use the 403.html template.
+                    self.assertEqual(response.status_code, 403,
+                        "{} should not have access to URL: ({}) T:{}".format(
+                            codename, self.reverse_url, self.template))
+
+                    self.assertTemplateUsed(response, "403.html")
+                self.client.logout()
+
+                remove_perm(codename, user, obj)

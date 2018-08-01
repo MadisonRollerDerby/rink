@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
+{% block title %}{{ event.name }} Registration - {{ event.league.name }}{% endblock %}
+
 {% block content %}
 
 <h2>{{ event.name }} Registration</h2>

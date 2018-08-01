@@ -2,7 +2,7 @@ from django.urls import path
 
 from . import views
 
-app_name = 'registration'
+app_name = 'register'
 urlpatterns = [
     path(
         '<slug:event_slug>/<uuid:invite_key>/',
