@@ -10,6 +10,19 @@
   {% if error_code == "already_registered" %}
     <p><strong>You have already registered for this event.</strong></p>
     <p>You can try to <a href="{% url "account_logout" %}">log out of the current account</a> and try again with a different account. If... for some reason you have two accounts. But that would be weird, right?</p>
+
+  {% elif error_code == "user_conflict" %}
+    <p><strong>User Conflict - Please Logout</strong></p>
+    <p>This invite was sent to a specific user, you are logged in as someone else. You can try to <a href="{% url "account_logout" %}">log out of the current account</a> and try again.</p>
+
+  {% elif error_code == "registration_not_yet_open" %}
+    <p><strong>Registration Not Quite Open Yet...</strong></p>
+    <p>It looks like you are early. Registration for this event is not quite open yet.</p>  
+
+  {% elif error_code == "registration_closed" %}
+    <p><strong>Registration Closed</strong></p>
+    <p>Sorry, but registration for this event is currently closed. Please contact us if you need to get in touch.</p>
+
   {% else %}
     Some unspecified, weird error occured here. That might be the issue. Wait, what?
   {% endif %}

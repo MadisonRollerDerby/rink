@@ -55,7 +55,7 @@ class Organization(models.Model):
 
     slug = models.CharField(
         "Organization Slug",
-        max_length=20,
+        max_length=50,
         help_text = "Example: 'mrd', 'wreckers', 'juniors'. DO NOT CHANGE.",
         unique=True,
         blank=True,

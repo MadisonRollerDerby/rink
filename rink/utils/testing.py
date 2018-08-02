@@ -3,7 +3,7 @@ from django.urls import reverse, resolve
 from guardian.shortcuts import get_perms_for_model, assign_perm, remove_perm
 
 from league.tests.factories import LeagueFactory
-from users.tests.factories import UserFactoryNoPermissions, user_password
+from users.tests.factories import UserFactory, UserFactoryNoPermissions, user_password
 
 
 class URLTestCase(object):
@@ -26,15 +26,29 @@ class RinkViewTest(object):
 
     def setUp(self):
         super(RinkViewTest, self).setUp()
-        self.league = LeagueFactory()
-        self.organization = self.league.organization
+        try:
+            self.league
+            self.organization
+        except AttributeError:
+            self.league = LeagueFactory()
+            self.organization = self.league.organization
+
+    def tearDown(self):
+        super(RinkViewTest, self).tearDown()
+
+    def reset(self):
+        self.tearDown()
+        self.setUp()
+
+    def user_factory(self, *args, **kwargs):
+        return UserFactory(organization=self.organization, league=self.league, **kwargs)
 
     # Additional kwargs to use for reverse lookup below.
     def url_kwargs(self):
         super(RinkViewTest, self).url_kwargs()
         return {}
 
-    def _get_url(self):
+    def get_url(self):
         if not self.url:
             raise self.fail("URL not set for this test")
 
@@ -53,7 +67,7 @@ class RinkViewTest(object):
             return
 
         # Always assume login is required on these admin views
-        response = self.client.get(self._get_url())
+        response = self.client.get(self.get_url())
         # Should redirect to /account/login?next=/users/profile or similar
         # or permission denied, possibly.
         if response.status_code == 403:
@@ -72,7 +86,7 @@ class RinkViewTest(object):
         # View should be publically accessable
         if self.is_public:
             # Simply check the template returned for now.
-            response = self.client.get(self._get_url())
+            response = self.client.get(self.get_url())
             if self.template:
                 self.assertTemplateUsed(response, self.template)
             if self.redirect:
@@ -85,7 +99,7 @@ class RinkViewTest(object):
 
         if self.skip_permissions_tests:
             self.client.login(email=user.email, password=user_password)
-            response = self.client.get(self._get_url())
+            response = self.client.get(self.get_url())
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, self.template,
                 "Wrong template being displayed by URL ({})".format(self.reverse_url))
@@ -105,7 +119,7 @@ class RinkViewTest(object):
                 assign_perm(codename, user, obj)
                 # Assign the permission before we login to ensure session data is set.
                 self.client.login(email=user.email, password=user_password)
-                response = self.client.get(self._get_url())
+                response = self.client.get(self.get_url())
 
                 self.assertIn(response.status_code, [200, 403], "URL {} returned code {} for {}".format(
                     self.reverse_url, response.status_code, codename))

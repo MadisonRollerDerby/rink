@@ -41,28 +41,27 @@ class RegisterBegin(RegistrationView):
         if invite_key:
             invite = get_object_or_404(RegistrationInvite, uuid=invite_key)
 
+            if self.event.invite_expiration_date and self.event.invite_expiration_date < timezone.now():
+                # Invites no longer work after this date.
+                return registration_error(request, self.event, "registration_closed")
+
             if invite.user:
                 # User attached to this invite, require login
 
                 if not request.user.is_authenticated:
+                    messages.info(request, "Please login to register for '{}'".format(self.event.name))
                     return redirect('{}?next={}'.format(reverse('account_login'), request.path))
-                
+
                 if invite.user != request.user:
                     # Different user is attached to this invite compared to whom is logged in
-                    # TODO useful message here?
-                    return HttpResponse(status=403)
-
+                    return registration_error(request, self.event, "user_conflict")
         else:
             # Check if event is available to be registered by the public
-            if (self.event.public_registration_open_date and
-                    self.event.public_registration_open_date >= timezone.now()) \
-                or \
-                (self.event.public_registration_closes_date and
-                    self.event.public_registration_closes_date <= timezone.now()):
+            if self.event.public_registration_open_date and self.event.public_registration_open_date > timezone.now():
+                return registration_error(request, self.event, "registration_not_yet_open")
 
-                # Registration closed to the public currently
-                # TODO helpful message here?
-                return HttpResponse(status=404)
+            if self.event.public_registration_closes_date and self.event.public_registration_closes_date < timezone.now():
+                return registration_error(request, self.event, "registration_closed")
 
         request.session['register_event_id'] = self.event.pk
         if invite:

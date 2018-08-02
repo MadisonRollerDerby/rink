@@ -4,7 +4,7 @@ from guardian.shortcuts import assign_perm
 from league.tests.factories import OrganizationFactory, LeagueFactory
 
 
-user_password = "testing"
+user_password = "test1ngISmag1c4l!"
 league_member_permission = 'league_member'
 league_admin_permission = 'league_admin'
 org_admin_permission = 'org_admin'
