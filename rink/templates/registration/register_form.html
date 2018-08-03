@@ -3,6 +3,7 @@
 
 
 {% block css %}
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <style type="text/css">
 /**
  * The CSS shown here will not be introduced in the Quickstart guide, but shows
@@ -36,8 +37,13 @@
 
 {% block javascript %}
 <script src="https://js.stripe.com/v3/"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
 <script>
+$(".datepicker").each(function() {    
+    $(this).datepicker({ dateFormat: "m/d/yy" }).datepicker('setDate', $(this).val());
+});
+
 // Create a Stripe client.
 var stripe = Stripe('pk_test_ewB0eFxUAWV0cMJEV2UJcHJQ');
 

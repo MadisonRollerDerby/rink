@@ -28,7 +28,7 @@ LANGUAGE_CODE = 'en-us'
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
-USE_I18N = True
+USE_I18N = False
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-l10n
 USE_L10N = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
@@ -287,3 +287,6 @@ RINK_PERMISSIONS_IGNORE = (
 
 # The number of times we should try to resolve duplicate slugs
 SLUG_RESOLVE_DUPLICATES_LIMIT = 10
+
+DATE_FORMAT = '%n/%j/%Y'
+DATE_FORMAT_PYTHON = '%-m/%-d/%Y'

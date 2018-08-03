@@ -166,7 +166,7 @@ class RegistrationDataForm(forms.ModelForm):
         ]
 
         widgets = {
-            'emergency_date_of_birth': forms.TextInput(attrs={'type': 'date'}),
+            'emergency_date_of_birth': forms.DateInput(format=('%-m/%-d/%Y'), attrs={'class': 'datepicker'}),
         }
 
 

@@ -1,9 +1,13 @@
 from django.conf import settings
 from django.urls import reverse, resolve
 from guardian.shortcuts import get_perms_for_model, assign_perm, remove_perm
+from rink.utils.selenium import WebDriver
+from rink.utils.derby_names import RANDOM_DERBY_NAMES
 
 from league.tests.factories import LeagueFactory
 from users.tests.factories import UserFactory, UserFactoryNoPermissions, user_password
+
+import random
 
 
 class URLTestCase(object):
@@ -101,8 +105,9 @@ class RinkViewTest(object):
             self.client.login(email=user.email, password=user_password)
             response = self.client.get(self.get_url())
             self.assertEqual(response.status_code, 200)
-            self.assertTemplateUsed(response, self.template,
-                "Wrong template being displayed by URL ({})".format(self.reverse_url))
+            if self.template:
+                self.assertTemplateUsed(response, self.template,
+                    "Wrong template being displayed by URL ({})".format(self.reverse_url))
 
         else:
             perms_list = []
@@ -142,3 +147,80 @@ class RinkViewTest(object):
                 self.client.logout()
 
                 remove_perm(codename, user, obj)
+
+
+class RinkViewLiveTest(RinkViewTest):
+    @classmethod
+    def setUpClass(cls):
+        super(RinkViewLiveTest, cls).setUpClass()
+        cls.wd = WebDriver()
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.dont_quit
+        except AttributeError:
+            cls.wd.quit()
+        super(RinkViewLiveTest, cls).tearDownClass()
+
+
+RANDOM_FIRST_LAST_NAMES = (
+    ('Shante', 'Whelpley'),
+    ('Sherri', 'Tippins'),
+    ('Hanna', 'Lum'),
+    ('Yasuko', 'Blakney'),
+    ('Glenn', 'Record'),
+    ('Juana', 'Vallejos'),
+    ('Venice', 'Navarre'),
+    ('Maricruz', 'Delvalle'),
+    ('Zofia', 'Cagle'),
+    ('Santa', 'Manfredi'),
+    ('Margeret', 'Wantz'),
+    ('Emilee', 'Pratte'),
+    ('Simona', 'Kennedy'),
+    ('Faustina', 'Acevedo'),
+    ('Hollie', 'Cromartie'),
+    ('Ming', 'Knepper'),
+    ('Lia', 'Cisco'),
+    ('Willard', 'Ahart'),
+    ('Kristofer', 'Madera'),
+    ('Hassie', 'Audet'),
+    ('Paul', 'Freeburg'),
+    ('Rubi', 'Sereno'),
+    ('Adele', 'Feng'),
+    ('Olga', 'Benny'),
+    ('Jarrett', 'Eveland'),
+    ('Victorina', 'Shill'),
+    ('Inge', 'Devalle'),
+    ('Yi', 'Mcdonalds'),
+    ('Lelah', 'Coffey'),
+    ('Simone', 'Doud'),
+    ('Rosendo', 'Stauffer'),
+    ('Nathanael', 'Teeter'),
+    ('Weston', 'Lines'),
+    ('Everette', 'Arvizo'),
+    ('Merrilee', 'Simoneau'),
+    ('Hildred', 'Scribner'),
+    ('Laurene', 'Monsen'),
+    ('Maxine', 'Routt'),
+    ('Shantel', 'Linz'),
+    ('Farah', 'Summey'),
+    ('Savanna', 'Pinnock'),
+    ('Aleisha', 'Woodford'),
+    ('Willene', 'Driggers'),
+    ('Tiffani', 'Conners'),
+    ('Karey', 'Madonia'),
+    ('Maryam', 'Felberbaum'),
+    ('Rhoda', 'Bernat'),
+    ('Ethelene', 'Cryer'),
+    ('Marilyn', 'Wafer'),
+    ('Avery', 'Disher'),
+)
+
+
+def get_random_first_last_name():
+    return random.choice(RANDOM_FIRST_LAST_NAMES)
+
+
+def get_random_derby_name():
+    return random.choice(RANDOM_DERBY_NAMES)

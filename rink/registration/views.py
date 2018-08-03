@@ -70,10 +70,6 @@ class RegisterBegin(RegistrationView):
         if request.user.is_authenticated:
             # If logged in, go to the registration form
             return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug': self.event.slug}))
-        elif invite and invite.user:
-            # No user attached to this invite, they need to register for an account
-            messages.info(request, "Please login to register for '{}'".format(self.event.name))
-            return HttpResponseRedirect(reverse("account:login"))
         else:
             # If not logged in, user needs to create an account
             messages.info(request, "Please create an account to register for '{}'".format(self.event.name))
