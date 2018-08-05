@@ -10,22 +10,33 @@ from selenium.webdriver.common.keys import Keys
 
 
 class WebDriver(web_driver_module.WebDriver):
-    """Our own WebDriver with some helpers added"""
 
     def key(self, input_name, keys, after_keys=None):
+        # Send a keypress of click event to a specific input field name.
+        print("K:{} V:{}".format(input_name, keys))
+
+        # If this input is a dropdown, select the option, just click it.
+        try:
+            self.find_element_by_xpath(
+                "//select[@name='{}']/option[@value = '{}']".format(input_name, keys)).click()
+            return
+        except NoSuchElementException:
+            pass
+
+        # Input boxes require a bit more work
+        # - click on the input box
+        # - enter the text
+        # - if necessary, send the after_keys (datepicker needs ESCAPE)
         input = self.find_name(input_name)
         input.click()
         try:
             input.clear()
         except InvalidElementStateException:
-            pass
+            pass  # Checkboxes and selects cannot be cleared.
 
-        #  print("K:{} V:{}".format(input_name, keys))
         input.send_keys(keys)
-        
+
         if after_keys:
-            #  Sometimes we need to send a little bit of ESCAPE keys or etc.
-            #  to close a window or something.
             input.send_keys(after_keys)
 
     def key_fields(self, key_value_dict={}):
@@ -33,6 +44,7 @@ class WebDriver(web_driver_module.WebDriver):
             self.key(key, value)
 
     def key_form_fields(self, form):
+        # Accepts a django form and fills out the assigned inputs.
         for field in form.fields:
             if field not in ['id', ]:
                 value = form[field].value()
@@ -53,18 +65,41 @@ class WebDriver(web_driver_module.WebDriver):
                 except ElementNotVisibleException:
                     pass
 
+    def checkbox(self, input_name):
+        self.find_element_by_name(input_name).click()
+
     def find_name(self, input_name):
         elem = self.find_element_by_name(input_name)
         if elem:
             return elem
         raise NoSuchElementException(name)
 
-    def class_contains(self, css_selector, contains):
-        # returns the first class that matches the class name and text
-        # //*[contains(concat(" ", normalize-space(@class), " "), " invalid-feedback ")]
-        elems = self.find_element_by_xpath('//*[contains(concat(" ", normalize-space(@class), " "), " {} ")]'.format(css_selector))
+    def xpath_contains(self, xpath_search, contains):
+        # /html/body/div[2]/p[contains(text(),'all done registering')]
+        elems = self.find_element_by_xpath("{}".format(
+            xpath_search))
         if not elems:
-            raise NoSuchElementException(css_selector)
+            raise NoSuchElementException(xpath_search)
+        if elems.text == contains:
+            return True
+        return False
+
+    def id_contains(self, id_selector, contains):
+        return self.search_contains(id_selector, contains, elem_type="id")
+
+    def class_contains(self, css_selector, contains):
+        return self.search_contains(css_selector, contains, elem_type="class")
+
+    def search_contains(self, selector, contains, elem_type):
+        # returns the first class that matches the name and text
+        # //*[contains(concat(" ", normalize-space(@class), " "), " invalid-feedback ")]
+        elems = self.find_element_by_xpath(
+            '//*[contains(concat(" ", normalize-space(@{}), " "), " {} ")]'.format(
+                elem_type,
+                selector,
+        ))
+        if not elems:
+            raise NoSuchElementException(elem_type, selector)
         if elems.text == contains:
             return True
         return False

@@ -1,4 +1,7 @@
 from django.conf import settings
+from django.db.models.fields.related import ManyToManyField
+from django.db.models import ForeignKey
+
 from django.urls import reverse, resolve
 from guardian.shortcuts import get_perms_for_model, assign_perm, remove_perm
 from rink.utils.selenium import WebDriver
@@ -29,7 +32,7 @@ class RinkViewTest(object):
     _url_kwargs = {}
 
     def setUp(self):
-        super(RinkViewTest, self).setUp()
+        super().setUp()
         try:
             self.league
             self.organization
@@ -38,7 +41,7 @@ class RinkViewTest(object):
             self.organization = self.league.organization
 
     def tearDown(self):
-        super(RinkViewTest, self).tearDown()
+        super().tearDown()
 
     def reset(self):
         self.tearDown()
@@ -49,8 +52,11 @@ class RinkViewTest(object):
 
     # Additional kwargs to use for reverse lookup below.
     def url_kwargs(self):
-        super(RinkViewTest, self).url_kwargs()
-        return {}
+        super_args = super(RinkViewTest, self).url_kwargs()
+        if super_args:
+            return super_args
+        else:
+            return {}
 
     def get_url(self):
         if not self.url:
@@ -59,6 +65,8 @@ class RinkViewTest(object):
         # Custom kwargs can be returned by url_kwargs method
         try:
             self._url_kwargs = {**self._url_kwargs, **self.url_kwargs()}
+        except TypeError:
+            pass  #  this exception happens when url_kwargs isn't implemented
         except AttributeError:
             pass
 
@@ -224,3 +232,18 @@ def get_random_first_last_name():
 
 def get_random_derby_name():
     return random.choice(RANDOM_DERBY_NAMES)
+
+
+def copy_model_to_dict(instance, ignore_fields=[]):
+    # Convert the data inside a model instance to a dict
+    # but ignore any FOreignKey or ManyToMany fields.
+    opts = instance._meta
+    data = {}
+    for f in opts.concrete_fields + opts.many_to_many:
+        if isinstance(f, ManyToManyField) or isinstance(f, ForeignKey):
+            pass
+        elif f.name in ignore_fields:
+            pass
+        else:
+            data[f.name] = f.value_from_object(instance)
+    return data

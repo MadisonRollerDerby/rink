@@ -76,4 +76,4 @@ class RegistrationDataFactory(RegistrationDataFactoryMinimumFields):
         if self.user.derby_number:
             self.derby_number = self.user.derby_number
         else:
-            self.derby_number = random.randint(0, 9999)
+            self.derby_number = str(random.randint(0, 9999))

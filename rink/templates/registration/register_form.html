@@ -132,6 +132,12 @@ function stripeTokenHandler(token) {
 
 {% if legal_form %}
     <legend>Legal Forms</legend>
+
+    {% if legal_form.errors %}
+      <div class="alert alert-danger" role="alert" id="error_legal_document_agree">
+        You must agree to the legal documents below to register. Please contact us if you have any questions.
+      </div>
+    {% endif %}
     
     Please read and indicate that you agree to the following:
     <div id="div_id_legal_forms" class="form-group"> 

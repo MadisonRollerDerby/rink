@@ -8,6 +8,8 @@ from .factories import UserFactory, user_password
 
 from ..views import UserProfileView
 
+from league.models import League
+
 
 class TestUserProfileView(TestCase):
     def setUp(self):
@@ -40,8 +42,9 @@ class TestUserProfileView(TestCase):
 
         # Ensure the organization this user belongs to gets updated to have a
         # contact email for notifications
-        self.user.league.email_from_address = 'alert-test@rink.com'
-        self.user.league.save()
+        league = League.objects.get(pk=self.user.league.pk)
+        league.email_from_address = 'alert-test@rink.com'
+        league.save()
 
         # Test complete form
         post_data = {

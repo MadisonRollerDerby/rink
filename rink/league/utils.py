@@ -59,3 +59,4 @@ def send_email(league, template, to_email, context={}):
     )
     msg.attach_alternative(message_html, "text/html")
     msg.send(fail_silently=False)
+

@@ -25,8 +25,11 @@ class UserProfileView(LoginRequiredMixin, View):
     def post(self, request):
         form = UserProfileForm(request.POST, instance=User.objects.get(pk=request.user.pk))
         if form.is_valid() and form.has_changed():
-            initial = User.objects.get(pk=request.user.pk)
-            updated = form.save()
+            form.save()
+
+            initial_user = User.objects.get(pk=request.user.pk)
+            initial_form = UserProfileForm(instance=initial_user)
+            initial = initial_form.initial
 
             leagues = get_objects_for_user(
                 request.user,
@@ -35,8 +38,8 @@ class UserProfileView(LoginRequiredMixin, View):
                 accept_global_perms=False)
 
             # Send notifications for all leagues that this user is a member of.
-            for league in leagues:
-                notify_admin_of_user_changes.delay(league, initial, updated)
+            for league in leagues.all():
+                notify_admin_of_user_changes.delay(league.pk, initial, form.initial)
 
             messages.info(request, "Updated profile saved. Thanks.")
             return HttpResponseRedirect(reverse("users:profile"))

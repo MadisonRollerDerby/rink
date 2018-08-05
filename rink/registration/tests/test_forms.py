@@ -5,6 +5,7 @@ from legal.tests.factories import LegalDocumentFactory
 from registration.forms import (
     RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
 )
+from .factories import RegistrationEventFactory
 
 
 testing_password = "testing12345"
@@ -150,16 +151,16 @@ class TestLegalDocumentAgreeForm(TestCase):
     form = LegalDocumentAgreeForm
 
     def setUp(self):
-        self.league = LeagueFactory()
+        self.event = RegistrationEventFactory()
         self.legal_documents = []
         for count in range(0, 3):
-            self.legal_documents.append(LegalDocumentFactory(league=self.league))
+            self.legal_documents.append(LegalDocumentFactory(league=self.event.league))
 
     def tearDown(self):
         self.league.delete()
         self.legal_documents = []
 
-    def test_legal_document_agree_form_requires_league_arg(self):
+    def test_legal_document_agree_form_requires_event_arg(self):
         with self.assertRaises(TypeError):
             form = self.form()
 
@@ -167,13 +168,14 @@ class TestLegalDocumentAgreeForm(TestCase):
         # Ensure that we are filtering for other leagues documents
         # and only showing the ones applicable to this league.
         other_league = LeagueFactory()
+        other_event = RegistrationEventFactory(league=other_league)
         other_leagues_documents = LegalDocumentFactory(league=other_league)
 
         form = self.form(league=self.league)
         self.assertEqual(len(form.fields), len(self.legal_documents))
 
     def test_legal_document_agree_form_none_selected(self):
-        form = self.form(league=self.league, data={})
+        form = self.form(event=self.event, data={})
         self.assertFalse(form.is_valid(), form.errors)
 
     def test_legal_document_agree_form_some_selected(self):
@@ -182,7 +184,7 @@ class TestLegalDocumentAgreeForm(TestCase):
             key = 'Legal{}'.format(self.legal_documents[count].pk)
             data[key] = key
 
-        form = self.form(league=self.league, data=data)
+        form = self.form(event=self.event, data=data)
         self.assertFalse(form.is_valid(), form.errors)
 
     def test_legal_document_agree_form_all_selected(self):
@@ -191,5 +193,5 @@ class TestLegalDocumentAgreeForm(TestCase):
             key = 'Legal{}'.format(self.legal_documents[count].pk)
             data[key] = key
 
-        form = self.form(league=self.league, data=data)
-        self.assertTrue(form.is_valid(), form.errors)        
+        form = self.form(event=self.event, data=data)
+        self.assertTrue(form.is_valid(), form.errors)  

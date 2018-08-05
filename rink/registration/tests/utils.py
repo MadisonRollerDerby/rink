@@ -3,7 +3,7 @@ from registration.tests.factories import RegistrationEventFactory
 
 class RegistrationEventTest(object):
     def setUp(self):
-        super(RegistrationEventTest, self).setUp()
+        super().setUp()
 
         try:
             self.event

@@ -2,7 +2,8 @@ from celery import shared_task
 from django.utils import timezone
 
 from league.utils import send_email
-from registration.models import RegistrationInvite
+from registration.models import RegistrationInvite, RegistrationData
+from users.models import User
 
 
 @shared_task(ignore_result=True)
@@ -34,7 +35,13 @@ def send_registration_invite_email(invite_ids=[]):
 
 
 @shared_task(ignore_result=True)
-def send_registration_confirmation(user, registration_data):
+def send_registration_confirmation(user_id, registration_data_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        registration_data = RegistrationData.objects.get(pk=registration_data_id)
+    except (User.DoesNotExist, RegistrationData.DoesNotExist):
+        return
+    
     send_email(
         league=registration_data.league,
         to_email=user.email,
@@ -45,3 +52,4 @@ def send_registration_confirmation(user, registration_data):
             'registration': registration_data,
         },
     )
+    

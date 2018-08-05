@@ -193,16 +193,22 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             existing_registration.registration_date = None
             existing_registration.email = request.user.email
 
-            form = RegistrationDataForm(instance=existing_registration)
+            form = RegistrationDataForm(
+                logged_in_user_id=request.user.pk, instance=existing_registration)
         else:
-            form = RegistrationDataForm(initial={
-                'contact_email': request.user.email,
-                'contact_state': self.event.league.default_address_state,
-                'derby_insurance_type': self.event.league.default_insurance_type,
-            })
+            form = RegistrationDataForm(
+                logged_in_user_id=request.user.pk,
+                initial={
+                    'contact_email': request.user.email,
+                    'contact_state': self.event.league.default_address_state,
+                    'derby_insurance_type': self.event.league.default_insurance_type,
+                })
 
         # Legal documents that need to be agreed to
-        legal_form = LegalDocumentAgreeForm(league=self.event.league)
+        if self.event.legal_forms.count() > 0:
+            legal_form = LegalDocumentAgreeForm(event=self.event)
+        else:
+            legal_form = None
 
         # Get Billing Period
         invite_billing_group = None
@@ -230,8 +236,8 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         })
 
     def post(self, request, event_slug):
-        form = RegistrationDataForm(data=request.POST)
-        legal_form = LegalDocumentAgreeForm(league=self.event.league, data=request.POST)
+        form = RegistrationDataForm(logged_in_user_id=request.user.pk, data=request.POST)
+        legal_form = LegalDocumentAgreeForm(event=self.event, data=request.POST)
 
         if form.is_valid() and legal_form.is_valid():
 
@@ -284,7 +290,6 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 pass
 
             registration_data.save()
-
             # Save details to user profile
             user = request.user
             user.first_name = registration_data.contact_first_name
@@ -314,16 +319,18 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 #   I suppose the document could go away or not be found?
                 #    But probably not likely...
 
+            completed_time = timezone.now()
+
             # Save registration invite
             if registration_data.invite:
-                registration_data.invite.completed_date = timezone.now()
+                registration_data.invite.completed_date = completed_time
                 registration_data.invite.save()
             else:
                 # Create the registration invite if it was a public invite
                 registration_data.invite = RegistrationInvite.objects.create(
                     user=user,
-                    sent_date=timezone.now(),
-                    completed_date=timezone.now(),
+                    sent_date=completed_time,
+                    completed_date=completed_time,
                     public_registration=True,
                     email=user.email,
                     event=self.event,
@@ -331,15 +338,47 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
             # Send email confirmation of registration
             send_registration_confirmation.delay(
-                user=user,
-                registration_data=registration_data,
+                user_id=user.pk,
+                registration_data_id=registration_data.pk,
             )
+
+            # Reset session data
+            try:
+                del request.session['register_invite_id']
+                request.session.modified = True
+            except KeyError:
+                pass
+            try:
+                del request.session['register_event_id']
+                request.session.modified = True
+            except KeyError:
+                pass
 
             return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug': self.event.slug}))
 
+        #  If there are any errors with the email address field show this message
+        #   if its a duplicate email address.
+        if not form.is_valid():
+            try:
+                if form.errors['contact_email'].as_data()[0].code == "username_conflict":
+                    messages.error(request, "<h4>Duplicate Email Address</h4> \
+                        <p>An account already exists with that email address.</p> \
+                        <p>You can use attempt to \
+                        <a href='{}'>login to that account</a>, \
+                        <a href='{}'>reset the password</a>, \
+                        or use a different email address.</p>".format(
+                            reverse('account_logout'),
+                            reverse('account_reset_password'),
+                    ))
+            except KeyError:
+                pass
+
+        if not legal_form.is_valid():
+            print(legal_form.errors)
+
         return render(
-            request, 
-            self.template, 
+            request,
+            self.template,
             {'form': form, 'legal_form': legal_form, 'event': self.event}
         )
 

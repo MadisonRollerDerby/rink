@@ -1,7 +1,10 @@
 from datetime import timedelta
+
+from django.core import mail
 from django.test import LiveServerTestCase
 from django.urls import reverse
 from django.utils import timezone
+
 from test_plus.test import TestCase
 
 from .factories import (
@@ -10,10 +13,11 @@ from .factories import (
 )
 from .utils import RegistrationEventTest
 from league.tests.factories import InsuranceTypeFactory
-from rink.utils.testing import RinkViewTest, RinkViewLiveTest
+from legal.tests.factories import LegalDocumentFactory
+from rink.utils.testing import RinkViewTest, RinkViewLiveTest, copy_model_to_dict
 from users.tests.factories import user_password
 
-from registration.models import RegistrationEvent
+from registration.models import RegistrationEvent, RegistrationData, RegistrationInvite
 from registration.forms import RegistrationDataForm
 from users.models import User
 
@@ -209,30 +213,41 @@ class TestRegisterRegisterShowFormPublic(RegistrationEventTest, RinkViewTest, Te
             reverse('register:show_form', kwargs={'event_slug': self.event.slug})
         )
 
+from django.test.utils import override_settings
 
+@override_settings(DEBUG=True)
 class TestRegisterRegisterShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTest, LiveServerTestCase):
     # The big kahuna. Test the registration form.
     skip_permissions_tests = True  # test requires a user, but only an unprivileged one
-    #template = "registration/register_form.html"
     url = 'register:register_event_uuid'
 
-    dont_quit = True
+    #dont_quit = True
 
     def setUp(self):
-        super(TestRegisterRegisterShowFormLoggedIn, self).setUp()
+        super().setUp()
         self.user = self.user_factory()
         self.invite = RegistrationInviteFactory(event=self.event, user=self.user)
         self.insurance = InsuranceTypeFactory()
+        self.legal_documents = (
+            LegalDocumentFactory(league=self.league),
+            LegalDocumentFactory(league=self.league),
+            LegalDocumentFactory(league=self.league),
+        )
+        for doc in self.legal_documents:
+            self.event.legal_forms.add(doc)
 
     def tearDown(self):
-        super(TestRegisterRegisterShowFormLoggedIn, self).tearDown()
-        if self.invite.id:
+        super().tearDown()
+        if self.invite and self.invite.id:
             self.invite.delete()
         self.user.delete()
         self.insurance.delete()
+        for document in self.legal_documents:
+            document.delete()
 
     def url_kwargs(self):
-        return {'invite_key': self.invite.uuid}
+        if self.invite:
+            return {'invite_key': self.invite.uuid}
 
     # Helper methods for selenium tests.
     def registration_data_factory(self, delete_after_create=True):
@@ -257,12 +272,149 @@ class TestRegisterRegisterShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTe
         self.wd.find_element_by_xpath('//input[@value="Submit Registration"]').click()
 
     # Here's some actual tests.
-    def test_registration_form_errors(self):
-        form = RegistrationDataForm(instance=self.registration_data_factory())
+    def test_registration_form_fields_required(self):
+        self.sign_in_to_register()
+
+        # Make the form empty and submit it, we should have some errors.
+        self.wd.execute_script("$('#payment-form').attr('novalidate', 'novalidate');")
+        self.wd.execute_script("$('#id_contact_email').val('');")
+        self.submit_registration_form()
+
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_email", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_first_name", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_last_name", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_address1", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_city", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_state", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_zipcode", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_contact_phone", "This field is required."))
+
+        self.assertTrue(self.wd.id_contains("error_1_id_emergency_date_of_birth", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_emergency_contact", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_emergency_phone", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_emergency_relationship", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_emergency_hospital", "This field is required."))
+        self.assertTrue(self.wd.id_contains("error_1_id_emergency_allergies", "This field is required."))
+
+        self.assertTrue(self.wd.id_contains("error_legal_document_agree",
+            "You must agree to the legal documents below to register. Please contact us if you have any questions."))
+
+    def test_registration_form_duplicate_email(self):
+        registration_data = self.registration_data_factory()
+
+        # Create a conflicting user and try to register using that email address
+        conflict_user = self.user_factory()
+        registration_data_conflict = copy_model_to_dict(registration_data)
+        registration_data_conflict['contact_email'] = conflict_user.email
+        conflict_form = RegistrationDataForm(
+            logged_in_user_id=self.user.pk, data=registration_data_conflict)
+
+        self.sign_in_to_register()
+
+        self.wd.key_form_fields(conflict_form)
+        for doc in self.legal_documents:
+            self.wd.checkbox("Legal{}".format(doc.pk))
+        self.submit_registration_form()
+
+        self.assertTrue(self.wd.xpath_contains("//h4", "Duplicate Email Address"))
+
+    def test_registration_form_valid_fields(self):
+        # Now let's fill out the form and submit it.
+        # Fill in all the fields and test actually registering someone.
+        registration_data = self.registration_data_factory()
+        form = RegistrationDataForm(
+            logged_in_user_id=self.user.pk, instance=registration_data)
 
         self.sign_in_to_register()
         self.wd.key_form_fields(form)
-        
+        for doc in self.legal_documents:
+            self.wd.checkbox("Legal{}".format(doc.pk))
+        self.submit_registration_form()
+
+        # We should end up on the successful registration form
+        self.assertTrue(self.wd.xpath_contains("//h2", "{} Registration".format(self.event.name)))
+        self.assertTrue(self.wd.xpath_contains("//p", "You're all done registering."))
+
+        # User details should have been updated to their user profile
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, registration_data.contact_first_name)
+        self.assertEqual(self.user.last_name, registration_data.contact_last_name)
+        self.assertEqual(self.user.email, registration_data.contact_email)
+        self.assertEqual(self.user.derby_name, registration_data.derby_name)
+        self.assertEqual(self.user.derby_number, registration_data.derby_number)
+        # User has been appropriately tagged as a member of the league
+        self.assertTrue(self.user.has_perm("league_member", self.league))
+        # Registration invite has been marked as completed
+        self.invite.refresh_from_db()
+        self.assertTrue(self.invite.completed_date)
+        invite = self.invite
+        self.invite = None
+        self.url = "register:register_event"
+
+        # Test that the next time this user registers, they will have their details
+        # brought back up and can just submit the form.
+
+        event2 = RegistrationEventFactory(league=self.league)
+        for doc in self.legal_documents:
+            event2.legal_forms.add(doc)
+
+        self._url_kwargs = {'event_slug': event2.slug}
+        self.wd.get('%s%s' % (self.live_server_url, self.get_url()))
+        for doc in self.legal_documents:
+            self.wd.checkbox("Legal{}".format(doc.pk))
+        self.wd.find_element_by_xpath('//input[@value="Submit Registration"]').click()
+
+        self.assertTrue(self.wd.xpath_contains("//h2", "{} Registration".format(event2.name)))
+        self.assertTrue(self.wd.xpath_contains("//p", "You're all done registering."))
+
+        # Now, if we go back and try and regsiter again, we will get an
+        # error message stating we already have registered.
+        self.wd.get('%s%s' % (self.live_server_url, self.get_url()))
+        self.wd.class_contains("alert-warning", "already registered")
+
+        # User should have two reg data objects they are registered for now
+        # These objects should also be relatively equal... relatively. Due to the reuse
+        # of the registration data the second time around.
+        registration_data_objs = RegistrationData.objects.filter(user=self.user).order_by('id')
+        invite1 = RegistrationInvite.objects.get(user=self.user, event=self.event)
+        invite2 = RegistrationInvite.objects.get(user=self.user, event=event2)
+
+        self.assertEqual(registration_data_objs.count(), 2)
+        for field in registration_data_objs[0]._meta.get_fields():
+            try:
+                # Skip these fields, as they should be different
+                if field.name not in ['id', 'event', 'registration_date', 'legal_forms', 'invite']:
+                    self.assertEqual(
+                        getattr(registration_data_objs[0], field.name),
+                        getattr(registration_data_objs[1], field.name))
+                else:
+                    self.assertNotEqual(
+                        getattr(registration_data_objs[0], field.name),
+                        getattr(registration_data_objs[1], field.name))
+            except AttributeError:
+                pass
+
+        # Registration invites were created and marked as completed.
+        self.assertEqual(registration_data_objs[0].invite.pk, invite1.pk)
+        self.assertTrue(registration_data_objs[0].invite.completed_date)
+        self.assertFalse(registration_data_objs[0].invite.public_registration)
+        # This second event actually was created without an invite, it would have
+        # been crated during POST save in the view
+
+        self.assertTrue(invite2.public_registration)
+        self.assertEqual(invite2.email, self.user.email)
+        self.assertEqual(invite2.sent_date, invite2.completed_date)
+
+        # Check that an email was sent for the registration
+        # There should now be 2 messages in the inbox since we registred twice.
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn('{} -- {} Registration Invite'.format(
+            event2.name, event2.league.name), mail.outbox[1].subject)
+
+        #  Manual clean up
+        invite.delete()
+        self.url = 'register:register_event_uuid'
+        self._url_kwargs = {'event_slug': self.event.slug}
 
 
 class TestRegisterRegisterDonePublic(RegistrationEventTest, RinkViewTest, TestCase):

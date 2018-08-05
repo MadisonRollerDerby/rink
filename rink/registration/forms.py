@@ -1,3 +1,4 @@
+from django.contrib import messages
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML
 from crispy_forms.bootstrap import FormActions
@@ -6,6 +7,8 @@ from django.contrib.auth import (
     authenticate, password_validation,
 )
 from django.forms.widgets import CheckboxSelectMultiple
+from django.urls import reverse
+
 from guardian.shortcuts import assign_perm
 
 from legal.models import LegalDocument
@@ -92,7 +95,9 @@ class LegalCheckboxSelectMultiple(CheckboxSelectMultiple):
 
 class RegistrationDataForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        super(RegistrationDataForm, self).__init__(*args, **kwargs)
+        self.logged_in_user_id = kwargs.pop('logged_in_user_id', None)
+        super().__init__(*args, **kwargs)
+        
         self.helper = FormHelper(self)
 
         for field_name, field in self.fields.items():
@@ -169,12 +174,24 @@ class RegistrationDataForm(forms.ModelForm):
             'emergency_date_of_birth': forms.DateInput(format=('%-m/%-d/%Y'), attrs={'class': 'datepicker'}),
         }
 
+    def clean_contact_email(self):
+        if self.logged_in_user_id:
+            existing_user = User.objects.exclude(
+                pk=self.logged_in_user_id).filter(email=self.cleaned_data['contact_email'])
+        else:
+            existing_user = User.objects.filter(email=self.cleaned_data['contact_email'])
+
+        if existing_user.exists():
+            raise forms.ValidationError("This email address already has an account set up. You cannot change your email address to it.", code="username_conflict")
+
+        return self.cleaned_data['contact_email']
+
 
 class LegalDocumentAgreeForm(forms.Form):
-    def __init__(self, league, *args, **kwargs):
+    def __init__(self, event, *args, **kwargs):
         super(LegalDocumentAgreeForm, self).__init__(*args, **kwargs)
 
-        for document in LegalDocument.objects.filter(league=league):
+        for document in event.legal_forms.all():
             doc_key = "{}{}".format("Legal", document.pk)
 
             self.fields[doc_key] = forms.BooleanField(
