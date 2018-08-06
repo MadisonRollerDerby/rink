@@ -3,7 +3,6 @@ from django.utils import timezone
 
 from league.utils import send_email
 from registration.models import RegistrationInvite, RegistrationData
-from users.models import User
 
 
 @shared_task(ignore_result=True)
@@ -35,21 +34,20 @@ def send_registration_invite_email(invite_ids=[]):
 
 
 @shared_task(ignore_result=True)
-def send_registration_confirmation(user_id, registration_data_id):
-    try:
-        user = User.objects.get(pk=user_id)
-        registration_data = RegistrationData.objects.get(pk=registration_data_id)
-    except (User.DoesNotExist, RegistrationData.DoesNotExist):
-        return
+def send_registration_confirmation(registration_data_id):
+    #try:
+    registration_data = RegistrationData.objects.get(pk=registration_data_id)
+    #except RegistrationData.DoesNotExist:
+    #    raise RegistrationData.DoesNotExist
     
     send_email(
-        league=registration_data.league,
-        to_email=user.email,
+        league=registration_data.event.league,
+        to_email=registration_data.user.email,
         template="registration_confirmation",
         context={
-            'user': user,
+            'user': registration_data.user,
             'event': registration_data.event,
             'registration': registration_data,
         },
     )
-    
+    return True

@@ -240,16 +240,16 @@ INSTALLED_APPS += ['rink.taskapp.celery.CeleryConfig']
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
 #CELERY_RESULT_BACKEND = 'redis://'
 
-CELERY_BROKER_TRANSPORT = "redis"
-CELERY_BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+#CELERY_BROKER_TRANSPORT = "redis"
+#CELERY_BROKER_URL = 'redis://localhost:6379'
+#CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
-CELERY_ACCEPT_CONTENT = ['json']
+#CELERY_ACCEPT_CONTENT = ['json']
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-task_serializer
-CELERY_TASK_SERIALIZER = 'json'
+#CELERY_TASK_SERIALIZER = 'json'
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_serializer
-CELERY_RESULT_SERIALIZER = 'json'
+#CELERY_RESULT_SERIALIZER = 'json'
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool('DJANGO_ACCOUNT_ALLOW_REGISTRATION', True)

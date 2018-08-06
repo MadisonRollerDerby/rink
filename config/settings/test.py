@@ -15,7 +15,7 @@ DEBUG = True
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='mMW4rrhtezQvDPIOn61KGnZmHLNTxFzqXQ7kVjykwT1L3ujQ3A6qLEjni9te1y6F')
 # https://docs.djangoproject.com/en/dev/ref/settings/#test-runner
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-
+#TEST_RUNNER = "celery.contrib.test_runner.CeleryTestSuiteRunner"
 # CACHES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#caches
@@ -51,6 +51,7 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [  # noqa F405
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+#EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-host
 EMAIL_HOST = 'localhost'
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-port
@@ -58,4 +59,3 @@ EMAIL_PORT = 1025
 
 # Your stuff...
 # ------------------------------------------------------------------------------
-CELERY_ALWAYS_EAGER = True

@@ -5,7 +5,8 @@ from django.test import LiveServerTestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from test_plus.test import TestCase
+import pytest
+from django.test import TestCase, TransactionTestCase
 
 from .factories import (
     RegistrationInviteFactory, RegistrationEventFactory,
@@ -18,6 +19,7 @@ from rink.utils.testing import RinkViewTest, RinkViewLiveTest, copy_model_to_dic
 from users.tests.factories import user_password
 
 from registration.models import RegistrationEvent, RegistrationData, RegistrationInvite
+from registration.tasks import send_registration_confirmation
 from registration.forms import RegistrationDataForm
 from users.models import User
 
@@ -117,7 +119,7 @@ class TestRegisterBeginWithUUID(RegistrationEventTest, RinkViewLiveTest, LiveSer
             reverse('register:show_form', kwargs={'event_slug': self.event.slug})))
 
 
-class TestRegisterBeginPublicURL(RegistrationEventTest, RinkViewTest, TestCase):
+class TestRegisterBeginPublicURL(RegistrationEventTest, RinkViewTest, TransactionTestCase):
     # Tests the RegisterBegin view using the public entry URL.
     is_public = True
     url = 'register:register_event'
@@ -200,7 +202,7 @@ class TestRegisterCreateAccount(RegistrationEventTest, RinkViewLiveTest, LiveSer
         self.assertTrue(self.wd.class_contains("invalid-feedback", "User with this Email address already exists."))
 
 
-class TestRegisterRegisterShowFormPublic(RegistrationEventTest, RinkViewTest, TestCase):
+class TestRegisterRegisterShowFormPublic(RegistrationEventTest, RinkViewTest, TransactionTestCase):
     # Attempt to load the registration form without logging in. Should redirect
     # back to the login page.
     is_public = True
@@ -213,10 +215,18 @@ class TestRegisterRegisterShowFormPublic(RegistrationEventTest, RinkViewTest, Te
             reverse('register:show_form', kwargs={'event_slug': self.event.slug})
         )
 
-from django.test.utils import override_settings
 
-@override_settings(DEBUG=True)
-class TestRegisterRegisterShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTest, LiveServerTestCase):
+@pytest.mark.usefixtures("celery_worker")
+class TestCanSendRegistrationConfirmEmail(TransactionTestCase):
+    def test_celery(self):
+        self.assertEqual(len(mail.outbox), 0)
+        d = RegistrationDataFactory()
+        send_registration_confirmation(registration_data_id=d.pk)
+        self.assertEqual(len(mail.outbox), 1)
+
+
+@pytest.mark.usefixtures("celery_worker")
+class TestRegisteShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTest, LiveServerTestCase):
     # The big kahuna. Test the registration form.
     skip_permissions_tests = True  # test requires a user, but only an unprivileged one
     url = 'register:register_event_uuid'
@@ -408,8 +418,8 @@ class TestRegisterRegisterShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTe
         # Check that an email was sent for the registration
         # There should now be 2 messages in the inbox since we registred twice.
         self.assertEqual(len(mail.outbox), 2)
-        self.assertIn('{} -- {} Registration Invite'.format(
-            event2.name, event2.league.name), mail.outbox[1].subject)
+        self.assertIn('{} -- {} Registration for {}'.format(
+            event2.name, event2.league.name), mail.outbox[1].subject, self.user)
 
         #  Manual clean up
         invite.delete()
@@ -417,7 +427,7 @@ class TestRegisterRegisterShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTe
         self._url_kwargs = {'event_slug': self.event.slug}
 
 
-class TestRegisterRegisterDonePublic(RegistrationEventTest, RinkViewTest, TestCase):
+class TestRegisterRegisterDonePublic(RegistrationEventTest, RinkViewTest, TransactionTestCase):
     is_public = True
     url = 'register:done'
 

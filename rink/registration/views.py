@@ -212,10 +212,8 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
         # Get Billing Period
         invite_billing_group = None
-        try:
+        if request.session.get('register_invite_id', None):
             invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
-        except KeyError:
-            pass
         except RegistrationInvite.DoesNotExist:
             pass
         else:
@@ -282,10 +280,8 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             registration_data.league = self.event.league
             registration_data.organization = self.event.league.organization
 
-            try:
+            if request.session.get('register_invite_id', None):
                 registration_data.invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
-            except KeyError:
-                pass
             except RegistrationInvite.DoesNotExist:
                 pass
 
@@ -337,44 +333,36 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 )
 
             # Send email confirmation of registration
-            send_registration_confirmation.delay(
-                user_id=user.pk,
-                registration_data_id=registration_data.pk,
-            )
+            print("sending...")
+            #from pudb import set_trace; set_trace()
+            from rink.taskapp.celery import debug_task
+            debug_task.delay()
+            send_registration_confirmation.delay(registration_data.pk)
+            print("sent.")
 
             # Reset session data
-            try:
+            if request.session.get('register_invite_id', None):
                 del request.session['register_invite_id']
                 request.session.modified = True
-            except KeyError:
-                pass
-            try:
+            if request.session.get('register_event_id', None):
                 del request.session['register_event_id']
                 request.session.modified = True
-            except KeyError:
-                pass
 
             return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug': self.event.slug}))
 
         #  If there are any errors with the email address field show this message
         #   if its a duplicate email address.
-        if not form.is_valid():
-            try:
-                if form.errors['contact_email'].as_data()[0].code == "username_conflict":
-                    messages.error(request, "<h4>Duplicate Email Address</h4> \
-                        <p>An account already exists with that email address.</p> \
-                        <p>You can use attempt to \
-                        <a href='{}'>login to that account</a>, \
-                        <a href='{}'>reset the password</a>, \
-                        or use a different email address.</p>".format(
-                            reverse('account_logout'),
-                            reverse('account_reset_password'),
-                    ))
-            except KeyError:
-                pass
-
-        if not legal_form.is_valid():
-            print(legal_form.errors)
+        if not form.is_valid() and form.errors.get('contact_email', None):
+            if form.errors['contact_email'].as_data()[0].code == "username_conflict":
+                messages.error(request, "<h4>Duplicate Email Address</h4> \
+                    <p>An account already exists with that email address.</p> \
+                    <p>You can use attempt to \
+                    <a href='{}'>login to that account</a>, \
+                    <a href='{}'>reset the password</a>, \
+                    or use a different email address.</p>".format(
+                        reverse('account_logout'),
+                        reverse('account_reset_password'),
+                ))
 
         return render(
             request,

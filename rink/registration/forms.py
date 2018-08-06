@@ -189,9 +189,9 @@ class RegistrationDataForm(forms.ModelForm):
 
 class LegalDocumentAgreeForm(forms.Form):
     def __init__(self, event, *args, **kwargs):
-        super(LegalDocumentAgreeForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
-        for document in event.legal_forms.all():
+        for document in LegalDocument.objects.filter(league=event.league).all():
             doc_key = "{}{}".format("Legal", document.pk)
 
             self.fields[doc_key] = forms.BooleanField(

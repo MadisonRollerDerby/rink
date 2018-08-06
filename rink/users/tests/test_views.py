@@ -2,7 +2,8 @@ from django.core import mail
 from django.test import RequestFactory
 from django.urls import reverse
 
-from test_plus.test import TestCase
+from django.test import TransactionTestCase
+import pytest
 
 from .factories import UserFactory, user_password
 
@@ -11,7 +12,8 @@ from ..views import UserProfileView
 from league.models import League
 
 
-class TestUserProfileView(TestCase):
+@pytest.mark.usefixtures("celery_worker")
+class TestUserProfileView(TransactionTestCase):
     def setUp(self):
         super(TestUserProfileView, self).setUp()
         self.user = UserFactory()

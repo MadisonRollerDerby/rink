@@ -157,7 +157,7 @@ class TestLegalDocumentAgreeForm(TestCase):
             self.legal_documents.append(LegalDocumentFactory(league=self.event.league))
 
     def tearDown(self):
-        self.league.delete()
+        self.event.league.delete()
         self.legal_documents = []
 
     def test_legal_document_agree_form_requires_event_arg(self):
@@ -171,7 +171,7 @@ class TestLegalDocumentAgreeForm(TestCase):
         other_event = RegistrationEventFactory(league=other_league)
         other_leagues_documents = LegalDocumentFactory(league=other_league)
 
-        form = self.form(league=self.league)
+        form = self.form(event=self.event)
         self.assertEqual(len(form.fields), len(self.legal_documents))
 
     def test_legal_document_agree_form_none_selected(self):
