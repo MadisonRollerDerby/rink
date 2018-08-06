@@ -1,0 +1,25 @@
+{{ header_html }}
+
+<p>Hi {{ user }},</p>
+
+<p>Thanks for your payment. Here's a receipt.</p>
+
+<p>Date: {{ payment.payment_date }}</p>
+
+<p>Amount Paid: ${{ payment.amount }}</p>
+
+<p>Paid using: {{ payment.get_card() }}</p>
+
+<p>This payment was for{% if invoices.count == 1 %} {{ invoices[0].description }}{% endif %}</p>
+
+{% if invoices.count > 1 %}
+<ul>
+    {% for invoice in invoices %}
+    <li>{{ invoice.description }} -- ${{ invoice.invoice_amount }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+
+
+{{ footer_html }}

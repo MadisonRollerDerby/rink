@@ -1,3 +1,4 @@
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -128,26 +129,25 @@ class League(models.Model):
 
     stripe_private_key = EncryptedCharField(
         "Stripe Private Key",
-        max_length = 100,
-        blank = True,
-        help_text = "Private API key for Stripe.com. Used for charging credit cards.",
+        max_length=100,
+        blank=True,
+        help_text="Private API key for Stripe.com. Used for charging credit cards.",
     )
 
     stripe_public_key = EncryptedCharField(
         "Stripe Public Key",
-        max_length = 100,
-        blank = True,
-        help_text = "Private API key for Stripe.com. Used for charging credit cards.",
+        max_length=100,
+        blank=True,
+        help_text="Private API key for Stripe.com. Used for charging credit cards.",
     )
 
 
-    # Registration Settings
-
+    #  Registration Settings
     default_address_state = models.CharField(
         max_length=2,
         blank=True,
         choices=STATE_CHOICES,
-        help_text = "Default state choice on Registration forms.",
+        help_text="Default state choice on Registration forms.",
     )
 
     default_insurance_type = models.ForeignKey(
@@ -155,7 +155,7 @@ class League(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
-        help_text = "Default insurance type to show on Registration forms."
+        help_text="Default insurance type to show on Registration forms."
     )
 
 
@@ -212,6 +212,16 @@ class League(models.Model):
 
     def get_absolute_url(self):
         return reverse('league:league_update', kwargs={'slug': self.slug, 'organization_slug': self.organization.slug })
+
+    def get_stripe_private_key(self):
+        if self.stripe_private_key:
+            return self.stripe_private_key
+        raise ImproperlyConfigured("Stripe private key not set for {}".format(self.league.name))
+
+    def get_stripe_public_key(self):
+        if self.stripe_public_key:
+            return self.stripe_public_key
+        raise ImproperlyConfigured("Stripe public key not set for {}".format(self.league.name))
 
 
 @receiver(pre_save, sender=Organization)

@@ -10,12 +10,12 @@ from django.views import View
 from guardian.shortcuts import assign_perm
 from guardian.mixins import LoginRequiredMixin
 import re
-import stripe
 
 from .forms import RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
 from .models import RegistrationEvent, RegistrationInvite, RegistrationData
-from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, \
-    UserPaymentTokenizedCard
+from billing.models import (
+    BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount,
+    UserStripeCard, Invoice)
 from legal.models import LegalDocument, LegalSignature
 
 from registration.tasks import send_registration_confirmation
@@ -134,38 +134,14 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             billing_period = billing_period_query.get()
         return billing_period
 
-    def get_invoice_amount(self, billing_period, billing_group=None):
-        if billing_period and billing_group:
-            try:
-                billing_schedule_obj = BillingPeriodCustomPaymentAmount.objects.get(
-                    group=billing_group,
-                    period=billing_period,
-                )
-            except BillingPeriodCustomPaymentAmount.DoesNotExist:
-                pass
-            else:
-                return billing_schedule_obj.invoice_amount
-
-        # If we're still here, use the default amount in the billing_group
-        if billing_group:
-            return billing_group.invoice_amount
-
-        # If for some reason no group was sent, but we have a billing period
-        # use the default group for the league.
+    def get_invite_billing_group(self, request):
         try:
-            default_group_for_league = BillingGroup.objects.get(
-                league=self.event.league,
-                default_group_for_league=True,
-            )
-        except BillingGroup.DoesNotExist:
-            pass
+            if request.session.get('register_invite_id', None):
+                invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
+        except RegistrationInvite.DoesNotExist:
+            return None
         else:
-            return default_group_for_league.invoice_amount
-
-        # If we are STILL here, that means NO valid billing group set and
-        # the billing period/group through table doesn't have an entry.
-        # I guess give them a free ride?
-        return 0
+            return invite.billing_group
 
     def get(self, request, event_slug):
 
@@ -211,17 +187,9 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             legal_form = None
 
         # Get Billing Period
-        invite_billing_group = None
-        if request.session.get('register_invite_id', None):
-            invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
-        except RegistrationInvite.DoesNotExist:
-            pass
-        else:
-            invite_billing_group = invite.billing_group
-
         num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
         billing_period = self.get_billing_period()
-        billing_amount = self.get_invoice_amount(billing_period, invite_billing_group)
+        billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
 
         #  If there are no billing periods available... I guess don't include it.
         return render(request, self.template, {
@@ -239,116 +207,131 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
         if form.is_valid() and legal_form.is_valid():
 
-            """
-            # Attempt to charge the card
-            stripe.api_key = self.event.league.stripe_private_key
+            num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
             billing_period = self.get_billing_period()
-            billing_amount = self.get_invoice_amount(billing_period, invite_billing_group)
+            billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
 
-            # Create or Update Payment Method
-            try:
-                payment_method = UserPaymentTokenizedCard.objects.filter(user=request.user, league=self.event.league)
-            except PaymentMethod.DoesNotExist:
-                payment_method = UserPaymentTokenizedCard.objects.create(
-                    user=request.user,
-                    league=self.event.league,
-
-                )
-            if 
-
-
-            if billing_amount > 0:
-                # Create or Get Invoice
-
-                # Attempt to Charge Invoice
-
-                # Errors?
-
-
-                stripe.Charge.create(
-                  amount=billing_amount * 100,
-                  currency="usd",
-                  source=form.cleaned_data['stripe_token']
-                  description="Charge for jacob.martinez@example.com"
-                )
-            """
-
-            # Save registration data
-            registration_data = form.save(commit=False)
-            registration_data.user = request.user
-            registration_data.event = self.event
-            registration_data.league = self.event.league
-            registration_data.organization = self.event.league.organization
-
-            if request.session.get('register_invite_id', None):
-                registration_data.invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
-            except RegistrationInvite.DoesNotExist:
-                pass
-
-            registration_data.save()
-            # Save details to user profile
-            user = request.user
-            user.first_name = registration_data.contact_first_name
-            user.last_name = registration_data.contact_last_name
-            user.email = registration_data.contact_email
-            user.derby_name = registration_data.derby_name
-            user.derby_number = registration_data.derby_number
-            user.save()
-
-            # Update permissions
-            assign_perm("league_member", user, self.event.league)
-
-            # Save legal signatures
-            # This should already be validated in the dynamic form model
-            regex = re.compile('^Legal(\d+)$')
-            for field in legal_form.fields:
-                match = regex.match(str(field))
-                if match:
-                    LegalSignature.objects.create(
-                        user=user,
-                        document=LegalDocument.objects.get(pk=match.group(1)),
-                        league=self.event.league,
-                        event=self.event,
-                        registration=registration_data,
-                    )
-                # else:
-                #   I suppose the document could go away or not be found?
-                #    But probably not likely...
-
-            completed_time = timezone.now()
-
-            # Save registration invite
-            if registration_data.invite:
-                registration_data.invite.completed_date = completed_time
-                registration_data.invite.save()
+            if num_billing_periods == 1:
+                invoice_description = "{} Registration".format(self.event.name)
             else:
-                # Create the registration invite if it was a public invite
-                registration_data.invite = RegistrationInvite.objects.create(
-                    user=user,
-                    sent_date=completed_time,
-                    completed_date=completed_time,
-                    public_registration=True,
-                    email=user.email,
-                    event=self.event,
+                invoice_description = "{} Dues / Registration".format(self.billing_period.name)
+
+            # Create an invoice for this billing period
+            invoice = Invoice.objects.get_or_create(
+                user=request.user,
+                league=self.event.league,
+                billing_period=billing_period,
+                defaults={
+                    'invoice_amount': billing_amount,
+                    'invoice_date': timezone.now(),
+                    'autopay_disabled': True,
+                    'description': invoice_description,
+                }
+            )
+
+            card_profile = UserStripeCard.objects.get_or_create(
+                user=request.user,
+                league=self.event.league,
+            )
+            try:
+                card_profile.update_from_token(form.cleaned_data['stripe_token'])
+                card_profile.charge(invoice=invoice, send_receipt=False)
+            except stripe.error.CardError as e:
+                body = e.json_body
+                err = body.get('error', {})
+                messages.error(request, "<p>We were unable to charge your credit card.</p>\
+                    <p>Reason: {}</p>\
+                    <p>Please try again or contact us if you continue to have issues.</p>".format(
+                    err.get('message'))
                 )
+            except Exception as e:
+                body = e.json_body
+                err = body.get('error', {})
+                messages.error(request, "<p>Generic Error. Weird. We were unable to charge your credit card.</p>\
+                    <p>Reason: {}</p>\
+                    <p>Please try again or contact us if you continue to have issues.</p>".format(
+                    err.get('message'))
+                )
+            else:
+                # Card successfully saved.
+                # Save registration data.
+                registration_data = form.save(commit=False)
+                registration_data.user = request.user
+                registration_data.event = self.event
+                registration_data.league = self.event.league
+                registration_data.organization = self.event.league.organization
 
-            # Send email confirmation of registration
-            print("sending...")
-            #from pudb import set_trace; set_trace()
-            from rink.taskapp.celery import debug_task
-            debug_task.delay()
-            send_registration_confirmation.delay(registration_data.pk)
-            print("sent.")
+                try:
+                    if request.session.get('register_invite_id', None):
+                        registration_data.invite = RegistrationInvite.objects.get(
+                            pk=request.session['register_invite_id'])
+                except RegistrationInvite.DoesNotExist:
+                    pass
 
-            # Reset session data
-            if request.session.get('register_invite_id', None):
-                del request.session['register_invite_id']
-                request.session.modified = True
-            if request.session.get('register_event_id', None):
-                del request.session['register_event_id']
-                request.session.modified = True
+                registration_data.save()
+                # Save details to user profile
+                user = request.user
+                user.first_name = registration_data.contact_first_name
+                user.last_name = registration_data.contact_last_name
+                user.email = registration_data.contact_email
+                user.derby_name = registration_data.derby_name
+                user.derby_number = registration_data.derby_number
+                user.save()
 
-            return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug': self.event.slug}))
+                # Update permissions
+                assign_perm("league_member", user, self.event.league)
+
+                # Save legal signatures
+                # This should already be validated in the dynamic form model
+                regex = re.compile('^Legal(\d+)$')
+                for field in legal_form.fields:
+                    match = regex.match(str(field))
+                    if match:
+                        LegalSignature.objects.create(
+                            user=user,
+                            document=LegalDocument.objects.get(pk=match.group(1)),
+                            league=self.event.league,
+                            event=self.event,
+                            registration=registration_data,
+                        )
+                    # else:
+                    #   I suppose the document could go away or not be found?
+                    #    But probably not likely...
+
+                completed_time = timezone.now()
+
+                # Save registration invite
+                if registration_data.invite:
+                    registration_data.invite.completed_date = completed_time
+                    registration_data.invite.save()
+                else:
+                    # Create the registration invite if it was a public invite
+                    registration_data.invite = RegistrationInvite.objects.create(
+                        user=user,
+                        sent_date=completed_time,
+                        completed_date=completed_time,
+                        public_registration=True,
+                        email=user.email,
+                        event=self.event,
+                    )
+
+                # Send email confirmation of registration
+                print("sending...")
+                #from pudb import set_trace; set_trace()
+                from rink.taskapp.celery import debug_task
+                debug_task.delay()
+                send_registration_confirmation.delay(registration_data.pk)
+                print("sent.")
+
+                # Reset session data
+                if request.session.get('register_invite_id', None):
+                    del request.session['register_invite_id']
+                    request.session.modified = True
+                if request.session.get('register_event_id', None):
+                    del request.session['register_event_id']
+                    request.session.modified = True
+
+                return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug': self.event.slug}))
 
         #  If there are any errors with the email address field show this message
         #   if its a duplicate email address.
