@@ -266,6 +266,11 @@ class Invoice(models.Model):
     )
 
     invoice_date = models.DateField(
+        "Invoice Date",
+        help_text="The date this invoice was generated on.",
+    )
+
+    due_date = models.DateField(
         "Due Date",
         help_text="The date this invoice is due for payment or will be collected for auto payment.",
     )
@@ -600,7 +605,10 @@ class UserStripeCard(models.Model):
 
 @receiver(pre_delete, sender=BillingGroup)
 def delete_default_billing_group_for_league(sender, instance, *args, **kwargs):
-    if instance.default_group_for_league:
+    if instance.default_group_for_league and \
+        (BillingGroup.objects.exclude(pk=instance.pk).filter(league=instance.league).count() > 0 or \
+        BillingPeriodCustomPaymentAmount.objects.filter(group=instance).count() > 0):
+        
         raise ValidationError("You cannot delete the default Billing Group for a league. Please set another group as the default one first.")
 
 
