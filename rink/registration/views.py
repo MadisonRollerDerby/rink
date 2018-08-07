@@ -207,17 +207,13 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
         if form.is_valid() and legal_form.is_valid():
 
-            num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
+            #num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
             billing_period = self.get_billing_period()
             billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
-
-            if num_billing_periods == 1:
-                invoice_description = "{} Registration".format(self.event.name)
-            else:
-                invoice_description = "{} Dues / Registration".format(self.billing_period.name)
+            invoice_description = billing_period.get_invoice_description()
 
             # Create an invoice for this billing period
-            invoice = Invoice.objects.get_or_create(
+            invoice, created = Invoice.objects.get_or_create(
                 user=request.user,
                 league=self.event.league,
                 billing_period=billing_period,
@@ -229,7 +225,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 }
             )
 
-            card_profile = UserStripeCard.objects.get_or_create(
+            card_profile, created = UserStripeCard.objects.get_or_create(
                 user=request.user,
                 league=self.event.league,
             )

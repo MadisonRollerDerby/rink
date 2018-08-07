@@ -102,6 +102,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         return name
 
     @property
+    def legal_name(self):
+        if not self.first_name and not self.last_name:
+            return ""
+        return "{} {}".format(self.first_name, self.last_name)
+
+    @property
     def is_staff(self):
         "Is the user a member of staff?"
         # Simplest possible answer: All admins are staff

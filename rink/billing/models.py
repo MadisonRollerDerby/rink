@@ -120,7 +120,21 @@ class BillingPeriod(models.Model):
         if self.invoice_date > self.due_date:
             raise ValidationError("Invoice date needs occur before Due date. We cannot process payments before they are actually billed. Did you swap the invoice and due dates?")
 
-    def get_invoice_amount(self, billing_group=None):
+    def get_invoice_amount(self, billing_group=None, user=None):
+        if user and billing_group:
+            raise ValueError("Do not pass both billing_group and user to get_invoice_amount")
+      
+        if user:
+            try:
+                membership = BillingGroupMembership.objects.get(
+                    league=self.league,
+                    user=user
+                )
+            except BillingGroupMembership.DoesNotExist:
+                pass
+            else:
+                billing_group = membership.group
+
         if billing_group:
             try:
                 billing_schedule_obj = BillingPeriodCustomPaymentAmount.objects.get(
@@ -152,6 +166,51 @@ class BillingPeriod(models.Model):
         # the billing period/group through table doesn't have an entry.
         # I guess give them a free ride?
         return 0
+
+    def get_invoice_description(self):
+        num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
+
+        if num_billing_periods == 1:
+            return "{} Registration".format(self.event.name)
+        else:
+            return "{} Dues / Registration".format(self.name)
+
+    def generate_invoice(self, user):
+        invoice, created = Invoice.objects.get_or_create(
+            league=self.league,
+            billing_period=self,
+            user=user,
+            defaults={
+                'invoice_amount': self.get_invoice_amount(user=user),
+                'invoice_date': timezone.now(),
+                'due_date': self.due_date,
+                'description': self.get_invoice_description(),
+            }
+        )
+        return invoice
+
+
+class BillingGroupMembership(models.Model):
+    group = models.ForeignKey(
+        'billing.BillingGroup',
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return "{} - {} - {}".format(self.league.name, self.group.name, self.user)
+
+    class Meta:
+        unique_together = ['user', 'league']
 
 
 class BillingPeriodCustomPaymentAmount(models.Model):
@@ -279,12 +338,14 @@ class Invoice(models.Model):
         "Payment Date",
         help_text="The date this invoice was marked as paid.",
         blank=True,
+        null=True,
     )
 
     refund_date = models.DateTimeField(
         "Refund Date",
         help_text="The date this invoice was refunded.",
         blank=True,
+        null=True,
     )
 
     class Meta:
@@ -292,7 +353,7 @@ class Invoice(models.Model):
         ordering = ['invoice_date']
 
     def __str__(self):
-        #1234 - Billing Period - Event Name - League Name - $AMOUNT (STATUS)
+        #  1234 - Billing Period - Event Name - League Name - $AMOUNT (STATUS)
         return "#{} - {} - {} - {} - ${} ({})".format(
             self.pk,
             self.billing_period.name,
@@ -301,6 +362,45 @@ class Invoice(models.Model):
             self.invoice_date,
             self.status
         )
+
+    def pay(self, amount=None, processor="cash"):
+        if not any(processor in processor_choice for processor_choice in PAYMENT_PROCESSOR_CHOICES):
+            raise ValueError("Payment method not in PAYMENT_PROCESSOR_CHOICES: {}".format(processor))
+
+        if not amount:
+            amount=self.invoice_amount
+        if amount != self.invoice_amount:
+            raise ValueError("Payment amount cannot be different than invoice amount. We do not accept partial payments currently. ")
+
+        payment_date = timezone.now()
+        payment = Payment.objects.create(
+            user=self.user,
+            league=self.league,
+            processor=processor,
+            amount=amount,
+            payment_date=payment_date,
+        )
+
+        self.paid_amount = amount
+        self.status = 'paid'
+        self.payment = payment
+        self.paid_date = payment_date
+        self.save()
+
+        return payment
+
+    def is_paid(self):
+        if self.status == "paid":
+            return True
+        return False
+
+
+PAYMENT_PROCESSOR_CHOICES = [
+    ('cash', 'Cash'),
+    ('check', 'Check'),
+    ('stripe', 'Stripe'),
+    ('square', 'Square'),
+]
 
 
 class Payment(models.Model):
@@ -316,6 +416,8 @@ class Payment(models.Model):
 
     processor = models.CharField(
         "Payment Processor",
+        choices=PAYMENT_PROCESSOR_CHOICES,
+        default='cash',
         max_length=50,
         help_text="Name of the payment processor, or possibly Cash or Check."
     )
@@ -359,21 +461,25 @@ class Payment(models.Model):
     card_expire_month = models.IntegerField(
         "Credit/Debit Card Expiration Month",
         blank=True,
+        null=True,
     )
 
     card_expire_year = models.IntegerField(
         "Credit/Debit Card Expiration Year",
         blank=True,
+        null=True,
     )
 
     payment_date = models.DateTimeField(
         "Payment Date",
         blank=True,
+        null=True,
     )
 
     refund_date = models.DateTimeField(
         "Refund Date",
         blank=True,
+        null=True,
     )
 
     refund_amount = models.DecimalField(
@@ -392,7 +498,6 @@ class Payment(models.Model):
         blank=True
     )
 
-    @property
     def get_card(self):
         if not self.card_type:
             return None
@@ -413,8 +518,8 @@ class Payment(models.Model):
     def __str__(self):
         # MM/DD/YY - User - Processor - $AMOUNT - Transaction ID - Card Details
         card_details = ""
-        if self.get_card:
-            card_details = " - {}".self.get_card
+        if self.get_card():
+            card_details = " - {}".format(self.get_card())
         transaction_id = ""
         if self.transaction_id:
             transaction_id = " - {}".format(transaction_id)
@@ -423,14 +528,12 @@ class Payment(models.Model):
             self.payment_date.date(),
             self.user,
             self.processor,
-            self.payment_amount,
+            self.amount,
             transaction_id,
             card_details,
         )
 
     def refund(self, amount=None, refund_reason=""):
-        stripe.api_key = self.league.get_stripe_private_key()
-
         if amount:
             if amount > self.amount:
                 raise ValueError("Refund amount cannot be larger than the payment amount.")
@@ -439,10 +542,12 @@ class Payment(models.Model):
         else:
             amount = self.amount
 
-        refund = stripe.Refund.Create(
-            charge=self.transaction_id,
-            amount=int(amount * 100.0),
-        )
+        if self.processor == 'stripe':
+            stripe.api_key = self.league.get_stripe_private_key()
+            refund = stripe.Refund.Create(
+                charge=self.transaction_id,
+                amount=int(amount * 100.0),
+            )
 
         self.refund_amount = amount
         self.refund_date = timezone.now()
@@ -500,17 +605,36 @@ class UserStripeCard(models.Model):
     card_expire_month = models.IntegerField(
         "Credit/Debit Card Expiration Month",
         blank=True,
+        null=True,
     )
 
     card_expire_year = models.IntegerField(
         "Credit/Debit Card Expiration Year",
         blank=True,
+        null=True,
     )
 
-    @property 
+    card_last_update_date = models.DateTimeField(
+        "Last time credit card was updated",
+        blank=True,
+        null=True,
+    )
+
+    card_last_charge_date = models.DateTimeField(
+        "Last time credit card was updated",
+        blank=True,
+        null=True,
+    )
+
+    card_last_fail_date = models.DateTimeField(
+        "Last time credit card was updated",
+        blank=True,
+        null=True,
+    )
+
     def get_card(self):
         if not self.card_type:
-            return None
+            return "<no card data>"
         return "{} ending {}, expires {}/{}".format(
             self.card_type,
             self.card_last4,
@@ -531,29 +655,37 @@ class UserStripeCard(models.Model):
         if not self.customer_id:
             # Need to create a stripe customer profile
             customer = stripe.Customer.create(
-                description=self.user.name,
+                description=self.user.legal_name,
                 email=self.user.email,
                 source=token,
             )
             self.customer_id = customer.id
         else:
-            customer = stripe.Customer.retreive(self.customer_id)
-            customer.description = self.user.name,
-            customer.email = self.user.email,
+            customer = stripe.Customer.retrieve(self.customer_id)
+            if self.user.legal_name == "":
+                customer.description = None
+            else:
+                customer.description = self.user.legal_name
+            customer.email = self.user.email
+            customer.source = token
             customer.save()
+
+        self.card_type = customer.active_card.brand
+        self.card_last4 = customer.active_card.last4
+        self.card_expire_month = customer.active_card.exp_month
+        self.card_expire_year = customer.active_card.exp_year
+        self.card_last_update_date = timezone.now()
+        self.card_last_charge_date = None
+        self.card_last_fail_date = None
+        self.save()
 
     def charge(self, invoice=None, invoices=[], send_receipt=True):
         # Charge the customer for an invoice or a list of invoices.
         # Returns a payment object if the payment is successful.
         # send_receipt can be useful in other cases where we  don't want to send
         # yet another email, such as registration.
-        if not self.customer_id:
-            raise ValueError("Cannot charge card, this user does not have a card saved to Stripe.")
-
         if invoice and invoices:
             raise ValueError("You cannot charge both one invoice and multiple invoices at the same time.")
-
-        stripe.api_key = self.league.get_stripe_private_key()
 
         if invoice:
             invoices = [invoice, ]
@@ -568,37 +700,60 @@ class UserStripeCard(models.Model):
                 invoice.pk, invoice.billing_period.name, invoice.billing_period.event.name))
             payment_total += int(invoice.invoice_amount * 100)
 
-        charge = stripe.Charge.create(
-            amount=payment_total,
-            customer=self.customer_id,
-            description=invoice_description.join(', ')
-        )
+        payment_date = timezone.now()
 
-        balance = stripe.BalanceTransaction.retreive(charge.balance_transaction)
+        if payment_total > 0:
+            stripe.api_key = self.league.get_stripe_private_key()
+            if not self.customer_id:
+                raise ValueError("Cannot charge card, this user does not have a card saved to Stripe.")
 
-        payment = Payment.objects.create(
-            user=self.user,
-            league=self.league,
-            processor="stripe",
-            transaction_id=charge.id,
-            amount=Decimal(charge.amount / 100.0),
-            fee=Decimal(balance.fee / 100.0),
-            card_type=charge.source.brand,
-            card_last4=charge.source.last4,
-            card_expire_month=charge.source.exp_month,
-            card_expire_year=charge.source.exp_year,
-            payment_date=timezone.now(),
-        )
+            if not invoice_description:
+                invoice_description = None
+
+            charge = stripe.Charge.create(
+                amount=payment_total,
+                currency='usd',
+                customer=self.customer_id,
+                description=', '.join(invoice_description),
+            )
+
+            self.card_last_charge_date = timezone.now()
+            self.save()
+
+            balance = stripe.BalanceTransaction.retrieve(charge.balance_transaction)
+
+            payment = Payment.objects.create(
+                user=self.user,
+                league=self.league,
+                processor="stripe",
+                transaction_id=charge.id,
+                amount=Decimal(charge.amount / 100.0),
+                fee=Decimal(balance.fee / 100.0),
+                card_type=charge.source.brand,
+                card_last4=charge.source.last4,
+                card_expire_month=charge.source.exp_month,
+                card_expire_year=charge.source.exp_year,
+                payment_date=payment_date,
+            )
+        else:
+            payment = Payment.objects.create(
+                user=self.user,
+                league=self.league,
+                processor="cash",
+                amount=0.00,
+                payment_date=payment_date,
+            )
 
         for invoice in invoices:
             invoice.paid_amount = invoice.invoice_amount  # oh, okay?
-            invoice.status = 'paid',
-            invoice.payment = payment,
-            invoice.paid_date = timezone.now()
+            invoice.status = 'paid'
+            invoice.payment = payment
+            invoice.paid_date = payment_date
             invoice.save()
 
-        if send_receipt:
-            email_payment_receipt(payment.id)
+        #if payment_total > 0:
+        #if send_receipt:
+        #    email_payment_receipt(payment.id)
 
         return payment
 
@@ -608,7 +763,7 @@ def delete_default_billing_group_for_league(sender, instance, *args, **kwargs):
     if instance.default_group_for_league and \
         (BillingGroup.objects.exclude(pk=instance.pk).filter(league=instance.league).count() > 0 or \
         BillingPeriodCustomPaymentAmount.objects.filter(group=instance).count() > 0):
-        
+
         raise ValidationError("You cannot delete the default Billing Group for a league. Please set another group as the default one first.")
 
 
