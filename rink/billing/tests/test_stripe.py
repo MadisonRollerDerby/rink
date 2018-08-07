@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.test import TransactionTestCase
 from django.utils import timezone
-from datetime import timedelta
 from unittest.mock import patch
 
 from .factories import (
@@ -12,8 +11,105 @@ from billing.models import UserStripeCard, BillingPeriodCustomPaymentAmount
 from league.models import League
 
 import stripe
-from stripe.error import InvalidRequestError
+from stripe.error import InvalidRequestError, CardError
 stripe.api_key = settings.STRIPE_TEST_SECRET
+
+
+"""
+Here are the valid test Stripe cards:
+
+4242424242424242    tok_visa
+4000056655665556    tok_visa_debit
+5555555555554444    tok_mastercard
+5200828282828210    tok_mastercard_debit
+5105105105105100    tok_mastercard_prepaid
+378282246310005     tok_amex
+6011111111111117    tok_discover
+30569309025904      tok_diners
+3566002020360505    tok_jcb
+6200000000000005    tok_unionpay
+
+
+The following failures we do check:
+
+4000000000000101
+tok_cvcCheckFail
+    If a CVC number is provided, the cvc_check fails. If your account
+    is blocking payments that fail CVC code validation the charge
+    is declined.
+
+4000000000000341
+tok_chargeCustomerFail
+    Attaching this card to a Customer object succeeds, but attempts 
+    to charge the customer fail.
+
+4000000000000002
+tok_chargeDeclined
+    Charge is declined with a card_declined code.
+
+4000000000009995
+tok_chargeDeclinedInsufficientFunds
+    Charge is declined with a card_declined code. The decline_code
+    attribute is insufficient_funds.
+
+4100000000000019
+tok_chargeDeclinedFraudulent
+    Results in a charge with a risk level of highest. The charge is
+    blocked as it's considered fraudulent.
+
+4000000000000127
+tok_chargeDeclinedIncorrectCvc
+    Charge is declined with an incorrect_cvc code.
+
+4000000000000069
+tok_chargeDeclinedExpiredCard
+    Charge is declined with an expired_card code.
+
+4000000000000119
+tok_chargeDeclinedProcessingError
+    Charge is declined with a processing_error code.
+
+(no token)
+4242424242424241
+    Charge is declined with an incorrect_number code as the card
+    number fails the Luhn check.
+
+4000000000005126
+tok_refundFail
+    Charge succeeds but refunding a captured charge fails with a 
+    failure_reason of expired_or_canceled_card.
+
+
+-------------------------------------
+
+
+Here's a list of things we DO NOT check:
+
+4000000000000010
+tok_avsFail     
+    The address_line1_check and address_zip_check verifications fail.
+    If your account is blocking payments that fail ZIP code
+    validation the charge is declined.
+
+4000000000000028
+tok_avsLine1Fail
+    Charge succeeds but the address_line1_check verification fails.
+
+4000000000000036
+tok_avsZipFail
+    The address_zip_check verification fails. If your account is
+    blocking payments that fail ZIP code validation the charge is declined.
+
+4000000000000044
+tok_avsUnchecked
+    Charge succeeds but the address_zip_check and address_line1_check 
+    verifications are both unavailable.
+
+4000000000009235
+tok_riskLevelElevated
+    Results in a charge with a risk_level of elevated.
+
+"""
 
 
 # Mock the private key get method for testing purposes
@@ -110,7 +206,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
     def test_charge_stripe_zero_success(self):
         # Create an invoice with a zero balance and pay it.
         # This should be handled as a cash payment.
-        bp = BillingPeriodFactory(league=self.league,)
+        bp = BillingPeriodFactory(league=self.league)
         bpc = BillingPeriodCustomPaymentAmount.objects.create(
             group=self.group,
             period=bp,
@@ -134,23 +230,49 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
         invoice.delete()
         bpc.delete()
         bp.delete()
+    
+    def test_stripe_cvc_check_fail(self):
+        stripe_test_fail_tokens = [
+            #('tok_cvcCheckFail', 'charge', 'CVC Check Fail'),
+            ('tok_chargeCustomerFail', 'charge', 'Attach to customer succeeds, but charges fail.'),
+            ('tok_chargeDeclined', 'attach', 'Charge declined with card_declined code.'),
+            ('tok_chargeDeclinedInsufficientFunds', 'attach', 'Charge declined with card_declined and insufficent funds.'),
+            ('tok_chargeDeclinedFraudulent', 'charge', 'Fraudulent transaction'),
+            ('tok_chargeDeclinedIncorrectCvc', 'attach', 'Wrong CVC code'),
+            ('tok_chargeDeclinedExpiredCard', 'attach', 'Expired card'),
+            ('tok_chargeDeclinedProcessingError', 'attach', 'Processing error'),
+        ]
 
+        for token, expected_error, reason in stripe_test_fail_tokens:
+            print(reason)
+
+            if expected_error == "attach":
+                with self.assertRaises(CardError):
+                    self.usc.update_from_token(token)
+                continue
+            else:
+                self.usc.update_from_token(token)
+
+            self.usc.refresh_from_db()
+            bp = BillingPeriodFactory(league=self.league)
+            invoice = bp.generate_invoice(user=self.user)
+
+            if expected_error == "charge":
+                with self.assertRaises(CardError):
+                    payment = self.usc.charge(invoice=invoice)
+                continue
+            else:
+                payment = self.usc.charge(invoice=invoice)
+
+            invoice.delete()
+            bp.delete()
+    
 
     """
-
     def test_send_receipt(self):
-
-    def 
-
-    def test_charge_stripe_failures(self):
 
     def test_charge_stripe_multiple_invoices(self):
 
-    def test_cash_payment(self):
-
-    def test_check_payment(self):
-
-    def test_square_payment(self):
 
     def test_parital_refund_success(self):
 
