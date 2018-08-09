@@ -3,9 +3,7 @@
 
 {% block content %}
 
-{% include "registration/event_admin_menu.html" %}
-
-<h3>Change Registration Settings</h3>
+{% include "registration/event_admin_menu.html" with section_title="Settings" %}
 
 {% crispy event_form %}
 

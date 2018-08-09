@@ -8,12 +8,12 @@ from django.views import View
 from django.views.generic import ListView
 
 from league.models import League
-from registration.models import RegistrationData
+from registration.models import RegistrationData, RegistrationEvent
 from .forms import LegalDocumentAdminForm
 from .models import LegalDocument, LegalSignature
 
-# Publically accessable documents
 
+# Publically accessable documents
 class LegalDocumentPublicView(View):
     def get(self, request, document_slug, league_slug):
         return render(request, 'legal/public_document.html', {
@@ -22,11 +22,20 @@ class LegalDocumentPublicView(View):
                 slug=document_slug,
                 league=get_object_or_404(League, slug=league_slug),
             ),
-        })         
+        })
+
+
+class LegalDocumentEventView(View):
+    def get(self, request, event_slug, league_slug):
+        event = get_object_or_404(RegistrationEvent,
+            slug=event_slug, league__slug=league_slug)
+
+        return render(request, 'legal/event_documents.html', {
+            'event': event,
+        })
 
 
 # User Classes
-
 class UserLegalSignaturesListView(ListView):
     def get(self, request):
         return render(request, 'legal/user_signed_forms.html', {
@@ -45,7 +54,6 @@ class UserLegalSignaturesListView(ListView):
 
 
 # Admin Stuff Below
-
 class LegalDocumentList(ListView):
     model = LegalDocument
     template_name = 'legal/admin_document_list.html'

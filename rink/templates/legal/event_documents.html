@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2 id="doclist">Legal Forms for {{ event.name }}</h2>
+
+{% if not event.legal_forms %}
+    No forms are attached to this event. There may be forms required to be signed on paper.
+{% else %}
+
+<p>This event requires agreement to the following {{ event.legal_forms.all.count }} documents:</p>
+
+<div class="list-group">
+        {% for document in event.legal_forms.all %}
+        <a class="list-group-item" href="#doc{{ document.id }}">
+            {{ document.name }} - {{ document.date }}
+        </a>
+        {% endfor %}
+</div>
+
+
+    <div style="height:30px"></div>
+
+
+    {% for document in event.legal_forms.all %}
+    <div class="container" style="margin-bottom:50px">
+        <div class="row">
+            <h4 id="doc{{ document.id }}">{{ document.name }} - {{ document.date }}</h4>
+        </div>
+        <div class="row">
+            {{ document.content_html|safe }}
+        </div>
+        <div class="row">
+            <a href="#doclist" class="text-muted" style="text-decoration:underline">Back to Document List</a>
+        </div>
+    </div>
+    {% endfor %}
+
+{% endif %}
+
+{% endblock %}

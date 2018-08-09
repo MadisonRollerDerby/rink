@@ -38,12 +38,32 @@ class RegistrationEvent(models.Model):
     description = models.TextField(
         "Event Description",
         blank=True,
-        help_text="Blurb of text shown at the top of the registration form."
+        help_text="Blurb of text shown at the <strong>top of the registration form</strong> and <strong>included in the registration confirmation email.</strong> You can use <a target='_blank' href='https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet'>Markdown Code</a> to format the document."
+    )
+
+    legal_blurb = models.TextField(
+        "Legal Blurb",
+        blank=True,
+        help_text="Blurb of text shown in the <strong>legal section</strong> and <strong>included in the registration confirmation email.</strong> You can use <a target='_blank' href='https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet'>Markdown Code</a> to format the document."
+    )
+
+    payment_blurb = models.TextField(
+        "Payment Blurb",
+        blank=True,
+        help_text="Blurb of text shown in the <strong>payment section</strong> and <strong>included in the registration confirmation email.</strong> You can use <a target='_blank' href='https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet'>Markdown Code</a> to format the document."
     )
 
     @property
     def description_html(self):
         return markdownify(self.description)
+
+    @property
+    def legal_blurb_html(self):
+        return markdownify(self.legal_blurb)
+
+    @property
+    def payment_blurb_html(self):
+        return markdownify(self.payment_blurb)
 
     start_date = models.DateField(
         "Start Date",

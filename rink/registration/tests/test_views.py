@@ -13,6 +13,7 @@ from .factories import (
     RegistrationDataFactoryMinimumFields, RegistrationDataFactory,
 )
 from .utils import RegistrationEventTest
+from billing.tests.factories import BillingGroupFactory, BillingPeriodFactory
 from league.tests.factories import InsuranceTypeFactory
 from legal.tests.factories import LegalDocumentFactory
 from rink.utils.testing import RinkViewTest, RinkViewLiveTest, copy_model_to_dict
@@ -425,6 +426,36 @@ class TestRegisteShowFormLoggedIn(RegistrationEventTest, RinkViewLiveTest, LiveS
         invite.delete()
         self.url = 'register:register_event_uuid'
         self._url_kwargs = {'event_slug': self.event.slug}
+
+    dont_quit = True
+    @pytest.mark.now
+    def test_register_with_stripe_success(self):
+        group = BillingGroupFactory(league=self.league)
+        bp = BillingPeriodFactory(
+            league=self.league,
+            event=self.event,
+            # For the billing period to be selected by get_billing_context in
+            # the view, we need to either have a future start date or an end
+            # date in the future. Kinda force something like that now.
+            start_date=timezone.now() + timedelta(days=30)
+        )
+
+        registration_data = self.registration_data_factory()
+        form = RegistrationDataForm(
+            logged_in_user_id=self.user.pk, instance=registration_data)
+
+        self.sign_in_to_register()
+        self.wd.key_form_fields(form)
+        for doc in self.legal_documents:
+            self.wd.checkbox("Legal{}".format(doc.pk))
+
+        #import pdb; pdb.set_trace()
+        self.submit_registration_form()
+
+        group.delete()
+        bp.delete()
+
+
 
 
 class TestRegisterRegisterDonePublic(RegistrationEventTest, RinkViewTest, TransactionTestCase):

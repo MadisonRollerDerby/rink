@@ -10,6 +10,7 @@ from django.views import View
 from guardian.shortcuts import assign_perm
 from guardian.mixins import LoginRequiredMixin
 import re
+from stripe.error import CardError
 
 from .forms import RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
 from .models import RegistrationEvent, RegistrationInvite, RegistrationData
@@ -30,13 +31,24 @@ def registration_error(request, event, error_code):
 
 class RegistrationView(View):
     def dispatch(self, request, *args, **kwargs):
-        self.event = get_object_or_404(RegistrationEvent, slug=kwargs['event_slug'])
-        return super(RegistrationView, self).dispatch(request, *args, **kwargs)
+        self.event = get_object_or_404(
+            RegistrationEvent,
+            slug=kwargs['event_slug'],
+            league__slug=kwargs['league_slug'],
+        )
+        return super().dispatch(request, *args, **kwargs)
 
 
 class RegisterBegin(RegistrationView):
-    def get(self, request, event_slug, invite_key=None):
+    def get(self, request, league_slug, event_slug, invite_key=None):
         invite = None
+
+        # Check if we're in form preview mode
+        preview_mode = False
+        if request.user.is_authenticated and \
+            ('org_admin' in request.session.get('organization_permissions', []) or \
+             'registration_manager' in request.session.get('league_permissions', [])):
+            preview_mode = True
 
         if invite_key:
             invite = get_object_or_404(RegistrationInvite, uuid=invite_key)
@@ -58,10 +70,16 @@ class RegisterBegin(RegistrationView):
         else:
             # Check if event is available to be registered by the public
             if self.event.public_registration_open_date and self.event.public_registration_open_date > timezone.now():
-                return registration_error(request, self.event, "registration_not_yet_open")
+                if preview_mode:
+                    messages.info(request, "This form is currently not yet open for registration. You are logged in as an administrator, so you are allowed to view it.")
+                else:
+                    return registration_error(request, self.event, "registration_not_yet_open")
 
             if self.event.public_registration_closes_date and self.event.public_registration_closes_date < timezone.now():
-                return registration_error(request, self.event, "registration_closed")
+                if preview_mode:
+                    messages.info(request, "This form is currently closed to registration. You are logged in as an administrator, so you are allowed to view it.")
+                else:
+                    return registration_error(request, self.event, "registration_closed")
 
         request.session['register_event_id'] = self.event.pk
         if invite:
@@ -69,21 +87,23 @@ class RegisterBegin(RegistrationView):
 
         if request.user.is_authenticated:
             # If logged in, go to the registration form
-            return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug': self.event.slug}))
+            return HttpResponseRedirect(reverse("register:show_form",
+                kwargs={'event_slug': self.event.slug, 'league_slug': self.event.league.slug}))
         else:
             # If not logged in, user needs to create an account
             messages.info(request, "Please create an account to register for '{}'".format(self.event.name))
-            return HttpResponseRedirect(reverse("register:create_account", kwargs={'event_slug': self.event.slug}))
+            return HttpResponseRedirect(reverse("register:create_account", 
+                kwargs={'event_slug': self.event.slug, 'league_slug': self.event.league.slug}))
 
 
 class RegisterCreateAccount(RegistrationView):
     template = 'registration/register_create_account.html'
 
-    def get(self, request, event_slug):
+    def get(self, request, event_slug, league_slug):
         form = RegistrationSignupForm()
         return render(request, self.template, {'form': form, 'event': self.event})
 
-    def post(self, request, event_slug):
+    def post(self, request, event_slug, league_slug):
         form = RegistrationSignupForm(request.POST)
         if form.is_valid():
             user = form.save(league=self.event.league)
@@ -107,7 +127,8 @@ class RegisterCreateAccount(RegistrationView):
                 invite.user = user
                 invite.save()
 
-            return HttpResponseRedirect(reverse("register:show_form", kwargs={'event_slug': self.event.slug}))
+            return HttpResponseRedirect(reverse("register:show_form",
+                kwargs={'event_slug': self.event.slug, 'league_slug': self.event.league.slug}))
 
         return render(request, self.template, {'form': form, 'event': self.event})
 
@@ -138,12 +159,25 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         try:
             if request.session.get('register_invite_id', None):
                 invite = RegistrationInvite.objects.get(pk=request.session['register_invite_id'])
+            else:
+                return None
         except RegistrationInvite.DoesNotExist:
             return None
         else:
             return invite.billing_group
 
-    def get(self, request, event_slug):
+    def get_billing_contexts(self, request):
+        num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
+        billing_period = self.get_billing_period()
+        billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
+        return (num_billing_periods, billing_period, billing_amount)
+
+    def get(self, request, event_slug, league_slug):
+        preview_mode = False
+        preview_mode_disable_button = False
+        if 'org_admin' in request.session['organization_permissions'] or \
+                'registration_manager' in request.session['league_permissions']:
+            preview_mode = True
 
         # Check if the user has already registered
         try:
@@ -151,7 +185,11 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         except RegistrationData.DoesNotExist:
             pass
         else:
-            return registration_error(request, self.event, "already_registered")
+            if preview_mode:
+                messages.info(request, "<strong>You have already registered.</strong> You are currently logged in as an administrator. You are allowed to preview this form to review changes to it.")
+                preview_mode_disable_button = True
+            else:
+                return registration_error(request, self.event, "already_registered")
 
         # Check if user has some registration data we can already use
         try:
@@ -182,14 +220,12 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
         # Legal documents that need to be agreed to
         if self.event.legal_forms.count() > 0:
-            legal_form = LegalDocumentAgreeForm(event=self.event)
+            legal_form = LegalDocumentAgreeForm()
         else:
             legal_form = None
 
         # Get Billing Period
-        num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
-        billing_period = self.get_billing_period()
-        billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
+        num_billing_periods, billing_period, billing_amount = self.get_billing_contexts(request)
 
         #  If there are no billing periods available... I guess don't include it.
         return render(request, self.template, {
@@ -199,17 +235,16 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             'billing_period': billing_period,
             'billing_amount': billing_amount,
             'num_billing_periods': num_billing_periods,
+            'preview_mode_disable_button': preview_mode_disable_button,
         })
 
-    def post(self, request, event_slug):
+    def post(self, request, event_slug, league_slug):
         form = RegistrationDataForm(logged_in_user_id=request.user.pk, data=request.POST)
-        legal_form = LegalDocumentAgreeForm(event=self.event, data=request.POST)
+        legal_form = LegalDocumentAgreeForm(data=request.POST)
+
+        num_billing_periods, billing_period, billing_amount = self.get_billing_contexts(request)
 
         if form.is_valid() and legal_form.is_valid():
-
-            #num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
-            billing_period = self.get_billing_period()
-            billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
             invoice_description = billing_period.get_invoice_description()
 
             # Create an invoice for this billing period
@@ -220,6 +255,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 defaults={
                     'invoice_amount': billing_amount,
                     'invoice_date': timezone.now(),
+                    'due_date': billing_period.due_date,
                     'autopay_disabled': True,
                     'description': invoice_description,
                 }
@@ -232,7 +268,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             try:
                 card_profile.update_from_token(form.cleaned_data['stripe_token'])
                 card_profile.charge(invoice=invoice, send_receipt=False)
-            except stripe.error.CardError as e:
+            except CardError as e:
                 body = e.json_body
                 err = body.get('error', {})
                 messages.error(request, "<p>We were unable to charge your credit card.</p>\
@@ -240,14 +276,12 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                     <p>Please try again or contact us if you continue to have issues.</p>".format(
                     err.get('message'))
                 )
-            except Exception as e:
-                body = e.json_body
-                err = body.get('error', {})
-                messages.error(request, "<p>Generic Error. Weird. We were unable to charge your credit card.</p>\
-                    <p>Reason: {}</p>\
-                    <p>Please try again or contact us if you continue to have issues.</p>".format(
-                    err.get('message'))
-                )
+            #except Exception as e:
+            #    messages.error(request, "<p>Generic Error. Weird. We were unable to charge your credit card.</p>\
+            #        <p>Reason: {}</p>\
+            #       <p>Please try again or contact us if you continue to have issues.</p>".format(
+            #        str(e))
+            #    )
             else:
                 # Card successfully saved.
                 # Save registration data.
@@ -278,21 +312,14 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 assign_perm("league_member", user, self.event.league)
 
                 # Save legal signatures
-                # This should already be validated in the dynamic form model
-                regex = re.compile('^Legal(\d+)$')
-                for field in legal_form.fields:
-                    match = regex.match(str(field))
-                    if match:
-                        LegalSignature.objects.create(
-                            user=user,
-                            document=LegalDocument.objects.get(pk=match.group(1)),
-                            league=self.event.league,
-                            event=self.event,
-                            registration=registration_data,
-                        )
-                    # else:
-                    #   I suppose the document could go away or not be found?
-                    #    But probably not likely...
+                for document in self.event.legal_forms.all():
+                    LegalSignature.objects.create(
+                        user=user,
+                        document=document,
+                        league=self.event.league,
+                        event=self.event,
+                        registration=registration_data,
+                    )
 
                 completed_time = timezone.now()
 
@@ -312,12 +339,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                     )
 
                 # Send email confirmation of registration
-                print("sending...")
-                #from pudb import set_trace; set_trace()
-                from rink.taskapp.celery import debug_task
-                debug_task.delay()
                 send_registration_confirmation.delay(registration_data.pk)
-                print("sent.")
 
                 # Reset session data
                 if request.session.get('register_invite_id', None):
@@ -327,7 +349,12 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                     del request.session['register_event_id']
                     request.session.modified = True
 
-                return HttpResponseRedirect(reverse("register:done", kwargs={'event_slug': self.event.slug}))
+                return HttpResponseRedirect(
+                    reverse("register:done",
+                        kwargs={
+                            'event_slug': self.event.slug,
+                            'league_slug': self.event.league.slug
+                        }))
 
         #  If there are any errors with the email address field show this message
         #   if its a duplicate email address.
@@ -343,15 +370,18 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                         reverse('account_reset_password'),
                 ))
 
-        return render(
-            request,
-            self.template,
-            {'form': form, 'legal_form': legal_form, 'event': self.event}
-        )
+        return render(request, self.template, {
+            'form': form,
+            'legal_form': legal_form,
+            'event': self.event,
+            'billing_period': billing_period,
+            'billing_amount': billing_amount,
+            'num_billing_periods': num_billing_periods,
+        })
 
 
 class RegisterDone(LoginRequiredMixin, RegistrationView):
     template = 'registration/register_done.html'
 
-    def get(self, request, event_slug):
+    def get(self, request, event_slug, league_slug):
         return render(request, self.template, {'event': self.event})

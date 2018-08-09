@@ -2,9 +2,6 @@
 invite_ajax_url = '{% url "registration:event_admin_invites" event_slug=event.slug %}';
 </script>
 
-<h5>Invites Sent</h5>
-
-
 {% if invites_waiting > 0 %}
     <h6><span class="badge badge-pill badge-primary">{{ invites_waiting }}</span> Pending Invites</h6>
 {% endif %}

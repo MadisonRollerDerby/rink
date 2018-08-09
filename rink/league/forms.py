@@ -12,34 +12,53 @@ from .models import Organization, League
 from users.models import User
 
 
-class LeagueForm(forms.ModelForm):
+class LeagueSettingsBaseForm(object):
+    def __init__(self, *args, **kwargs):
+        self.helper = FormHelper()
+        super().__init__(*args, **kwargs)
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class LeagueNameForm(LeagueSettingsBaseForm, forms.ModelForm):
     class Meta:
         model = League
         fields = [
-            'name', 
+            'name',
             'logo',
             'short_name',
+        ]
 
+
+class LeagueBillingForm(LeagueSettingsBaseForm, forms.ModelForm):
+    class Meta:
+        model = League
+        fields = [
             'default_payment_due_day',
             'default_invoice_day_diff',
-            'stripe_private_key', 
-            'stripe_public_key', 
+            'stripe_private_key',
+            'stripe_public_key',
+        ]
 
+
+class LeagueRegistrationForm(LeagueSettingsBaseForm, forms.ModelForm):
+    class Meta:
+        model = League
+        fields = [
             'default_address_state',
             'default_insurance_type',
+        ]
 
+
+class LeagueEmailForm(LeagueSettingsBaseForm, forms.ModelForm):
+    class Meta:
+        model = League
+        fields = [
             'email_from_name',
             'email_from_address',
             'email_cc_address',
             'email_header',
             'email_footer',
         ]
-
-    def __init__(self, *args, **kwargs):
-        self.helper = FormHelper()
-        super(LeagueForm, self).__init__(*args, **kwargs)
-        self.helper.add_input(Submit('submit', 'Submit'))
-
 
 
 class PermissionsForm(forms.Form):

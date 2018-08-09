@@ -16,9 +16,8 @@ app = Celery(
     #redis_socket_connect_timeout=10,
     #redis_socket_timeout=8,
     broker_connection_timeout=9,
-
-
-    #broker_url="amqp://guest:guest@localhost:5672/test_rink",
+    broker="amqp://guest:guest@localhost:5672/test_rink",
+    backend="amqp://guest:guest@localhost:5672/test_rink",
 
     #broker="redis://",
     #broker_transport="redis",
@@ -41,8 +40,29 @@ class CeleryConfig(AppConfig):
         #app.config_from_object('django.conf:settings', namespace='CELERY')
         installed_apps = [app_config.name for app_config in apps.get_app_configs()]
         app.autodiscover_tasks(lambda: installed_apps, force=True)
+        
+app.conf.task_always_eager = True
 
 
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')  # pragma: no cover
+
+
+#. https://stackoverflow.com/questions/46530784/make-django-test-case-database-visible-to-celery/46564964#46564964
+@app.task(name='celery.ping')
+def ping():
+    # type: () -> str
+    """Simple task that just returns 'pong'."""
+    return 'pong'
+
+from django.core import mail
+from django.conf import settings
+@app.task(bind=True)
+def get_outbox(self):
+    print(settings.EMAIL_BACKEND)
+    print(mail.outbox)
+    return mail.outbox
+
+
+

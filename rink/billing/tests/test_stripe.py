@@ -1,7 +1,10 @@
 from django.conf import settings
+from django.core import mail
 from django.test import TransactionTestCase
 from django.utils import timezone
+import pytest
 from unittest.mock import patch
+from unittest import skip
 
 from .factories import (
     BillingPeriodFactory, BillingGroupFactory, BillingGroupMembershipFactory,
@@ -12,6 +15,7 @@ from league.models import League
 
 import stripe
 from stripe.error import InvalidRequestError, CardError
+
 stripe.api_key = settings.STRIPE_TEST_SECRET
 
 
@@ -116,6 +120,7 @@ tok_riskLevelElevated
 def override_get_stripe_private_key(self):
     return settings.STRIPE_TEST_SECRET
 
+#@pytest.mark.usefixtures("celery_worker")
 @patch.object(League, 'get_stripe_private_key', override_get_stripe_private_key)
 class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCase):
     def setUp(self):
@@ -177,6 +182,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
         with self.assertRaises(InvalidRequestError):
             usc.update_from_token("tok_a39x8vjdja")
 
+    #@pytest.mark.celery
     def test_charge_stripe_success(self):
         usc = self.usc
         usc.update_from_token("tok_visa")  # Visa card, successful charge and attach
@@ -198,6 +204,10 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
         self.assertEqual(payment.card_expire_year, usc.card_expire_year)
         self.assertTrue(payment.payment_date)
         self.assertEqual(invoice.status, 'paid')
+
+        #self.assertEqual(len(mail.outbox), 1)
+        #self.assertIn('{} -- {} Registration for {}'.format(
+        #   event2.name, event2.league.name), mail.outbox[1].subject, self.user)
 
         payment.delete()
         invoice.delete()
@@ -267,18 +277,57 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
             invoice.delete()
             bp.delete()
     
+    def test_full_refund(self):
+        self.usc.update_from_token("tok_visa")  # Visa card, successful charge and attach
+        self.usc.refresh_from_db()
+
+        bp = BillingPeriodFactory(league=self.league)
+        invoice = bp.generate_invoice(user=self.user)
+        payment = self.usc.charge(invoice=invoice)
+
+        payment.refund()
+        payment.refresh_from_db()
+        invoice.refresh_from_db()
+
+        self.assertEqual(invoice.status, 'refunded')
+        self.assertEqual(invoice.refunded_amount, payment.amount)
+        self.assertTrue(invoice.refund_date)
+
+        self.assertEqual(payment.refund_amount, payment.amount)
+        self.assertEqual(payment.refund_date, invoice.refund_date)
+        self.assertFalse(payment.refund_reason)
+
+        stripe_payment = stripe.Charge.retrieve(payment.transaction_id)
+
+        self.assertTrue(stripe_payment.refunded)
+        self.assertEqual(stripe_payment.refunds[0].amount, int(payment.amount * 100))
+        self.assertEqual(stripe_payment.refunds[0].status, "succeeded")
+
+    @skip("Needs to be converted to a webhook https://stripe.com/docs/refunds")
+    def test_failed_refund(self):
+        self.usc.update_from_token("tok_refundFail")
+        self.usc.refresh_from_db()
+
+        bp = BillingPeriodFactory(league=self.league)
+        invoice = bp.generate_invoice(user=self.user)
+        payment = self.usc.charge(invoice=invoice)
+
+        #with self.assertRaises(CardError):
+        payment.refund()
+
+        stripe_payment = stripe.Charge.retrieve(payment.transaction_id)
+        self.assertFalse(stripe_payment.refunded)
 
     """
     def test_send_receipt(self):
 
     def test_charge_stripe_multiple_invoices(self):
 
+    def test_parital_refund_success(self):
 
     def test_parital_refund_success(self):
 
     def test_partial_refund_failure(self):
-
-    def test_full_refund(self):
 
     def test_already_refunded(self):
 

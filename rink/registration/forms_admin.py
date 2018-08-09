@@ -37,60 +37,63 @@ class RegistrationAdminEventForm(forms.ModelForm):
         )
 
         self.helper.layout = Layout(
-            HTML('<hr>'),
             Fieldset(
                 'Details',
                 'name',
                 'start_date',
                 'end_date',
             ),
-            HTML('<hr>'),
-            # If this fieldset is no longer #3, change the code below.
+            # If this fieldset is no longer #1, change the helper.layout[1] code below
             Fieldset(
                 'Invoices and Billing',
                 'automatic_billing_dates',
             ),
-            HTML('<hr>'),
-            'description',
-            HTML('<hr>'),
             Fieldset(
                 'Legal Forms Required',
                 'legal_forms',
             ),
-            HTML('<hr>'),
             Fieldset(
                 'Optional Dates',
                 'public_registration_open_date',
                 'public_registration_closes_date',
                 'invite_expiration_date',
             ),
-            HTML('<hr>'),
+            Fieldset(
+                'Blurbs',
+                'description',
+                'legal_blurb',
+                'payment_blurb',
+            ),
             Fieldset(
                 'Settings',
                 'minimum_registration_age',
                 'maximum_registration_age',
             ),
-            HTML('<hr>'),
 
             ButtonHolder(
                 Submit('submit', 'Save Event', css_class='button white')
             )
         )
+        
+        if self.instance.id and BillingPeriod.objects.filter(event=self.instance).count() > 0:
+            # Remove the Invoice and Billing section if we already have Billing Periods
+            del self.helper.layout[1]
+        else:
+            # Allow for the Invoices and Billing Period wizard to display in the form.
+            for group in BillingGroup.objects.filter(league=league):
+                field_name = 'billinggroup{}'.format(group.pk)
+                self.fields[field_name] = forms.DecimalField(
+                    min_value=0,
+                    decimal_places=2,
+                    max_digits=10,
+                    label="{} Invoice Amount".format(group.name),
+                    initial=group.invoice_amount,
+                )
+                #self.fields[field_name].widget.attrs.update({'placeholder': "0.00"})
 
-        for group in BillingGroup.objects.filter(league=league):
-            field_name = 'billinggroup{}'.format(group.pk)
-            self.fields[field_name] = forms.DecimalField(
-                min_value=0,
-                decimal_places=2,
-                max_digits=10,
-                label="{} Invoice Amount".format(group.name),
-                initial=group.invoice_amount,
-            )
-            #self.fields[field_name].widget.attrs.update({'placeholder': "0.00"})
-
-            self.helper.layout[3].append(
-                field_name
-            )
+                self.helper.layout[1].append(
+                    field_name
+                )
 
     class Meta:
         model = RegistrationEvent
@@ -100,6 +103,8 @@ class RegistrationAdminEventForm(forms.ModelForm):
             'start_date',
             'end_date',
             'description',
+            'legal_blurb',
+            'payment_blurb',
             'public_registration_open_date',
             'public_registration_closes_date',
             'invite_expiration_date',

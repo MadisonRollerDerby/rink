@@ -140,6 +140,7 @@ class EventAdminSettings(EventAdminBaseView):
         if form.is_valid():
             event = form.save()
 
+            messages.success(request, 'Saved Event Settings')
             return HttpResponseRedirect(
                 reverse("registration:event_admin_settings",
                     kwargs={'event_slug': event.slug})

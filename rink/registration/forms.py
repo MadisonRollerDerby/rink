@@ -84,15 +84,6 @@ class RegistrationSignupForm(forms.ModelForm):
         return user
 
 
-class LegalCheckboxSelectMultiple(CheckboxSelectMultiple):
-    template_name = 'registration/legal_checkbox_select.html'
-    option_template_name = 'registration/legal_checkbox_option.html'
-
-    def use_required_attribute(self, initial):
-        # Require all fields to be selected
-        return True  # pragma: no cover
-
-
 class RegistrationDataForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.logged_in_user_id = kwargs.pop('logged_in_user_id', None)
@@ -100,15 +91,15 @@ class RegistrationDataForm(forms.ModelForm):
         
         self.helper = FormHelper(self)
 
-        for field_name, field in self.fields.items():
-            field.widget.attrs['placeholder'] = field.label
+        #for field_name, field in self.fields.items():
+        #    field.widget.attrs['placeholder'] = field.label
 
         self.fields['stripe_token'] = forms.CharField(
             widget=forms.HiddenInput(),
             required=False,
         )
 
-        self.helper.form_show_labels = False
+        self.helper.form_show_labels = True
         self.helper.form_tag = False
         self.helper.layout = Layout(
             Fieldset(
@@ -188,14 +179,4 @@ class RegistrationDataForm(forms.ModelForm):
 
 
 class LegalDocumentAgreeForm(forms.Form):
-    def __init__(self, event, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for document in LegalDocument.objects.filter(league=event.league).all():
-            doc_key = "{}{}".format("Legal", document.pk)
-
-            self.fields[doc_key] = forms.BooleanField(
-                required=True,
-                label=document.get_absolute_url(),
-                help_text="{} ({})".format(document.name, document.date),
-            )
+    legal_agree = forms.BooleanField(required=True)

@@ -41,11 +41,11 @@
 
 <script>
 $(".datepicker").each(function() {    
-    $(this).datepicker({ dateFormat: "m/d/yy" }).datepicker('setDate', $(this).val());
+    $(this).datepicker({ dateFormat: "m/d/yy", changeMonth: true, changeYear: true }).datepicker('setDate', $(this).val());
 });
 
 // Create a Stripe client.
-var stripe = Stripe('pk_test_ewB0eFxUAWV0cMJEV2UJcHJQ');
+var stripe = Stripe('{{ event.league.get_stripe_public_key }}');
 
 // Create an instance of Elements.
 var elements = stripe.elements();
@@ -84,17 +84,21 @@ card.addEventListener('change', function(event) {
 
 var form = document.getElementById('payment-form');
 form.addEventListener('submit', function(event) {
-  console.log("here?");
   event.preventDefault();
+
+  $('#submit-id-submit').prop("disabled", true).val("Please wait...");
+
 
   stripe.createToken(card).then(function(result) {
     if (result.error) {
       // Inform the customer that there was an error.
       var errorElement = document.getElementById('card-errors');
       errorElement.textContent = result.error.message;
+      $('#submit-id-submit').prop("disabled", false).val("Submit Registration");
     } else {
       // Send the token to your server.
       stripeTokenHandler(result.token);
+      $('#submit-id-submit').val("Almost done...");
     }
   });
 });
@@ -124,7 +128,7 @@ function stripeTokenHandler(token) {
 {% endif %}
 
 
-<form method="post" action="{% url 'register:show_form' event_slug=event.slug %}" id="payment-form">
+<form method="post" action="{% url 'register:show_form' event_slug=event.slug league_slug=event.league.slug %}" id="payment-form">
 
 
 {% crispy form %}
@@ -133,30 +137,57 @@ function stripeTokenHandler(token) {
 {% if legal_form %}
     <legend>Legal Forms</legend>
 
+  {% if event.legal_blurb %}
+    <div class="container">
+        <div class="row">
+            <div class="alert alert-secondary" role="alert">
+            {{ event.legal_blurb_html|safe }}
+            </div>
+        </div>
+    </div>
+  {% endif %}
+
     {% if legal_form.errors %}
       <div class="alert alert-danger" role="alert" id="error_legal_document_agree">
         You must agree to the legal documents below to register. Please contact us if you have any questions.
       </div>
     {% endif %}
     
-    Please read and indicate that you agree to the following:
+    You must read and agree to the following {{ event.legal_forms.all.count }} documents to particapte in this event:
+
     <div id="div_id_legal_forms" class="form-group"> 
      <div class="">
-    {% for field in legal_form %}
-        <div class="form-check"> 
-            <label class="form-check-label" for="{{ field.name }}"> 
-                <input type="checkbox" class="form-check-input" name="{{ field.name }}" id="{{ field.name }}" value="{{ field.name }}" required>
-                <a href="{{ field.label }}" target="_blank">{{ field.help_text }}</a>
-            </label> 
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" name="legal_agree" id="legal_agree" value="legal_agree" required>
+          <label>
+            <strong>I have read and agree to the following documents:</strong>
+          </label> 
         </div>
-    {% endfor %}
-     </div>
+      </div>
+      <ol> 
+      {% for document in event.legal_forms.all %}
+        <li><a href="{% url 'legal:view_event_legal_documents' league_slug=event.league.slug event_slug=event.slug %}#doc{{ document.id }}" target="_blank">{{ document.name }} ({{ document.date }})</a></li>
+        {% endfor %}
+      </ol>
     </div>
 {% endif %}
+
+
 
 {% if billing_amount > 0 %}
 
 <legend>Payment</legend>
+
+{% if event.payment_blurb %}
+    <div class="container">
+        <div class="row">
+            <div class="alert alert-secondary" role="alert">
+            {{ event.payment_blurb_html|safe }}
+            </div>
+        </div>
+    </div>
+{% endif %}
+
 <div class="mt-1 mb-3">
     <label for="card-element">
       <strong>Due with Registration: </strong> ${{ billing_amount }}
@@ -164,6 +195,7 @@ function stripeTokenHandler(token) {
     <div id="card-element">
       <!-- A Stripe Element will be inserted here. -->
     </div>
+    <small class="form-text text-muted">Please enter your credit card, expiration date and CVC code</small>
 
     <!-- Used to display form errors. -->
     <div id="card-errors" role="alert"></div>
@@ -174,9 +206,9 @@ function stripeTokenHandler(token) {
 {% endif %}
 
 
-<div class="form-group row"> 
+<div class="form-group row form-submit"> 
     <div class=""> 
-        <input type="submit" value="Submit Registration" class="btn btn-primary button white" id="submit-id-submit" /> 
+        <input {% if preview_mode_disable_button %}aria-disabled="true" disabled="disabled"{% endif %} type="submit" value="Submit Registration" class="btn btn-primary button white" id="submit-id-submit" />
     </div>
 </div>
 

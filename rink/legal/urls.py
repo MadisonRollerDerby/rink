@@ -32,7 +32,11 @@ urlpatterns = [
 
 
     # Public Views
-    path('<slug:league_slug>/<slug:document_slug>/', 
+    path('<slug:league_slug>/<slug:document_slug>/',
         views.LegalDocumentPublicView.as_view(),
         name="view_legal_document"),
+
+    path('<slug:league_slug>/event/<slug:event_slug>/',
+        views.LegalDocumentEventView.as_view(),
+        name="view_event_legal_documents"),
 ]

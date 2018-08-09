@@ -7,8 +7,9 @@ from django.utils import timezone
 
 from decimal import Decimal
 import stripe
+from stripe.error import CardError
 
-#from billing.tasks import email_payment_receipt
+from taskapp.celery import app as celery_app
 
 
 class BillingGroup(models.Model):
@@ -544,13 +545,15 @@ class Payment(models.Model):
 
         if self.processor == 'stripe':
             stripe.api_key = self.league.get_stripe_private_key()
-            refund = stripe.Refund.Create(
+            refund = stripe.Refund.create(
                 charge=self.transaction_id,
-                amount=int(amount * 100.0),
+                amount=int(amount * 100),
             )
 
+        refund_date = timezone.now()
+
         self.refund_amount = amount
-        self.refund_date = timezone.now()
+        self.refund_date = refund_date
         self.refund_reason = refund_reason
         self.save()
 
@@ -559,7 +562,7 @@ class Payment(models.Model):
         amount_remaining = amount
         for invoice in invoices:
             invoice.status = 'refunded'
-            invoice.refund_date = timezone.now()
+            invoice.refund_date = refund_date
 
             # Partial refund half-assed attempt
             if amount_remaining < invoice.paid_amount:
@@ -751,9 +754,9 @@ class UserStripeCard(models.Model):
             invoice.paid_date = payment_date
             invoice.save()
 
-        #if payment_total > 0:
-        #if send_receipt:
-        #    email_payment_receipt(payment.id)
+        if payment_total > 0 and send_receipt:
+            celery_app.send_task('billing.tasks.email_payment_receipt',
+                args=[payment.id], kwargs={})
 
         return payment
 

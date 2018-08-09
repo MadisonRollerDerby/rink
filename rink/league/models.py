@@ -7,7 +7,7 @@ from django.utils.text import slugify
 
 from fernet_fields import EncryptedCharField
 from imagekit.models import ImageSpecField
-from imagekit.processors import ResizeToFill
+from imagekit.processors import ResizeToFill, ResizeToFit
 from localflavor.us.us_states import STATE_CHOICES
 
 DAY_OF_MONTH_CHOICES = [(i,i) for i in range(1, 31)]
@@ -109,6 +109,16 @@ class League(models.Model):
         format='JPEG',
         options={'quality': 80}
     )
+    logo_thumbnail_header = ImageSpecField(
+        source='logo',
+        processors=[ResizeToFit(50, 50)],
+        format='PNG',
+    )
+    logo_thumbnail_footer = ImageSpecField(
+        source='logo',
+        processors=[ResizeToFit(300, 300)],
+        format='PNG',
+    )
 
 
     # Payment Settings
@@ -128,10 +138,10 @@ class League(models.Model):
     )
 
     stripe_private_key = EncryptedCharField(
-        "Stripe Private Key",
+        "Stripe Secret Key",
         max_length=100,
         blank=True,
-        help_text="Private API key for Stripe.com. Used for charging credit cards.",
+        help_text="Private/secret API key for Stripe.com. Used for charging credit cards.",
     )
 
     stripe_public_key = EncryptedCharField(
@@ -216,12 +226,12 @@ class League(models.Model):
     def get_stripe_private_key(self):
         if self.stripe_private_key:
             return self.stripe_private_key
-        raise ImproperlyConfigured("Stripe private key not set for {}".format(self.league.name))
+        raise ImproperlyConfigured("Stripe private key not set for {}".format(self.name))
 
     def get_stripe_public_key(self):
         if self.stripe_public_key:
             return self.stripe_public_key
-        raise ImproperlyConfigured("Stripe public key not set for {}".format(self.league.name))
+        raise ImproperlyConfigured("Stripe public key not set for {}".format(self.name))
 
 
 @receiver(pre_save, sender=Organization)

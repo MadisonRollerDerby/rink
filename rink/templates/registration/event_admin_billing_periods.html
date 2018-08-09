@@ -72,9 +72,7 @@ $('#add_period_button').click(function() {
 
 {% block content %}
 
-{% include "registration/event_admin_menu.html" %}
-
-<h3>Billing Periods</h3>
+{% include "registration/event_admin_menu.html" with section_title="Billing Periods" %}
 
 {% include 'utils/messages.html' %}
 

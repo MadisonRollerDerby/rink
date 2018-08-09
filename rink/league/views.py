@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
@@ -10,7 +11,8 @@ from guardian.shortcuts import get_perms_for_model, get_users_with_perms
 
 from users.models import User
 
-from .forms import LeagueForm, PermissionsForm, CreateRinkUserForm
+from .forms import (LeagueNameForm, LeagueBillingForm, LeagueRegistrationForm,
+    LeagueEmailForm, PermissionsForm, CreateRinkUserForm)
 from .models import League, Organization
 from .mixins import RinkOrgAdminPermissionRequired, RinkLeagueAdminPermissionRequired
 from league.utils import send_email
@@ -28,7 +30,7 @@ class LeagueAdminList(RinkOrgAdminPermissionRequired, View):
 
 class LeagueAdminCreate(RinkOrgAdminPermissionRequired, CreateView):
     model = League
-    form_class = LeagueForm
+    form_class = LeagueNameForm
     template_name = 'league/league_detail.html'
 
     def form_valid(self, form):
@@ -36,11 +38,47 @@ class LeagueAdminCreate(RinkOrgAdminPermissionRequired, CreateView):
         return super().form_valid(form)
 
 
-class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, UpdateView):
-    model = League
-    form_class = LeagueForm
+class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, View):
+    # This class is a mess and could be cleaned up
     template_name = 'league/league_detail.html'
 
+    def get(self, request, organization_slug, slug):
+        league = get_object_or_404(League, slug=slug)
+
+        warning = ''
+        if not league.stripe_private_key or not league.stripe_public_key:
+            warning = '<strong>WARNING:</strong> Both <strong>Stripe Public Key</strong> and <strong>Stripe Secret Key</strong> need to be set in the Billing section to process credit card payments.'
+
+        return render(request, self.template_name, {
+            'league': league,
+            'forms': {
+                'name_form': LeagueNameForm(instance=league),
+                'billing_form': LeagueBillingForm(instance=league),
+                'registration_form': LeagueRegistrationForm(instance=league),
+                'email_form': LeagueEmailForm(instance=league),
+            },
+            'warning': warning,
+        })
+
+    def post(self, request, organization_slug, slug):
+        league = get_object_or_404(League, slug=slug)
+        forms = {
+            'name_form': LeagueNameForm(request.POST, instance=league),
+            'billing_form': LeagueBillingForm(request.POST, instance=league),
+            'registration_form': LeagueRegistrationForm(request.POST, instance=league),
+            'email_form': LeagueEmailForm(request.POST, instance=league),
+        }
+        
+        for form in forms:
+            if forms[form].is_valid():
+                forms[form].save()
+                messages.success(request, 'Saved League Settings')
+                return HttpResponseRedirect(reverse("league:league_update",
+                    kwargs={'slug': league.slug, 'organization_slug': league.organization.slug}))
+        return render(request, self.template_name, {
+            'forms': forms,
+            'league': league,
+        })
 
 
 class OrganizationPermissionsView(RinkOrgAdminPermissionRequired, View):

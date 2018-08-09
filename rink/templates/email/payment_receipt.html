@@ -8,9 +8,9 @@
 
 <p>Amount Paid: ${{ payment.amount }}</p>
 
-<p>Paid using: {{ payment.get_card() }}</p>
+<p>Paid using: {{ payment.get_card }}</p>
 
-<p>This payment was for{% if invoices.count == 1 %} {{ invoices[0].description }}{% endif %}</p>
+<p>This payment was for{% if invoices.count == 1 %} {% with invoices|first as first_invoice %}{{ first_invoice.description }}{% endwith %}{% endif %}</p>
 
 {% if invoices.count > 1 %}
 <ul>

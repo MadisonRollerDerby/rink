@@ -11,14 +11,47 @@
 </nav>
 
 <div class="container">
-    <div class="row">
+    <div class="row mb-3">
         {% if league.logo %}
-            <img src="{{ league.logo_thumbnail.url }}" alt="{{ league.name }} logo" class="img-thumbnail">
+            <img src="{{ league.logo_thumbnail_header.url }}" alt="{{ league.name }} logo" class="img-thumbnail">
         {% endif %}
-        <h1>{% if league %}{{ league }}{% else %}New League{% endif %}</h1>
+        <h1 style="margin:5px 0 0 15px;">{% if league %}{{ league }}{% else %}New League{% endif %}</h1>
+    </div>
+
+    {% if warning %}
+        <div class="alert alert-warning" role="alert">
+            {{ warning|safe }}
+        </div>
+    {% endif %}
+
+    {% include 'utils/messages.html' %}
+    
+    <div class="row mt-3">
+        <nav>
+          <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            <a class="nav-item nav-link active" id="nav-name-tab" data-toggle="tab" href="#nav-name" role="tab" aria-controls="nav-home" aria-selected="true">Name and Image</a>
+            <a class="nav-item nav-link" id="nav-billing-tab" data-toggle="tab" href="#nav-billing" role="tab" aria-controls="nav-profile" aria-selected="false">Billing</a>
+            <a class="nav-item nav-link" id="nav-registration-tab" data-toggle="tab" href="#nav-registration" role="tab" aria-controls="nav-contact" aria-selected="false">Registration</a>
+            <a class="nav-item nav-link" id="nav-email-tab" data-toggle="tab" href="#nav-email" role="tab" aria-controls="nav-contact" aria-selected="false">Email</a>
+          </div>
+        </nav>
+    </div>
+    <div class="row mt-3">
+        <div class="tab-content" id="nav-tabContent">
+            <div class="tab-pane fade show active" id="nav-name" role="tabpanel" aria-labelledby="nav-name-tab">
+            {% crispy forms.name_form %}
+            </div>
+            <div class="tab-pane fade" id="nav-billing" role="tabpanel" aria-labelledby="nav-billing-tab">
+            {% crispy forms.billing_form %}
+            </div>
+            <div class="tab-pane fade" id="nav-registration" role="tabpanel" aria-labelledby="nav-registration-tab">
+            {% crispy forms.registration_form %}
+            </div>
+            <div class="tab-pane fade" id="nav-email" role="tabpanel" aria-labelledby="nav-email-tab">
+            {% crispy forms.email_form %}
+            </div>
+        </div>
     </div>
 </div>
-
-{% crispy form %}
 
 {% endblock %}
