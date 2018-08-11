@@ -1,1 +1,1 @@
-{{ event.name }} - {{ league.name }} Registration for {{ user }}
+{{ event.name }} Registration for {{ user }} - {{ league.name}}

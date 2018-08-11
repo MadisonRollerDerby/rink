@@ -1,7 +1,52 @@
 {{ header_html }}
 
+<h2>{{ event.name }} Registration Confirmation</h2>
+
 <p>Hi {{ user }},</p>
 
-<p>You've successfully register for {{ event }} at {{ league }}</b>.</p>
+<p>You've successfully register for {{ event.name }} - {{ league.name }}</b>.</p>
+
+{% if event.description %}
+<h4>Details</h4>
+{{ event.description_html }}
+{% endif %}
+
+
+<h4>Your Information</h4>
+
+<b>ABOUT YOU:</b><br>
+Derby Name: {% if user.derby_name %}{{ user.derby_name }}{% else %}<empty, you can decide later>{% endif %}<br>
+Derby Number: {% if user.derby_number %}{{ user.derby_number }}{% else %}<empty, you can decide later>{% endif %}<br>
+<br>
+{{ user.first_name }} {{ user.last_name }}<br>
+{{ registration.address1 }} {{ registration.address2 }}<br>
+{{ registration.city }}, {{ registration.state }} {{ registration.zip }}<br>
+<br>
+Phone: {{ user.phone }}<br>
+Email: {{ user.email }}<br>
+<br>
+<br>
+<b>EMERGENCY CONTACT INFO:</b><br>
+<br>
+Contact: {{ user.emergency_contact }} [{{ user.emergency_relationship }}]<br>
+Phone: {{ user.emergency_phone }}<br>
+
+{% if payment %}
+<h4>PAYMENT</h4>
+You paid ${{ payment.amount }} using {{ payment.get_card }}<br>
+{% endif %}
+
+
+{% if event.legal_forms.count > 0 %}
+You signed the following legal docs:
+<ol>
+    {% for form in event.legal_forms.all %}
+    <li><a href="{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
+    {% endfor %}
+</ol>
+{% endif %}
+
+
+
 
 {{ footer_html }}

@@ -197,6 +197,12 @@ class League(models.Model):
         blank=True,
     )
 
+    email_signature = models.TextField(
+        "Email Signature",
+        help_text="Custom signature in HTML for all emails sent from this system.",
+        blank=True,
+    )
+
     email_footer = models.TextField(
         "Email Footer",
         help_text="Custom header design HTML (bottom) for all emails sent from this system.",

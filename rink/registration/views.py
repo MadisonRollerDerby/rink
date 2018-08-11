@@ -248,6 +248,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             invoice_description = billing_period.get_invoice_description()
 
             # Create an invoice for this billing period
+            payment = None
             invoice, created = Invoice.objects.get_or_create(
                 user=request.user,
                 league=self.event.league,
@@ -267,7 +268,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             )
             try:
                 card_profile.update_from_token(form.cleaned_data['stripe_token'])
-                card_profile.charge(invoice=invoice, send_receipt=False)
+                payment = card_profile.charge(invoice=invoice, send_receipt=False)
             except CardError as e:
                 body = e.json_body
                 err = body.get('error', {})
@@ -338,8 +339,15 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                         event=self.event,
                     )
 
+                payment_id = None
+                if payment:
+                    payment_id = payment.id
+
                 # Send email confirmation of registration
-                send_registration_confirmation.delay(registration_data.pk)
+                send_registration_confirmation.delay(
+                    registration_data.pk,
+                    payment_id,
+                )
 
                 # Reset session data
                 if request.session.get('register_invite_id', None):

@@ -1,6 +1,7 @@
 from celery import shared_task
 from django.utils import timezone
 
+from billing.models import Payment
 from league.utils import send_email
 from registration.models import RegistrationInvite, RegistrationData
 
@@ -34,9 +35,12 @@ def send_registration_invite_email(invite_ids=[]):
 
 
 @shared_task(ignore_result=True)
-def send_registration_confirmation(registration_data_id):
+def send_registration_confirmation(registration_data_id, payment_data_id=None):
     #try:
     registration_data = RegistrationData.objects.get(pk=registration_data_id)
+    payment_data = None
+    if payment_data_id:
+        payment_data = Payment.objects.get(pk=payment_data_id)
     #except RegistrationData.DoesNotExist:
     #    raise RegistrationData.DoesNotExist
     
@@ -48,6 +52,7 @@ def send_registration_confirmation(registration_data_id):
             'user': registration_data.user,
             'event': registration_data.event,
             'registration': registration_data,
+            'payment': payment_data,
         },
     )
     return True

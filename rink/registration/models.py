@@ -162,6 +162,10 @@ class RegistrationEvent(models.Model):
             'event_slug': self.slug,
         }
 
+    def get_legal_forms_url(self):
+        return reverse('legal:view_event_legal_documents',
+            kwargs={'league_slug': self.league.slug, 'event_slug': self.slug})
+
     def get_invites_url(self):
         return reverse('registration:event_admin_invites', kwargs=self.get_kwargs_for_url())
 
