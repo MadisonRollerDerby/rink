@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
+{% block title %}{{ document.name }} - Edit Legal Document{% endblock %}
+
 {% block content %}
 
 <h2>{% if document %}Edit {{ document.name }} ({{ document.date }}){% else %}New Legal Document{% endif %}</h2>

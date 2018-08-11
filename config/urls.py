@@ -19,6 +19,9 @@ urlpatterns = [
     url(r'^register/', include('registration.urls', namespace="register")),
     url(r'^registration/', include('registration.urls_admin', namespace='registration')),
 
+    url(r'^robots.txt',
+        TemplateView.as_view(template_name='robots.txt', content_type='text/plain'), 
+        name="robots_file")
 
 
 
