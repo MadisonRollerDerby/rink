@@ -1,0 +1,21 @@
+{% load bootstrap4 %}
+
+<h4>{% if billinggroup %}Update <strong>'{{ billinggroup.name }}'</strong>{% else %}Create{% endif %} Billing Group</h4>
+
+<div class="container">
+    <div class="row">
+        <form method="post">{% csrf_token %}
+
+          {% bootstrap_form form %}
+          {% buttons %}
+            <button type="submit" class="btn btn-primary">
+              Submit
+            </button>
+            <a class="ml-5" href="{% url 'league:billing_groups_list' organization_slug=organization_slug slug=league_slug %}">
+                <button type="button" class="btn btn-secondary">Go Back</button>
+            </a>
+          {% endbuttons %}
+
+        </form>
+    </div>
+</div>

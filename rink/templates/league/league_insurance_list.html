@@ -1,0 +1,25 @@
+<h4>Insurance Types</h4>
+
+<div class="container mt-3">
+    <div class="row">
+        <a href="{% url 'league:insurance_create' organization_slug=organization_slug slug=league_slug %}">
+            <button type="button" class="btn btn-primary btn-sm">Create Insurance Type</button>
+        </a>
+    </div>
+</div>
+
+<div class="container mt-3">
+    <div class="row">
+        <div class="list-group">
+        {% for ins in insurancetype_list %}
+            <a href="{% url 'league:insurance_change' organization_slug=organization_slug slug=league_slug insurance_type_id=ins.pk %}" class="list-group-item list-group-item-action">
+                <strong>{{ ins.name }}</strong>
+            
+                {% if ins.long_name %}
+                <br><span class="text-muted">{{ ins.long_name }}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+        </div>
+    </div>
+</div>

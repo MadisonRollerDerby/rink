@@ -1,0 +1,28 @@
+<h4>Billing Groups</h4>
+
+<div class="container mt-3">
+    <div class="row">
+        <a href="{% url 'league:billing_groups_create' organization_slug=organization_slug slug=league_slug %}">
+            <button type="button" class="btn btn-primary btn-sm">Create Billing Group</button>
+        </a>
+    </div>
+</div>
+
+<div class="container mt-3">
+    <div class="row">
+        <div class="list-group">
+        {% for bg in billinggroup_list %}
+            <a href="{% url 'league:billing_groups_change' organization_slug=organization_slug slug=league_slug billing_group_id=bg.pk %}" class="list-group-item list-group-item-action">
+                <strong>{{ bg.name }}</strong> - ${{ bg.invoice_amount}}
+                {% if bg.default_group_for_league %}
+                    <span class="badge badge-primary">DEFAULT</span>
+                {% endif %}
+            
+                {% if bg.description %}
+                <br><span class="text-muted">{{ bg.description }}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+        </div>
+    </div>
+</div>

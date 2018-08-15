@@ -83,12 +83,8 @@
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">League</a>
                   <div class="dropdown-menu">
-                    {% if "roster_manager" in request.session.league_permissions %}
-                      <a class="dropdown-item" href="#">Roster</a>
-                    {% endif %}
-
-                    {% if "dues_manager" in request.session.league_permissions %}
-                      <a class="dropdown-item" href="#">Dues</a>
+                    {% if "billing_manager" in request.session.league_permissions %}
+                      <a class="dropdown-item" href="#">Billing</a>
                     {% endif %}
 
                     {% if "registration_manager" in request.session.league_permissions %}

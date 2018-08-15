@@ -19,26 +19,42 @@ class InsuranceType(models.Model):
     name = models.CharField(
         "Insurer Name",
         max_length=50,
-        help_text = "Example: 'WFTDA'",
+        help_text="Example: 'WFTDA'",
     )
 
     long_name = models.CharField(
         "Insurer Long Name",
         max_length=50,
-        help_text = "Example: 'Women's Flat Track Derby Association'",
+        help_text="Example: 'Women's Flat Track Derby Association'",
+        null=True,
+        blank=True,
     )
 
     details_url = models.CharField(
         "Insurer Details URL",
         max_length=200,
-        help_text = "Link to sign up for insurance or get more information.",
+        help_text="Link to sign up for insurance or get more information.",
+        null=True,
+        blank=True,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
     )
 
     def __str__(self):
         return self.name
 
     class Meta:
-        ordering: ['name']
+        ordering = ['name']
+        unique_together = ['league', 'name']
+
+    def get_absolute_url(self):
+        return reverse('league:insurance_list', kwargs={
+            'organization_slug': self.league.organization.slug,
+            'slug': self.league.slug,
+        })
 
 
 class Organization(models.Model):
@@ -165,7 +181,8 @@ class League(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
-        help_text="Default insurance type to show on Registration forms."
+        help_text="Default insurance type to show on Registration forms.",
+        related_name="default_insurance_type",
     )
 
 

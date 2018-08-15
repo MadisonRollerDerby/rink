@@ -28,17 +28,22 @@
 
     {% include 'utils/messages.html' %}
     
+    {% include 'league/league_menu.html' with base_settings_url=base_settings_url selected_tab=selected_tab organization_slug=league.organization.slug league_slug=league.slug %}
+
     <div class="row mt-3">
-        <nav>
-          <div class="nav nav-tabs" id="nav-tab" role="tablist">
-            <a class="nav-item nav-link active" id="nav-name-tab" data-toggle="tab" href="#nav-name" role="tab" aria-controls="nav-home" aria-selected="true">Name and Image</a>
-            <a class="nav-item nav-link" id="nav-billing-tab" data-toggle="tab" href="#nav-billing" role="tab" aria-controls="nav-profile" aria-selected="false">Billing</a>
-            <a class="nav-item nav-link" id="nav-registration-tab" data-toggle="tab" href="#nav-registration" role="tab" aria-controls="nav-contact" aria-selected="false">Registration</a>
-            <a class="nav-item nav-link" id="nav-email-tab" data-toggle="tab" href="#nav-email" role="tab" aria-controls="nav-contact" aria-selected="false">Email</a>
-          </div>
-        </nav>
-    </div>
-    <div class="row mt-3">
+        {% if selected_tab == "insurance" %}
+            {% if form %}
+                {% include 'league/league_insurance_update.html' with insurancetype=insurancetype form=form organization_slug=league.organization.slug league_slug=league.slug %}
+            {% else %}
+                {% include 'league/league_insurance_list.html' with insurancetype_list=insurancetype_list organization_slug=league.organization.slug league_slug=league.slug %}
+            {% endif %}
+        {% elif selected_tab == "billing_group" %}
+            {% if form %}
+                {% include 'league/league_billing_groups_update.html' with billinggroup=billinggroup form=form organization_slug=league.organization.slug league_slug=league.slug %}
+            {% else %}
+                {% include 'league/league_billing_groups_list.html' with billinggroup_list=billinggroup_list organization_slug=league.organization.slug league_slug=league.slug %}
+            {% endif %}
+        {% else %}
         <div class="tab-content" id="nav-tabContent">
             <div class="tab-pane fade show active" id="nav-name" role="tabpanel" aria-labelledby="nav-name-tab">
             {% crispy forms.name_form %}
@@ -53,6 +58,7 @@
             {% crispy forms.email_form %}
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 

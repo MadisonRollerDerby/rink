@@ -9,6 +9,7 @@ from guardian.shortcuts import get_perms_for_model, get_user_perms, \
 import re
 
 from .models import Organization, League
+from league.models import InsuranceType
 from users.models import User
 
 
@@ -41,6 +42,10 @@ class LeagueBillingForm(LeagueSettingsBaseForm, forms.ModelForm):
 
 
 class LeagueRegistrationForm(LeagueSettingsBaseForm, forms.ModelForm):
+    def __init__(self, league, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['default_insurance_type'].queryset = InsuranceType.objects.filter(league=league)
+
     class Meta:
         model = League
         fields = [

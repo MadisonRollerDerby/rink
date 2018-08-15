@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models.signals import pre_save, pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
+from django.urls import reverse
 
 from decimal import Decimal
 import stripe
@@ -54,6 +55,12 @@ class BillingGroup(models.Model):
     class Meta:
         unique_together = ('name', 'league')
         ordering = ['league', 'name']
+
+    def get_absolute_url(self):
+        return reverse('league:billing_groups_list', kwargs={
+            'organization_slug': self.league.organization.slug,
+            'slug': self.league.slug,
+        })
 
 
 class BillingPeriod(models.Model):
