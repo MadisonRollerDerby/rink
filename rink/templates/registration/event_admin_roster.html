@@ -11,6 +11,10 @@
 
 {% include "registration/event_admin_menu.html" with section_title="Roster" %}
 
+<p class="float-right">
+    <a href="{% url 'registration:event_admin_roster_csv' event_slug=event.slug %}">Download CSV</a>
+</p>
+
 {% if filter %}
     <form action="" method="get" class="form form-inline">
         {% bootstrap_form filter.form layout='inline' %}

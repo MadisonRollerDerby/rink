@@ -12,16 +12,21 @@ from django.views import View
 from django_tables2 import SingleTableView
 from django_filters.views import FilterView
 
+import csv
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from guardian.shortcuts import get_users_with_perms
 import re
 
+from .forms import RegistrationDataForm
 from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
     EventInviteEmailForm, EventInviteAjaxForm
 from .models import RegistrationEvent, RegistrationInvite, Roster
+from .resources import RosterResource
 from .tables import RosterTable, RosterFilter
-from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, Invoice
+from billing.models import (
+    BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, Invoice,
+    BillingSubscription, UserStripeCard)
 from league.mixins import RinkLeagueAdminPermissionRequired
 from league.models import Organization, League
 from legal.models import LegalSignature
@@ -215,6 +220,16 @@ class EventAdminRoster(EventAdminTableView, FilterView):
         return Roster.objects.filter(event=self.event)
 
 
+class EventAdminRosterCSV(EventAdminBaseView):
+    def get(self, request, *args, **kwargs):
+        roster = Roster.objects.filter(event__slug=self.event.slug)
+        roster_resource = RosterResource()
+        dataset = roster_resource.export(queryset=roster)
+        response = HttpResponse(dataset.csv, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment;filename=roster={}.csv'.format(self.event.slug)
+        return response
+
+
 class EventAdminRosterDetail(EventAdminBaseView):
     template = 'registration/event_admin_roster_detail.html'
     event_menu_selected = "roster"
@@ -230,17 +245,70 @@ class EventAdminRosterDetail(EventAdminBaseView):
         roster = get_object_or_404(Roster, event=self.event, pk=roster_id)
         registration_data = RegistrationData.objects.get(roster=roster)
         invoices = Invoice.objects.filter(billing_period__event=self.event)
-        signatures = LegalSignature.objects.filter(registration=registration_data)
         invoices_unpaid_count = Invoice.objects.filter(billing_period__event=self.event, status='unpaid').count()
+        billing_subscription = BillingSubscription.objects.get(roster=roster)
+        billing_periods_future = BillingPeriod.objects.filter(event=self.event, invoice_date__gt=timezone.now())
+        signatures = LegalSignature.objects.filter(registration=registration_data)
+
+        update_info_form = RegistrationDataForm(instance=registration_data)
+
+        try:
+            card_on_file = UserStripeCard.objects.get(league=self.event.league, user=roster.user)
+        except UserStripeCard.DoesNotExist:
+            card_on_file = None
+
+        for bpf in billing_periods_future:
+            bpf.invoice_amount = bpf.get_invoice_amount(user=roster.user)
 
         return self.render(request, {
-            'user': request.user,
+            'user': roster.user,
             'roster': roster,
             'registration_data': registration_data,
             'invoices': invoices,
             'invoices_unpaid_count': invoices_unpaid_count,
+            'billing_subscription': billing_subscription,
+            'billing_periods_future': billing_periods_future,
+            'card_on_file': card_on_file,
             'signatures': signatures,
+            'update_info_form': update_info_form,
         })
+
+    def post(self, request, roster_id, *args, **kwargs):
+        roster = get_object_or_404(Roster, event=self.event, pk=roster_id)
+        registration_data = RegistrationData.objects.get(roster=roster)
+        form = RegistrationDataForm(instance=registration_data, data=request.POST)
+        form.logged_in_user_id = roster.user.id
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Updated registration details.")
+
+            user = roster.user
+            if user.first_name == roster.first_name:
+                user.first_name = form.cleaned_data['contact_first_name']
+            if user.last_name == roster.last_name:
+                user.last_name = form.cleaned_data['contact_last_name']
+            if user.email == roster.email:
+                user.email = form.cleaned_data['contact_email']
+            if user.derby_name == roster.derby_name:
+                user.derby_name = form.cleaned_data['derby_name']
+            if user.derby_number == roster.derby_number:
+                user.derby_number = form.cleaned_data['derby_number']
+            user.save()
+
+            # Also update roster entry
+            roster.first_name = form.cleaned_data['contact_first_name']
+            roster.last_name = form.cleaned_data['contact_last_name']
+            roster.derby_name = form.cleaned_data['derby_name']
+            roster.derby_number = form.cleaned_data['derby_number']
+            roster.email = form.cleaned_data['contact_email']
+            roster.save()
+
+            return HttpResponseRedirect(
+                reverse("registration:event_admin_roster_detail",
+                    kwargs={'event_slug': self.event.slug, 'roster_id': roster.pk }))
+
+        messages.error(request, "Error saving form: {}".format(form.errors))
+        return self.get(request, roster_id)
 
 
 class EventAdminInvites(EventAdminBaseView):

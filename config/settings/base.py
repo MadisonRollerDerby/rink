@@ -70,6 +70,7 @@ THIRD_PARTY_APPS = [
     'django_tables2',
     'django_filters',
     'bootstrap4',
+    'import_export',
 
     'allauth',
     'allauth.account',
@@ -296,3 +297,4 @@ DATE_FORMAT = '%n/%j/%Y'
 DATE_FORMAT_PYTHON = '%-m/%-d/%Y'
 
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap4.html'
+IMPORT_EXPORT_USE_TRANSACTIONS = True

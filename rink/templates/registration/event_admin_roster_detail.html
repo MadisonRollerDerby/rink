@@ -26,7 +26,7 @@
             <a class="nav-link" id="v-update-tab" data-toggle="pill" href="#v-update" role="tab" aria-controls="v-update" aria-selected="false">Update Info</a>
             <a class="nav-link" href="/?" role="tab" aria-selected="false">User Profile</a>
         </div>
-        <div class="tab-content ml-3" id="v-pills-tabContent">
+        <div class="tab-content ml-3 w-75" id="v-pills-tabContent">
             <div class="tab-pane fade show active" id="v-registration" role="tabpanel" aria-labelledby="v-registration-tab">
                 <fieldset>
                     <legend>Contact Details</legend>
@@ -62,12 +62,77 @@
 
             </div>
 
-            <div class="tab-pane fade" id="v-billing" role="tabpanel" aria-labelledby="v-billing-tab">
-            billing
+            <div class="tab-pane fade float-left" id="v-billing" role="tabpanel" aria-labelledby="v-billing-tab">
+                <p>
+                    <strong>Billing Subscription: 
+                    {% if billing_subscription.active %}<span class="text-success">ACTIVE</span>
+                    {% else %}<span class="text-danger">INACTIVE</span>
+                    {% endif %}
+                    </strong>
+                </p>
+                <p>
+                    <strong>Card on File:</strong> {% if card_on_file %}{{ card_on_file }}{% else %}None{% endif %}
+                </p>
+                <hr>
+                <div class="mb-3">
+                    <h5>Invoices</h5>
+                    {% if invoices %}
+                        <div class="list-group">
+                        {% for invoice in invoices %}
+                            
+                              <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex w-100 justify-content-between">
+                                  <h5 class="mb-1">${{ invoice.invoice_amount }} {{ invoice.status|upper }}</h5>
+                                  <small>{{ invoice.invoice_date }}</small>
+                                </div>
+                                <p class="mb-1">{{ invoice.description }}</p>
+                                <small>
+                                    {% if invoice.status == 'paid' %}
+                                        Paid ${{ invoice.paid_amount }} on {{ invoice.paid_date }}
+                                    {% elif invoice.status == 'refunded' %}
+                                        Refunded ${{ invoice.refund_amount }} on {{ invoice.refund_date }}
+                                    {% elif invoice.status == 'unpaid' %}
+                                        Due on {{ invoice.due_date }}
+                                    {% endif %}
+                                </small>
+                              </a>                    
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>No invoices found.</p>
+                    {% endif %}
+                </div>
+                {% if billing_periods_future %}
+                <div class="mt-5">
+                    <h5>Future Invoices</h5>
+                    <div class="list-group">
+                    {% for invoice in billing_periods_future %}
+                        
+                          <a href="#" class="list-group-item list-group-item-action flex-column align-items-start bg-light">
+                            <div class="d-flex w-100 justify-content-between">
+                              <h5 class="mb-1">${{ invoice.invoice_amount }}</h5>
+                              <small>{{ invoice.invoice_date }}</small>
+                            </div>
+                            <p class="mb-1">{{ invoice.name }}</p>
+                            <small>
+                                Payment will be charged on {{ invoice.due_date }}
+                            </small>
+                          </a>                    
+                    {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
             <div class="tab-pane fade" id="v-update" role="tabpanel" aria-labelledby="v-update-tab">
-            update
+                <form method="post" action="{% url 'registration:event_admin_roster_detail' event_slug=event.slug roster_id=roster.pk %}" id="payment-form">
+                    {% crispy update_info_form %}
+                    <div class="form-group row form-submit"> 
+                        <div class=""> 
+                            <input type="submit" value="Update Registration Details" class="btn btn-primary button white" id="submit-id-submit" />
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <div class="tab-pane fade" id="v-legal" role="tabpanel" aria-labelledby="v-legal-tab">
