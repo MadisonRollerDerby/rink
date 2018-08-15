@@ -684,13 +684,13 @@ class UserStripeCard(models.Model):
     )
 
     card_last_charge_date = models.DateTimeField(
-        "Last time credit card was updated",
+        "Last time credit card was charged",
         blank=True,
         null=True,
     )
 
     card_last_fail_date = models.DateTimeField(
-        "Last time credit card was updated",
+        "Last time credit card had a failed charge",
         blank=True,
         null=True,
     )
@@ -758,6 +758,9 @@ class UserStripeCard(models.Model):
         payment_total = 0  # This is dollars * 100, so technically the number of cents
 
         for invoice in invoices:
+            if invoice.user != self.user:
+                raise ValueError("You cannot charge an invoice to a card that does not belong to you.")
+
             invoice_numbers.append('#{}'.format(invoice.pk))
             invoice_description.append("#{} {} - {}".format(
                 invoice.pk, invoice.billing_period.name, invoice.billing_period.event.name))
@@ -773,12 +776,17 @@ class UserStripeCard(models.Model):
             if not invoice_description:
                 invoice_description = None
 
-            charge = stripe.Charge.create(
-                amount=payment_total,
-                currency='usd',
-                customer=self.customer_id,
-                description=', '.join(invoice_description),
-            )
+            try:
+                charge = stripe.Charge.create(
+                    amount=payment_total,
+                    currency='usd',
+                    customer=self.customer_id,
+                    description=', '.join(invoice_description),
+                )
+            except CardError as e:
+                self.card_last_fail_date = timezone.now()
+                self.save()
+                raise
 
             self.card_last_charge_date = timezone.now()
             self.save()

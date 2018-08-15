@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Pay Dues{% endblock %}
+
+{% block content %}
+
+<h4>Pay Dues</h4>
+
+{% include 'utils/messages.html' %}
+
+<p class="mt-4">
+    <strong>Credit card on file:</strong>
+    {% if user_stripe_card %}
+        {{ user_stripe_card }}
+    {% else %}
+         None
+    {% endif %}
+</p>
+<p class="text-muted small">This card is used to charge for dues and invoices. <a href="{% url 'billing:update_card' %}">Need to update your credit card?</a> </p>
+
+
+{% if invoices %}
+    <div class="list-group mb-4 mt-4">
+    {% for invoice in invoices %}
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">${{ invoice.invoice_amount }} / {{ invoice.status|upper }}</h5>
+          <small>Invoice #{{ invoice.pk }}<br>{{ invoice.invoice_date }}</small>
+        </div>
+        <p class="mb-1">{{ invoice.description }}</p>
+        <small>
+            {% if current_time > invoice.due_date %}
+            <strong>Payment was due on {{ invoice.due_date }}.</strong> Automatic payment failed.
+            {% else %}
+            <strong>Payment is due on {{ invoice.due_date }}.</strong>
+            <br><strong>Your card will be automatically charged on this date</strong> or you can click the <i>Pay Now</i> button below.
+            <form method="post" action="{% url 'billing:pay' %}" id="payment-form{{ invoice.pk }}">
+                {% csrf_token %}
+                <input type="hidden" name="invoice_id" value="{{ invoice.pk }}"/>
+                <div class="mt-2"> 
+                    <input type="submit" value="Pay Now" class="btn btn-primary button white" id="submit-id-submit" onclick="$(this).val('Please wait...').prop('disabled', 'disabled');$('#payment-form{{ invoice.pk }}').submit();" />
+                </div>
+            </form>                        
+            {% endif %}
+        </small>
+      </a>                    
+    {% endfor %}
+    </div>
+{% else %}
+    <p><strong><mark>You have no unpaid invoices.</mark></strong></p>
+    <p><a class="small" href="{% url 'billing:payment_history' %}">View your payment history here.</a></p>
+{% endif %}
+
+{% if future_invoices %}
+<hr>
+<p><strong>Upcoming Invoices</strong></p>
+<p class="small text-muted">These are invoices that will be billed at a future date.</p>
+
+    <div class="list-group">
+    {% for invoice in future_invoices %}
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">${{ invoice.invoice_amount }}</h5>
+          <small>{{ invoice.invoice_date }}</small>
+        </div>
+        <p class="mb-1">{{ invoice.name }}</p>
+        <small>
+            Invoice will be generated on {{ invoice.invoice_date}}.<br>
+            Payment will be collected on {{ invoice.due_date }}.
+        </small>
+      </a>                    
+    {% endfor %}
+    </div>
+
+{% endif %}
+
+{% endblock %}

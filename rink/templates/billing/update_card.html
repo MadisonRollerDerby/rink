@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Credit Card{% endblock %}
+
+
+{% block css %}
+<style type="text/css">
+.StripeElement {
+  background-color: white;
+  height: 40px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid #cecece;
+}
+</style>
+{% endblock %}
+
+{% block javascript %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+// Create a Stripe client.
+var stripe = Stripe('{{ league_template.get_stripe_public_key }}');
+
+// Create an instance of Elements.
+var elements = stripe.elements();
+
+var style = {
+  base: {
+    color: '#495057',
+    lineHeight: '18px',
+    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+    fontSmoothing: 'antialiased',
+    fontSize: '18px',
+    '::placeholder': {
+      color: '#6e6e6e'
+    }
+  },
+  invalid: {
+    color: '#fa755a',
+    iconColor: '#fa755a'
+  }
+};
+
+// Create an instance of the card Element.
+var card = elements.create('card', {style: style});
+
+// Add an instance of the card Element into the `card-element` <div>.
+card.mount('#card-element');
+
+card.addEventListener('change', function(event) {
+  var displayError = document.getElementById('card-errors');
+  if (event.error) {
+    displayError.textContent = event.error.message;
+  } else {
+    displayError.textContent = '';
+  }
+});
+
+var form = document.getElementById('payment-form');
+form.addEventListener('submit', function(event) {
+  event.preventDefault();
+
+  $('#submit-id-submit').prop("disabled", true).val("Please wait...");
+
+
+  stripe.createToken(card).then(function(result) {
+    if (result.error) {
+      // Inform the customer that there was an error.
+      var errorElement = document.getElementById('card-errors');
+      errorElement.textContent = result.error.message;
+      $('#submit-id-submit').prop("disabled", false).val("Save New Card");
+    } else {
+      // Send the token to your server.
+      stripeTokenHandler(result.token);
+      $('#submit-id-submit').val("Almost done...");
+    }
+  });
+});
+
+function stripeTokenHandler(token) {
+  $('#id_stripe_token').val(token.id);
+  form.submit();
+}
+</script>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h4>Update Payment Details</h4>
+
+{% include 'utils/messages.html' %}
+
+
+<p class="mt-4">
+    <strong>Credit card on file:</strong>
+    {% if user_stripe_card %}
+        {{ user_stripe_card }}
+    {% else %}
+         None
+    {% endif %}
+</p>
+<p class="text-muted">This card is used to automatically charge invoices when they are due.</p>
+
+<hr>
+
+<div class="container">
+    <div class="row">
+        <form method="post" action="{% url 'billing:update_card' %}" id="payment-form">
+            {% csrf_token %}
+            <input type="hidden" name="stripe_token" id="id_stripe_token" />
+
+            <div class="mt-1 mb-1">
+                <div id="card-element">
+                  <!-- A Stripe Element will be inserted here. -->
+                </div>
+                <br>
+                <small class="form-text text-muted">Please enter your credit card, expiration date and CVC code</small>
+
+                <!-- Used to display form errors. -->
+                <div id="card-errors" role="alert"></div>
+
+            </div>
+
+            <div class="row  form-submit"> 
+                <div class=""> 
+                    <input type="submit" value="Save New Card" class="btn btn-primary button white" id="submit-id-submit" />
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

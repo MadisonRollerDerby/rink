@@ -14,6 +14,7 @@ urlpatterns = [
     # User management
     url(r'^users/', include('rink.users.urls', namespace='users')),
     url(r'^accounts/', include('allauth.urls')),
+    url(r'^billing/', include('billing.urls', namespace='billing')),
     url(r'^legal/', include('legal.urls', namespace='legal')),
     url(r'^organization/', include('league.urls', namespace='league')),
     url(r'^register/', include('registration.urls', namespace="register")),

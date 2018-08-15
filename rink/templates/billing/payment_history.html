@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment History{% endblock %}
+
+{% block content %}
+
+<h4>Payments</h4>
+
+{% if invoices %}
+    <div class="list-group">
+    {% for invoice in invoices %}
+      <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">${{ invoice.invoice_amount }} {{ invoice.status|upper }}</h5>
+          <small>{{ invoice.invoice_date }}</small>
+        </div>
+        <p class="mb-1">{{ invoice.description }}</p>
+        <small>
+            {% if invoice.status == 'paid' %}
+                Paid ${{ invoice.paid_amount }} on {{ invoice.paid_date }}
+            {% elif invoice.status == 'refunded' %}
+                Refunded ${{ invoice.refund_amount }} on {{ invoice.refund_date }}
+            {% endif %}
+
+                {% if invoice.payment %}
+                using <i>{{ invoice.payment.get_card }}</i>
+                {% endif %}
+        </small>
+      </a>                    
+    {% endfor %}
+    </div>
+{% else %}
+    <p>You have no payments on file.</p>
+{% endif %}
+
+{% endblock %}

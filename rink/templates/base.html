@@ -106,9 +106,9 @@
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Dues</a>
                 <div class="dropdown-menu">
-                  <a class="dropdown-item" href="#">Pay Dues</a>
-                  <a class="dropdown-item" href="#">Payment History</a>
-                  <a class="dropdown-item" href="#">Update Credit Card</a>
+                  <a class="dropdown-item" href="{% url 'billing:pay' %}">Pay Dues</a>
+                  <a class="dropdown-item" href="{% url 'billing:payment_history' %}">Payment History</a>
+                  <a class="dropdown-item" href="{% url 'billing:update_card' %}">Update Credit Card</a>
                 </div>
               </li>
 
