@@ -67,6 +67,9 @@ THIRD_PARTY_APPS = [
     'guardian',
     'imagekit',
     'markdownx',
+    'django_tables2',
+    'django_filters',
+    'bootstrap4',
 
     'allauth',
     'allauth.account',
@@ -291,3 +294,5 @@ SLUG_RESOLVE_DUPLICATES_LIMIT = 10
 
 DATE_FORMAT = '%n/%j/%Y'
 DATE_FORMAT_PYTHON = '%-m/%-d/%Y'
+
+DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap4.html'

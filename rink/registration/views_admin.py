@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.validators import validate_email
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
 from django.http import HttpResponseRedirect, HttpResponse
@@ -8,17 +9,23 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
+from django_tables2 import SingleTableView
+from django_filters.views import FilterView
+
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from guardian.shortcuts import get_users_with_perms
 import re
 
-from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount
-from league.mixins import RinkLeagueAdminPermissionRequired
-from league.models import Organization, League
 from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
     EventInviteEmailForm, EventInviteAjaxForm
-from .models import RegistrationEvent, RegistrationInvite
+from .models import RegistrationEvent, RegistrationInvite, Roster
+from .tables import RosterTable, RosterFilter
+from billing.models import BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, Invoice
+from league.mixins import RinkLeagueAdminPermissionRequired
+from league.models import Organization, League
+from legal.models import LegalSignature
+from registration.models import RegistrationData
 from users.models import User
 
 from registration.tasks import send_registration_invite_email
@@ -40,20 +47,68 @@ class EventAdminBaseView(RinkLeagueAdminPermissionRequired, View):
         except KeyError:
             pass
 
-        return super(EventAdminBaseView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context(self):
+        roster_count = Roster.objects.filter(event=self.event).count()
+
+        pending_invites_count = RegistrationInvite.objects.filter(
+            event=self.event,
+            completed_date__isnull=True,
+        ).count()
+
         return {
             'organization_slug': self.organization.slug,
             'league_slug': self.league.slug,
             'event': self.event,
             'event_slug': self.event_slug,
             'event_menu_selected': self.event_menu_selected,
-            'invites_menu_selected': self.invites_menu_selected
+            'invites_menu_selected': self.invites_menu_selected,
+            'roster_menu_count': roster_count,
+            'invites_pending_menu_count': pending_invites_count,
         }
 
     def render(self, request, context={}):
         return render(request, self.template, {**context, **self.get_context()})
+
+
+class EventAdminTableView(RinkLeagueAdminPermissionRequired, SingleTableView, FilterView):
+    event = None
+    event_slug = None
+    event_menu_selected = None
+    invites_menu_selected = None
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.event = get_object_or_404(RegistrationEvent, slug=kwargs['event_slug'])
+            self.event_slug = self.event.slug
+        except KeyError:
+            pass
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        roster_count = Roster.objects.filter(event=self.event).count()
+
+        pending_invites_count = RegistrationInvite.objects.filter(
+            event=self.event,
+            completed_date__isnull=True,
+        ).count()
+
+        additional_context = {
+            'organization_slug': self.organization.slug,
+            'league_slug': self.league.slug,
+            'event': self.event,
+            'event_slug': self.event_slug,
+            'event_menu_selected': self.event_menu_selected,
+            'invites_menu_selected': self.invites_menu_selected,
+            'roster_menu_count': roster_count,
+            'invites_pending_menu_count': pending_invites_count,
+        }
+
+        return {**context, **additional_context}
 
 
 # List of registration events
@@ -149,15 +204,43 @@ class EventAdminSettings(EventAdminBaseView):
         return self.render(request, {'event_form': form})
 
 
-class EventAdminRoster(EventAdminBaseView):
-    template = 'registration/event_admin_roster.html'
+class EventAdminRoster(EventAdminTableView, FilterView):
+    template_name = 'registration/event_admin_roster.html'
+    event_menu_selected = "roster"
+    paginate_by = 50
+    table_class = RosterTable
+    #filterset_class = RosterFilter
+
+    def get_queryset(self):
+        return Roster.objects.filter(event=self.event)
+
+
+class EventAdminRosterDetail(EventAdminBaseView):
+    template = 'registration/event_admin_roster_detail.html'
     event_menu_selected = "roster"
 
-    def get(self, request, *args, **kwargs):
-        return self.render(request, {})
+    def get(self, request, roster_id, *args, **kwargs):
+        # user
+        # roster
+        # signup data
+        # billing
+        #   payments
+        #   invoices
+        # legal signatures
+        roster = get_object_or_404(Roster, event=self.event, pk=roster_id)
+        registration_data = RegistrationData.objects.get(roster=roster)
+        invoices = Invoice.objects.filter(billing_period__event=self.event)
+        signatures = LegalSignature.objects.filter(registration=registration_data)
+        invoices_unpaid_count = Invoice.objects.filter(billing_period__event=self.event, status='unpaid').count()
 
-    def post(self, request, *args, **kwargs):
-        pass
+        return self.render(request, {
+            'user': request.user,
+            'roster': roster,
+            'registration_data': registration_data,
+            'invoices': invoices,
+            'invoices_unpaid_count': invoices_unpaid_count,
+            'signatures': signatures,
+        })
 
 
 class EventAdminInvites(EventAdminBaseView):

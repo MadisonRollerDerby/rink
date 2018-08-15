@@ -39,6 +39,10 @@ urlpatterns = [
         views_admin.EventAdminRoster.as_view(),
         name="event_admin_roster"),
 
+    path('<slug:event_slug>/roster/<int:roster_id>',
+        views_admin.EventAdminRosterDetail.as_view(),
+        name="event_admin_roster_detail"),
+
     # Event Billing Periods
     path('<slug:event_slug>/billing',
         views_admin.EventAdminBillingPeriods.as_view(),

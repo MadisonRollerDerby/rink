@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.signals import user_logged_in
 from django.core.validators import validate_email
@@ -60,17 +62,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     organization = models.ForeignKey(
         'league.Organization',
         "Organization",
-        blank = True,
-        null = True,
-        #default = ???
+        blank=True,
+        null=True,
     )
 
     league = models.ForeignKey(
         'league.League',
         "League",
-        blank = True,
-        null = True,
-        #default = ???,
+        blank=True,
+        null=True,
     )
 
     derby_name = models.CharField(_('Derby Name'), blank=True, max_length=255)
@@ -80,6 +80,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+
+    tags = models.ManyToManyField(
+        'users.Tag',
+        through='UserTag',
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -136,6 +141,101 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
 
 
+class Tag(models.Model):
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    text = models.CharField(
+        "Tag Text",
+        max_length=50,
+    )
+
+    color = models.CharField(
+        "Tag Color",
+        max_length=50,
+    )
+
+    def __str__(self):
+        return self.text
+
+    class Meta:
+        unique_together = ['league', 'text']
+
+
+class UserTag(models.Model):
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    tag = models.ForeignKey(
+        'users.Tag',
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        unique_together = ['user', 'tag']
+
+
+LOG_MESSAGE_TYPE_CHOICES = [
+    # rink code // bootstrap alert class
+    ('default', 'info'),
+
+    ('primary', 'primary'),
+    ('secondary', 'secondary'),
+    ('info', 'info'),
+    ('light', 'light'),
+    ('dark', 'dark'),
+
+    ('success', 'success'),
+    ('green', 'success'),
+
+    ('warning', 'warning'),
+    ('yellow', 'warning'),
+
+    ('danger', 'danger'),
+    ('red', 'danger'),
+    ('error', 'danger'),
+]
+
+
+class UserLog(models.Model):
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    message = models.TextField(
+        "Log Message",
+    )
+
+    message_type = models.CharField(
+        "Message Type",
+        max_length=50,
+        choices=LOG_MESSAGE_TYPE_CHOICES,
+        default="default",
+    )
+
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+
+    date = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+
 def set_rink_session_data(sender, user, request, **kwargs):
     # Assist in figuring out which sections of the nav to show for admins
     # This pretty much just makes the permissions pretty and caches them for
@@ -172,6 +272,7 @@ def set_rink_session_data(sender, user, request, **kwargs):
         if user.league:
             for perm in get_perms_for_model(user.league):
                 request.session['league_permissions'].append(perm.codename)
-            
+
+
 # Attach the signal
 user_logged_in.connect(set_rink_session_data)

@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.http import HttpResponseRedirect, HttpResponse
@@ -9,15 +8,14 @@ from django.views import View
 
 from guardian.shortcuts import assign_perm
 from guardian.mixins import LoginRequiredMixin
-import re
 from stripe.error import CardError
 
 from .forms import RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
 from .models import RegistrationEvent, RegistrationInvite, RegistrationData
 from billing.models import (
-    BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount,
-    UserStripeCard, Invoice)
-from legal.models import LegalDocument, LegalSignature
+    BillingPeriod, UserStripeCard, Invoice, BillingSubscription
+)
+from legal.models import LegalSignature
 
 from registration.tasks import send_registration_confirmation
 
@@ -46,7 +44,7 @@ class RegisterBegin(RegistrationView):
         # Check if we're in form preview mode
         preview_mode = False
         if request.user.is_authenticated and \
-            ('org_admin' in request.session.get('organization_permissions', []) or \
+            ('org_admin' in request.session.get('organization_permissions', []) or
              'registration_manager' in request.session.get('league_permissions', [])):
             preview_mode = True
 
@@ -187,9 +185,10 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         else:
             if preview_mode:
                 messages.info(request, "<strong>You have already registered.</strong> You are currently logged in as an administrator. You are allowed to preview this form to review changes to it.")
-                preview_mode_disable_button = True
+                #preview_mode_disable_button = True
             else:
-                return registration_error(request, self.event, "already_registered")
+                messages.warning(request, "<strong>Just a heads up. You have already registered for this event.</strong> If you mean to register more than once, by all means, go for it.")
+                #return registration_error(request, self.event, "already_registered")
 
         # Check if user has some registration data we can already use
         try:
@@ -284,33 +283,42 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             #        str(e))
             #    )
             else:
+                user = request.user
+
                 # Card successfully saved.
                 # Save registration data.
                 registration_data = form.save(commit=False)
-                registration_data.user = request.user
+                registration_data.user = user
                 registration_data.event = self.event
                 registration_data.league = self.event.league
                 registration_data.organization = self.event.league.organization
-
                 try:
                     if request.session.get('register_invite_id', None):
                         registration_data.invite = RegistrationInvite.objects.get(
                             pk=request.session['register_invite_id'])
                 except RegistrationInvite.DoesNotExist:
                     pass
-
                 registration_data.save()
-                # Save details to user profile
-                user = request.user
-                user.first_name = registration_data.contact_first_name
-                user.last_name = registration_data.contact_last_name
-                user.email = registration_data.contact_email
-                user.derby_name = registration_data.derby_name
-                user.derby_number = registration_data.derby_number
-                user.save()
+
+                # Save details to user profile.
+                # On some forms, this will NOT update the user details
+                # (Juniors league registration could have mulitple signups by
+                #  a parent and this would be confusing)
+                form.update_user(user)
+
+                # Create roster entry
+                registration_data.roster = form.create_roster(user, self.event)
 
                 # Update permissions
                 assign_perm("league_member", user, self.event.league)
+
+                # Create billing profile
+                registration_data.billing_subscription = BillingSubscription.objects.create(
+                    user=user,
+                    league=self.event.league,
+                    event=self.event,
+                    roster=registration_data.roster,
+                )
 
                 # Save legal signatures
                 for document in self.event.legal_forms.all():
@@ -338,6 +346,8 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                         email=user.email,
                         event=self.event,
                     )
+
+                registration_data.save()
 
                 payment_id = None
                 if payment:
@@ -374,8 +384,8 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                     <a href='{}'>login to that account</a>, \
                     <a href='{}'>reset the password</a>, \
                     or use a different email address.</p>".format(
-                        reverse('account_logout'),
-                        reverse('account_reset_password'),
+                    reverse('account_logout'),
+                    reverse('account_reset_password'),
                 ))
 
         return render(request, self.template, {

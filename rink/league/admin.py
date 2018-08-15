@@ -1,7 +1,9 @@
 from django.contrib import admin
 from guardian.admin import GuardedModelAdmin
 
-from .models import Organization, League, InsuranceType
+from .models import (
+    Organization, League, InsuranceType
+)
 
 
 class OrganizationAdmin(GuardedModelAdmin):

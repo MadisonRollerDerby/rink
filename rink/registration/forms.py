@@ -1,19 +1,13 @@
-from django.contrib import messages
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML
-from crispy_forms.bootstrap import FormActions
+from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field
 from django import forms
 from django.contrib.auth import (
     authenticate, password_validation,
 )
-from django.forms.widgets import CheckboxSelectMultiple
-from django.urls import reverse
 
-from guardian.shortcuts import assign_perm
-
-from legal.models import LegalDocument
+from .models import RegistrationData
 from users.models import User
-from .models import RegistrationData, RegistrationEvent
+from registration.models import Roster
 
 
 class RegistrationSignupForm(forms.ModelForm):
@@ -21,7 +15,7 @@ class RegistrationSignupForm(forms.ModelForm):
         label="Email Address",
         required=True,
         widget=forms.TextInput(attrs={
-            'type': 'email', 
+            'type': 'email',
             'placeholder': 'Email Address'
         })
     )
@@ -176,6 +170,25 @@ class RegistrationDataForm(forms.ModelForm):
             raise forms.ValidationError("This email address already has an account set up. You cannot change your email address to it.", code="username_conflict")
 
         return self.cleaned_data['contact_email']
+
+    def update_user(self, user):
+        user.first_name = self.cleaned_data['contact_first_name']
+        user.last_name = self.cleaned_data['contact_last_name']
+        user.email = self.cleaned_data['contact_email']
+        user.derby_name = self.cleaned_data['derby_name']
+        user.derby_number = self.cleaned_data['derby_number']
+        user.save()
+
+    def create_roster(self, user, event):
+        return Roster.objects.create(
+            user=user,
+            event=event,
+            first_name=self.cleaned_data['contact_first_name'],
+            last_name=self.cleaned_data['contact_last_name'],
+            email=self.cleaned_data['contact_email'],
+            derby_name=self.cleaned_data['derby_name'],
+            derby_number=self.cleaned_data['derby_number'],
+        )
 
 
 class LegalDocumentAgreeForm(forms.Form):

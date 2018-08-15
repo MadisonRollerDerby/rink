@@ -1,11 +1,15 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as AuthUserAdmin
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from .models import User
+from .models import User, Tag, UserTag, UserLog
 from django.utils.translation import gettext, gettext_lazy as _
+
+
+admin.site.register(Tag)
+admin.site.register(UserTag)
+admin.site.register(UserLog)
 
 
 class MyUserChangeForm(forms.ModelForm):

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load bootstrap4 %}
+
+
+{% block title %}{{ roster.full_name }} - Roster{% endblock %}
+
+
+{% block content %}
+
+{% include "registration/event_admin_menu.html" with section_title="Roster" %}
+
+
+<h4>{{ roster.full_name }} {% if roster.derby_name %}- {{ roster.derby_name }} {% endif %}{% if roster.derby_name %}<span class="text-muted">({{ roster.derby_number }})</span>{% endif %}</h4>
+<h6>Email: <a href="mailto:{{ roster.email }}">{{ roster.email }}</a></h6>
+
+<hr>
+
+<div class="container mt-3">
+    <div class="row">
+        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            <a class="nav-link active" id="v-registration-tab" data-toggle="pill" href="#v-registration" role="tab" aria-controls="v-registration" aria-selected="true">Registration Details</a>
+            <a class="nav-link" id="v-billing-tab" data-toggle="pill" href="#v-billing" role="tab" aria-controls="v-billing" aria-selected="false">Billing <span class="badge badge-primary badge-pill">{{ invoices_unpaid }}</span></a>
+            <a class="nav-link" id="v-legal-tab" data-toggle="pill" href="#v-legal" role="tab" aria-controls="v-legal" aria-selected="false">Legal Signatures <span class="badge badge-primary badge-pill">{{ signatures.count }}</span></a>
+            <a class="nav-link" id="v-update-tab" data-toggle="pill" href="#v-update" role="tab" aria-controls="v-update" aria-selected="false">Update Info</a>
+            <a class="nav-link" href="/?" role="tab" aria-selected="false">User Profile</a>
+        </div>
+        <div class="tab-content ml-3" id="v-pills-tabContent">
+            <div class="tab-pane fade show active" id="v-registration" role="tabpanel" aria-labelledby="v-registration-tab">
+                <fieldset>
+                    <legend>Contact Details</legend>
+                    <address>
+                        <strong>{{ roster.first_name }} {{ roster.last_name }}</strong><br>
+                        {{ registration_data.contact_address1 }}<br>
+                        {% if registration_data.contact_address2 %}{{ registration_data.contact_address2 }}<br>{% endif %}
+                        {{ registration_data.contact_city }}, {{ registration_data.contact_state }} {{ registration_data.contact_zip }}<br>
+                        <abbr title="Phone">P:</abbr> {{ registration_data.contact_phone }}<br>
+                    </address>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Derby Details</legend>
+                    <label>Derby Name:</label> {{ roster.derby_name }}<br>
+                    <label>Derby Number:</label> {{ roster.derby_number }}<br>
+                    <label>Insurance:</label> {% if registration_data.derby_insurance_number %}
+                                    {{ registration_data.derby_insurance_type }} {{ registration_data.derby_insurance_number }}{% else %}Not Submitted{% endif %}
+                    {% if registration_data.derby_pronoun %}<label>Personal Pronoun:</label> {{ registration_data.derby_pronoun }}{% endif %}
+                </fieldset>
+
+                <fieldset>
+                    <legend>Emergency Details</legend>
+                    <label>Emergency Contact:</label>
+                        {{ registration_data.emergency_contact }} ({{ registration_data.emergency_relationship }})<br>
+                    <label>Emergency Phone #:</label> {{ registration_data.emergency_phone }}<br>
+                    <label>Hospital Preference:</label> {{ registration_data.emergency_hospital }}<br>
+                    <label>Date of Birth:</label> {{ registration_data.emergency_date_of_birth }}<br>
+                    <label>Allergies/Medical Conditions:</label> {{ registration_data.emergency_allergies }}<br>
+                </fieldset>
+
+                <span class="text-muted">Registration was submitted on {{ registration_data.registration_date }}
+
+            </div>
+
+            <div class="tab-pane fade" id="v-billing" role="tabpanel" aria-labelledby="v-billing-tab">
+            billing
+            </div>
+
+            <div class="tab-pane fade" id="v-update" role="tabpanel" aria-labelledby="v-update-tab">
+            update
+            </div>
+
+            <div class="tab-pane fade" id="v-legal" role="tabpanel" aria-labelledby="v-legal-tab">
+            
+                {% if signatures.count > 0 %}
+                <div class="card">
+                  <h5 class="card-header">{{ event }} Signatures</h5>
+                    <ul class="list-group list-group-flush">
+                    {% for signature in signatures %}
+                        <li class="list-group-item">
+                            <a href="{% url 'legal:view_legal_document' document_slug=signature.document.slug league_slug=signature.document.league.slug %}" target="_blank" class="card-link">{{ signature.document.name }} ({{ signature.document.date }})</a>
+                            <p class="card-text"><small class="text-muted">Signed on {{ signature.agree_date }} by {{ registration_data.contact_first_name }} {{registration_data.contact_last_name }}</small></p>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <p>Apparently, we have no signed forms to show you here. They might be on hard copy.</p>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

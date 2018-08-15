@@ -246,6 +246,66 @@ class BillingPeriodCustomPaymentAmount(models.Model):
             raise ValidationError("Invoice amount must be a positive number.")
 
 
+BILLING_SUBSCRIPTION_CHOICES = [
+    ('active', 'Active'),
+    ('inactive', 'Inactive'),
+]
+
+
+class BillingSubscription(models.Model):
+    user = models.ForeignKey(
+        'users.User',
+        on_delete=models.CASCADE,
+    )
+
+    league = models.ForeignKey(
+        'league.League',
+        on_delete=models.CASCADE,
+    )
+
+    event = models.ForeignKey(
+        "registration.RegistrationEvent",
+        on_delete=models.CASCADE,
+    )
+
+    roster = models.ForeignKey(
+        "registration.Roster",
+        on_delete=models.CASCADE,
+    )
+
+    status = models.CharField(
+        "Billing Status",
+        max_length=50,
+        choices=BILLING_SUBSCRIPTION_CHOICES,
+        default="active",
+    )
+
+    create_date = models.DateTimeField(
+        "Active Date",
+        help_text="The date this subscription was created.",
+        auto_now_add=True,
+    )
+
+    deactive_date = models.DateTimeField(
+        "Deactivate Date",
+        help_text="The date this subscription was deactivated.",
+        blank=True,
+        null=True,
+    )
+
+    @property
+    def active(self):
+        if self.status == "active":
+            return True
+        return False
+
+    def deactivate(self):
+        if self.active:
+            self.status = 'inactive'
+            self.deactivate_date = timezone.now()
+            self.save()
+
+
 INVOICE_STATUS_CHOICES = [
     ('unpaid', 'Unpaid'),
     ('paid', 'Paid'),

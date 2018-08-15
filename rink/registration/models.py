@@ -265,11 +265,25 @@ class RegistrationData(models.Model):
         on_delete=models.SET_NULL,
     )
 
+    roster = models.ForeignKey(
+        "registration.Roster",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+
+    billing_subscription = models.ForeignKey(
+        "billing.BillingSubscription",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+
     organization = models.ForeignKey(
         "league.Organization",
         on_delete=models.CASCADE,
     )
-    
+
     contact_email = models.EmailField("Email Address")
     contact_first_name = models.CharField("First Name", max_length=100)
     contact_last_name = models.CharField("Last Name", max_length=100)
@@ -349,3 +363,35 @@ class RegistrationData(models.Model):
     )
 
 
+class Roster(models.Model):
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+    )
+
+    event = models.ForeignKey(
+        "registration.RegistrationEvent",
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+
+    email = models.EmailField("Email Address")
+    
+    first_name = models.CharField("First Name", max_length=100)
+    last_name = models.CharField("Last Name", max_length=100)
+
+    derby_name = models.CharField(
+        "Derby Name",
+        max_length=100,
+        blank=True
+    )
+    derby_number = models.CharField(
+        "Derby Number",
+        max_length=10,
+        blank=True
+    )
+
+    @property
+    def full_name(self):
+        return "{} {}".format(self.first_name, self.last_name)
