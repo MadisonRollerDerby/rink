@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load django_tables2 %}
+{% load crispy_forms_tags %}
+
+{% block title %}Billing Manager{% endblock %}
+
+
+{% block css %}
+<style type="text/css">
+.form-check, .filter-button { margin-left: 10px; }
+.filter-form { font-size: smaller; }
+</style>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h4>Invoices</h4>
+
+{% if filter_form %}
+    <fieldset>
+        <legend>Filter Invoices</legend>
+        <form action="" method="get" class="form form-inline filter-form">
+            
+            {% crispy filter_form %}
+            <input type="submit" class="btn btn-primary btn-sm filter-button" value="Filter">
+        </form>
+    </fieldset>
+{% endif %}
+
+{% render_table table %}
+
+{% endblock %}

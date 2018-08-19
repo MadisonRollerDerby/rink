@@ -269,6 +269,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 card_profile.update_from_token(form.cleaned_data['stripe_token'])
                 payment = card_profile.charge(invoice=invoice, send_receipt=False)
             except CardError as e:
+                invoice.delete()
                 body = e.json_body
                 err = body.get('error', {})
                 messages.error(request, "<p>We were unable to charge your credit card.</p>\
