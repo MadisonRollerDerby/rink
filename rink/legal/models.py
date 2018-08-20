@@ -16,12 +16,13 @@ class LegalDocument(models.Model):
     league = models.ForeignKey(
         'league.League',
         on_delete=models.CASCADE,
+        null=True,
     )
 
     name = models.CharField(
         "Document Name",
         max_length=100,
-        help_text = "Name of this legal document.",
+        help_text="Name of this legal document.",
     )
 
     slug = models.CharField(
@@ -60,6 +61,7 @@ class LegalSignature(models.Model):
     user = models.ForeignKey(
         'users.User',
         on_delete=models.CASCADE,
+        null=True
     )
 
     document = models.ForeignKey(
@@ -70,6 +72,7 @@ class LegalSignature(models.Model):
     league = models.ForeignKey(
         'league.League',
         on_delete=models.CASCADE,
+        null=True
     )
 
     event = models.ForeignKey(
