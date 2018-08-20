@@ -320,6 +320,13 @@ INVOICE_STATUS_CHOICES = [
     ('refunded', 'Refunded'),
 ]
 
+INVOICE_STATUS_CLASSES = {
+    'unpaid': 'danger',
+    'paid': 'success',
+    'canceled': 'secondary',
+    'refunded': 'warning',
+}
+
 
 class Invoice(models.Model):
     user = models.ForeignKey(
@@ -431,7 +438,11 @@ class Invoice(models.Model):
             self.status
         )
 
-    def pay(self, amount=None, processor="cash"):
+    @property
+    def status_class(self):
+        return INVOICE_STATUS_CLASSES[self.status]
+
+    def pay(self, amount=None, processor="cash", transaction_id='', payment_date=None):
         if not any(processor in processor_choice for processor_choice in PAYMENT_PROCESSOR_CHOICES):
             raise ValueError("Payment method not in PAYMENT_PROCESSOR_CHOICES: {}".format(processor))
 
@@ -440,7 +451,9 @@ class Invoice(models.Model):
         if amount != self.invoice_amount:
             raise ValueError("Payment amount cannot be different than invoice amount. We do not accept partial payments currently. ")
 
-        payment_date = timezone.now()
+        if not payment_date:
+            payment_date = timezone.now()
+            
         payment = Payment.objects.create(
             user=self.user,
             league=self.league,
@@ -449,6 +462,7 @@ class Invoice(models.Model):
             payment_date=payment_date,
         )
 
+        self.transaction_id = transaction_id
         self.paid_amount = amount
         self.status = 'paid'
         self.payment = payment

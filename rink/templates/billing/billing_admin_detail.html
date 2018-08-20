@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load django_tables2 %}
+{% load crispy_forms_tags %}
+
+{% block title %}Invoice #{{ invoice.pk }} - {{ user }}{% endblock %}
+
+
+{% block css %}
+
+{% endblock %}
+
+
+
+{% block content %}
+
+<h4>Invoice #{{ invoice.pk }} <button type="button" class="btn disabled btn-sm btn-outline-{{ invoice.status_class }} text-uppercase">{{ invoice.status }}</button></h4>
+
+{% include 'utils/messages.html' %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm">
+            <fieldset>
+                <legend>Invoiced To</legend>
+                <strong>{{user }}</strong><br>
+                <a href="mailto:{{ user.email }}">{{ user.email }}</a><br>
+                <br>
+                <a href="#"><button type="button" class="btn btn-primary">View User</button></a>
+            </fieldset>
+        </div>
+        <div class="col-sm">
+            <fieldset>
+                <legend>Invoice Details</legend>
+                <p><strong>Description:</strong> {{ invoice.description }} <a href="#">(view event)</a><br></p>
+                
+                <strong>Status:</strong> <button type="button" class="btn disabled btn-sm btn-outline-{{ invoice.status_class }} text-uppercase">{{ invoice.status }}</button><br>
+                <strong>Amount:</strong> ${{ invoice.invoice_amount }}<br>
+                <br>
+                <strong>Invoice Date:</strong> {{ invoice.invoice_date|date:"n/j/Y" }}<br>
+                <strong>Due Date:</strong> {{ invoice.due_date|date:"n/j/Y" }}<br>
+                <strong>Paid Date:</strong> {{ invoice.paid_date|date:"n/j/Y" }}<br>
+                <br>
+
+                {% if not invoice.payment %}
+                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addPaymentModal">Add Payment</button>
+                {% endif %}
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editInvoiceModal">Edit Invoice</button>
+            </fieldset>
+        </div>
+        {% if invoice.payment %}
+        <div class="col-sm">
+            <fieldset>
+                <legend>Payment Details</legend>
+            
+                <strong>Amount:</strong> ${{ payment.amount }}<br><br>
+                <strong>Card:</strong> {{ payment.get_card }}<br>
+                <strong>Paid by:</strong> {{ payment.processor }} {{ payment.transaction_id }}<br>
+                <strong>Date:</strong> {{ payment.payment_date|date:"n/j/Y" }}<br>
+                <br>
+
+                {% if invoice.payment.is_refunded %}
+                <strong>Refund Amount:</strong> ${{ payment.refund_amount }}<br>
+                <strong>Refund Date:</strong> {{ payment.refund_date|date:"n/j/Y" }}<br>
+                <strong>Refund Reason:</strong> {{ payment.refund_reason }}<br>
+                <br>
+                {% endif %}
+                
+                {% if not invoice.payment.is_refunded %}
+                <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#sendRefundModal">Refund</button>
+                {% endif %}
+            </fieldset>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if not invoice.payment %}
+<div class="modal fade" id="addPaymentModal" tabindex="-1" role="dialog" aria-labelledby="addPaymentLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="addPaymentForm" action="{% url 'billing:billing_admin_add_payment' pk=invoice.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addPaymentLabel">Add Payment - Invoice #{{ invoice.pk }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% csrf_token %}
+        {% crispy payment_form %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-success" type="submit" value="Add Payment" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#addPaymentForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+
+<div class="modal fade" id="editInvoiceModal" tabindex="-1" role="dialog" aria-labelledby="editInvoiceLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="editInvoiceForm" action="{% url 'billing:billing_admin_edit_invoice' pk=invoice.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editInvoiceLabel">Edit Invoice - Invoice #{{ invoice.pk }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% csrf_token %}
+        {% crispy invoice_form %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-primary" type="submit" value="Edit Invoice" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#editInvoiceForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if invoice.payment and not invoice.payment.is_refunded %}
+<div class="modal fade" id="sendRefundModal" tabindex="-1" role="dialog" aria-labelledby="sendRefundLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="sendRefundForm"  action="{% url 'billing:billing_admin_refund_payment' pk=invoice.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sendRefundLabel">Refund Payment - Invoice #{{ invoice.pk }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% csrf_token %}
+        {% crispy refund_form %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-warning" type="submit" value="Refund Payment" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#sendRefundForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
