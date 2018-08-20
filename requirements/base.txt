@@ -8,8 +8,8 @@ python-slugify
 beautifulsoup4
 django-filter
 django-tables2==2.0.0a5
-django-bootstrap4=0.0.6
-import_export
+django-bootstrap4
+django-import-export
 
 # Django
 # ------------------------------------------------------------------------------
