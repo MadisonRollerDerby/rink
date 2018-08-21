@@ -4,9 +4,8 @@
 {% block title %}Registration Invites{% endblock %}
 
 {% block javascript %}
-{% csrf_token %}
 <script>
-var csrftoken = getCookie('csrftoken');
+var csrftoken = '{{ csrftoken }}';
 </script>
 {% endblock %}
 

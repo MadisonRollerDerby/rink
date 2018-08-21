@@ -4,6 +4,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
 from django.http import HttpResponseRedirect, HttpResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -52,6 +53,7 @@ class EventAdminBaseView(RinkLeagueAdminPermissionRequired, View):
         except KeyError:
             pass
 
+        self.request = request
         return super().dispatch(request, *args, **kwargs)
 
     def get_context(self):
@@ -71,6 +73,7 @@ class EventAdminBaseView(RinkLeagueAdminPermissionRequired, View):
             'invites_menu_selected': self.invites_menu_selected,
             'roster_menu_count': roster_count,
             'invites_pending_menu_count': pending_invites_count,
+            'csrftoken': get_token(self.request)
         }
 
     def render(self, request, context={}):
