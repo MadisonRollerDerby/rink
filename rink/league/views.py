@@ -71,12 +71,15 @@ class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, View):
             'email_form': LeagueEmailForm(data=request.POST, instance=league),
         }
 
-        for form in forms:
-            if forms[form].is_valid():
-                forms[form].save()
-                messages.success(request, 'Saved League Settings')
-                return HttpResponseRedirect(reverse("league:league_update",
-                    kwargs={'slug': league.slug, 'organization_slug': league.organization.slug}))
+        form_name = request.POST.get('form_name', None)
+        form = forms.get(form_name, None)
+
+        if form and form.is_valid():
+            form.save()
+            messages.success(request, 'Saved League Settings')
+            return HttpResponseRedirect(reverse("league:league_update",
+                kwargs={'slug': league.slug, 'organization_slug': league.organization.slug}))
+
         return render(request, self.template_name, {
             'forms': forms,
             'league': league,

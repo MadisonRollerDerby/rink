@@ -21,6 +21,8 @@ class LeagueSettingsBaseForm(object):
 
 
 class LeagueNameForm(LeagueSettingsBaseForm, forms.ModelForm):
+    form_name = forms.CharField(widget=forms.HiddenInput(), required=True, initial="name_form")
+
     class Meta:
         model = League
         fields = [
@@ -31,6 +33,8 @@ class LeagueNameForm(LeagueSettingsBaseForm, forms.ModelForm):
 
 
 class LeagueBillingForm(LeagueSettingsBaseForm, forms.ModelForm):
+    form_name = forms.CharField(widget=forms.HiddenInput(), required=True, initial="billing_form")
+
     class Meta:
         model = League
         fields = [
@@ -42,6 +46,8 @@ class LeagueBillingForm(LeagueSettingsBaseForm, forms.ModelForm):
 
 
 class LeagueRegistrationForm(LeagueSettingsBaseForm, forms.ModelForm):
+    form_name = forms.CharField(widget=forms.HiddenInput(), required=True, initial="registration_form")
+
     def __init__(self, *args, **kwargs):
         league = kwargs.pop('league', None)
         super().__init__(*args, **kwargs)
@@ -59,6 +65,8 @@ class LeagueRegistrationForm(LeagueSettingsBaseForm, forms.ModelForm):
 
 
 class LeagueEmailForm(LeagueSettingsBaseForm, forms.ModelForm):
+    form_name = forms.CharField(widget=forms.HiddenInput(), required=True, initial="email_form")
+
     class Meta:
         model = League
         fields = [
