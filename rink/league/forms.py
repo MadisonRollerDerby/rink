@@ -44,7 +44,7 @@ class LeagueBillingForm(LeagueSettingsBaseForm, forms.ModelForm):
 class LeagueRegistrationForm(LeagueSettingsBaseForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        league = kwargs.pop('league', None)
+        league = kwargs.get('league', None)
         if InsuranceType.objects.filter(league=league).count() > 0:
             self.fields['default_insurance_type'].queryset = InsuranceType.objects.filter(league=league)
         else:
