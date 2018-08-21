@@ -1,0 +1,14 @@
+[Unit]
+Description=gunicorn daemon
+After=network.target
+
+[Service]
+User=mwd
+Group=mwd
+
+WorkingDirectory=/home/mwd/rink
+EnvironmentFile=/home/mwd/rink/.env
+ExecStart=/home/mwd/.virtualenvs/rink/bin/gunicorn config.wsgi:application -b 127.0.0.1:9004
+
+[Install]
+WantedBy=multi-user.target

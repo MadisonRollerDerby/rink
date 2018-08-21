@@ -1,0 +1,44 @@
+upstream rink_server {
+    # server unix:/home/mwd/gunicorn.sock fail_timeout=5;
+    server 127.0.0.1:9004 fail_timeout=5;
+}
+
+server {
+        listen 80;
+        server_name  rinktest.silvers.net;
+        rewrite ^(.*) https://rinktest.silvers.net$1 permanent;
+        access_log /var/log/nginx/rinktest.silvers.net.ssl.access.log;
+        error_log /var/log/nginx/rinktest.silvers.net.ssl.error.log;
+}
+
+# SSL host
+server {
+    listen 443 ssl;
+    server_name rinktest.silvers.net;
+
+    access_log /var/log/nginx/rinktest.silvers.net.ssl.access.log;
+    error_log /var/log/nginx/rinktest.silvers.net.ssl.error.log;
+
+        ssl                  on;
+        ssl_certificate      /etc/letsencrypt/live/rinktest.silvers.net/fullchain.pem;
+        ssl_certificate_key  /etc/letsencrypt/live/rinktest.silvers.net/privkey.pem;
+        keepalive_timeout    70;
+        add_header           Front-End-Https    on;
+
+    # path for static files
+
+    location /static/ {
+            alias /home/mwd/rink/staticfiles/;
+        }
+
+    location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+
+        if (!-f $request_filename) {
+            proxy_pass http://rink_server;
+            break;
+        }
+    }
+}
