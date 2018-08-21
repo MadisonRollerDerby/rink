@@ -239,6 +239,7 @@ class RegistrationInvite(models.Model):
 
     def get_invite_url(self):
         return reverse("register:register_event_uuid", kwargs={
+            'league_slug': self.event.league.slug,
             'event_slug': self.event.slug,
             'invite_key': self.uuid,
         })
