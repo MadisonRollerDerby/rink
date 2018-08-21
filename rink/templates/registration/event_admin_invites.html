@@ -3,6 +3,13 @@
 
 {% block title %}Registration Invites{% endblock %}
 
+{% block javascript %}
+{% csrf_token %}
+<script>
+var csrftoken = getCookie('csrftoken');
+</script>
+{% endblock %}
+
 {% block content %}
 
 {% include "registration/event_admin_menu.html" with section_title="Invites" %}
