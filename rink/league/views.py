@@ -65,12 +65,12 @@ class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, View):
     def post(self, request, organization_slug, slug):
         league = get_object_or_404(League, slug=slug)
         forms = {
-            'name_form': LeagueNameForm(request.POST, instance=league),
-            'billing_form': LeagueBillingForm(request.POST, instance=league),
-            'registration_form': LeagueRegistrationForm(request.POST, instance=league),
-            'email_form': LeagueEmailForm(request.POST, instance=league),
+            'name_form': LeagueNameForm(data=request.POST, instance=league),
+            'billing_form': LeagueBillingForm(data=request.POST, instance=league),
+            'registration_form': LeagueRegistrationForm(data=request.POST, instance=league),
+            'email_form': LeagueEmailForm(data=request.POST, instance=league),
         }
-        
+
         for form in forms:
             if forms[form].is_valid():
                 forms[form].save()
