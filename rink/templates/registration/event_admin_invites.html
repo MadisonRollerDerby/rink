@@ -13,6 +13,7 @@
           <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "invites" %}active{%endif%}" href="{% url 'registration:event_admin_invites' event_slug=event_slug %}">View Invites</a>
           <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "users" %}active{%endif%}" href="{% url 'registration:event_admin_invite_users' event_slug=event_slug %}">Invite Users</a>
           <a class="flex-sm-fill text-sm-center nav-link {% if invites_menu_selected == "emails" %}active{%endif%}" href="{% url 'registration:event_admin_invite_emails' event_slug=event_slug %}">Invite Emails</a>
+          <a target="_blank" class="flex-sm-fill text-sm-center nav-link" href="{% url 'register:register_event' league_slug=event.league.slug event_slug=event_slug %}">Public Registration Link</a>
         </nav>
     </div>
 </div>

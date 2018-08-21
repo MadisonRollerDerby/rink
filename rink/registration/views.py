@@ -179,7 +179,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
         # Check if the user has already registered
         try:
-            data = RegistrationData.objects.get(user=request.user, event=self.event)
+            data = RegistrationData.objects.filter(user=request.user, event=self.event).first()
         except RegistrationData.DoesNotExist:
             pass
         else:
@@ -195,7 +195,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             existing_registration = RegistrationData.objects.filter(
                 user=request.user,
                 organization=self.event.league.organization,
-            ).order_by('-registration_date').get()
+            ).order_by('-registration_date').first()
         except RegistrationData.DoesNotExist:
             existing_registration = None
 
