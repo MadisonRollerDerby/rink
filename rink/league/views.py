@@ -67,7 +67,7 @@ class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, View):
         forms = {
             'name_form': LeagueNameForm(data=request.POST, instance=league),
             'billing_form': LeagueBillingForm(data=request.POST, instance=league),
-            'registration_form': LeagueRegistrationForm(data=request.POST, instance=league),
+            'registration_form': LeagueRegistrationForm(data=request.POST, instance=league, league=league),
             'email_form': LeagueEmailForm(data=request.POST, instance=league),
         }
 
