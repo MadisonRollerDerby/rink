@@ -20,6 +20,7 @@ class InsuranceTypeFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda n: f'TEST INSUR {n}')
     long_name = factory.Sequence(lambda n: f'Test Insurance Type {n}')
     details_url = "https://example.com"
+    league = factory.SubFactory(LeagueFactory)
 
     class Meta:
         model = 'league.InsuranceType'

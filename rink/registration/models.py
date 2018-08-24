@@ -157,7 +157,6 @@ class RegistrationEvent(models.Model):
 
     def get_kwargs_for_url(self):
         return {
-            'organization_slug': self.league.organization.slug,
             'league_slug': self.league.slug,
             'event_slug': self.slug,
         }

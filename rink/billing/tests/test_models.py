@@ -305,7 +305,7 @@ class TestBillingPeriod(BillingAppTestCase, TransactionTestCase):
         # Generate invoice either creates or returns an existing invoice
         # for the specified user .
         billing_period = BillingPeriodFactory(league=self.league)
-        invoice = billing_period.generate_invoice(self.user)
+        invoice, created = billing_period.generate_invoice(self.user)
 
         self.assertEqual(invoice.league, self.league)
         self.assertEqual(invoice.billing_period, billing_period)
@@ -317,7 +317,7 @@ class TestBillingPeriod(BillingAppTestCase, TransactionTestCase):
         self.assertEqual(invoice.description,
             billing_period.get_invoice_description())
 
-        invoice_again = billing_period.generate_invoice(self.user)
+        invoice_again, created = billing_period.generate_invoice(self.user)
         self.assertEqual(invoice.pk, invoice_again.pk)
 
 

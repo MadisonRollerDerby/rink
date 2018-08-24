@@ -189,7 +189,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
         usc.refresh_from_db()
 
         bp = BillingPeriodFactory(league=self.league)
-        invoice = bp.generate_invoice(user=self.user)
+        invoice, created = bp.generate_invoice(user=self.user)
         payment = usc.charge(invoice=invoice)
 
         invoice.refresh_from_db()
@@ -222,7 +222,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
             period=bp,
             invoice_amount=0
         )
-        invoice = bp.generate_invoice(user=self.user)
+        invoice, created = bp.generate_invoice(user=self.user)
         payment = self.usc.charge(invoice=invoice)
 
         invoice.refresh_from_db()
@@ -265,7 +265,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
 
             self.usc.refresh_from_db()
             bp = BillingPeriodFactory(league=self.league)
-            invoice = bp.generate_invoice(user=self.user)
+            invoice, created = bp.generate_invoice(user=self.user)
 
             if expected_error == "charge":
                 with self.assertRaises(CardError):
@@ -282,7 +282,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
         self.usc.refresh_from_db()
 
         bp = BillingPeriodFactory(league=self.league)
-        invoice = bp.generate_invoice(user=self.user)
+        invoice, created = bp.generate_invoice(user=self.user)
         payment = self.usc.charge(invoice=invoice)
 
         payment.refund()
@@ -309,7 +309,7 @@ class TestUserStripeIntegrationUpdateToken(BillingAppTestCase, TransactionTestCa
         self.usc.refresh_from_db()
 
         bp = BillingPeriodFactory(league=self.league)
-        invoice = bp.generate_invoice(user=self.user)
+        invoice, created = bp.generate_invoice(user=self.user)
         payment = self.usc.charge(invoice=invoice)
 
         #with self.assertRaises(CardError):

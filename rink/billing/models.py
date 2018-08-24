@@ -184,7 +184,8 @@ class BillingPeriod(models.Model):
             return "{} Dues / Registration".format(self.name)
 
     def generate_invoice(self, user):
-        invoice, created = Invoice.objects.get_or_create(
+        # returns (object, created_True_or_False)
+        return Invoice.objects.get_or_create(
             league=self.league,
             billing_period=self,
             user=user,
@@ -195,7 +196,6 @@ class BillingPeriod(models.Model):
                 'description': self.get_invoice_description(),
             }
         )
-        return invoice
 
 
 class BillingGroupMembership(models.Model):
@@ -657,6 +657,9 @@ class Payment(models.Model):
             invoice.save()
 
 
+USER_CARD_MAX_FAILURES = 3
+
+
 class UserStripeCard(models.Model):
     user = models.ForeignKey(
         'users.User',
@@ -716,14 +719,31 @@ class UserStripeCard(models.Model):
         null=True,
     )
 
+    card_num_failures = models.IntegerField(
+        "Number of times this card has failed",
+        default=0,
+    )
+
+    @property
+    def is_failed(self):
+        if self.card_num_failures > USER_CARD_MAX_FAILURES:
+            return True
+        else:
+            return False
+
     def get_card(self):
         if not self.card_type:
             return "<no card data>"
-        return "{} ending {}, expires {}/{}".format(
+
+        failed = ""
+        if self.is_failed:
+            failed = " (FAILED - declined too many times)"
+        return "{} ending {}, expires {}/{}{}".format(
             self.card_type,
             self.card_last4,
             self.card_expire_month,
-            self.card_expire_year
+            self.card_expire_year,
+            failed
         )
 
     def __str__(self):
@@ -761,6 +781,7 @@ class UserStripeCard(models.Model):
         self.card_last_update_date = timezone.now()
         self.card_last_charge_date = None
         self.card_last_fail_date = None
+        self.card_num_failures = 0
         self.save()
 
     def charge(self, invoice=None, invoices=[], send_receipt=True):
@@ -770,6 +791,9 @@ class UserStripeCard(models.Model):
         # yet another email, such as registration.
         if invoice and invoices:
             raise ValueError("You cannot charge both one invoice and multiple invoices at the same time.")
+
+        if self.card_num_failures >= USER_CARD_MAX_FAILURES:
+            raise ValueError("Card has the maximum number of failures ({}) and more charge attempts. User needs to update their card.".format(USER_CARD_MAX_FAILURES))
 
         if invoice:
             invoices = [invoice, ]
@@ -806,6 +830,7 @@ class UserStripeCard(models.Model):
                 )
             except CardError as e:
                 self.card_last_fail_date = timezone.now()
+                self.card_num_failures = self.card_num_failures + 1
                 self.save()
                 raise
 
