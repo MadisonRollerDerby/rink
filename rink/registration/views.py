@@ -98,11 +98,11 @@ class RegisterCreateAccount(RegistrationView):
     template = 'registration/register_create_account.html'
 
     def get(self, request, event_slug, league_slug):
-        form = RegistrationSignupForm()
+        form = RegistrationSignupForm(event=self.event)
         return render(request, self.template, {'form': form, 'event': self.event})
 
     def post(self, request, event_slug, league_slug):
-        form = RegistrationSignupForm(request.POST)
+        form = RegistrationSignupForm(data=request.POST, event=self.event, )
         if form.is_valid():
             user = form.save(league=self.event.league)
             auth_user = authenticate(request, username=user.email, password=form.cleaned_data['password1'])

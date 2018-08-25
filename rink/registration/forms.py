@@ -1,9 +1,10 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field
+from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML
 from django import forms
 from django.contrib.auth import (
     authenticate, password_validation,
 )
+from django.urls import reverse
 
 from .models import RegistrationData
 from users.models import User
@@ -24,7 +25,7 @@ class RegistrationSignupForm(forms.ModelForm):
         label="Password",
         strip=False,
         widget=forms.PasswordInput,
-        help_text=""
+        help_text="Set a password for your Rink account."
     )
 
     password2 = forms.CharField(
@@ -39,14 +40,25 @@ class RegistrationSignupForm(forms.ModelForm):
         fields = ("email",)
 
     def __init__(self, *args, **kwargs):
-        super(RegistrationSignupForm, self).__init__(*args, **kwargs)
+        event = kwargs.pop('event', None)
+        if event:
+            login_url = "{}?next={}".format(
+                reverse('account_login'),
+                reverse('register:register_event', kwargs={'league_slug': event.league.slug, 'event_slug': event.slug})
+            )
+        else:
+            # meh... this could be better, I guess...
+            login_url = reverse('account_login')
+
+        super().__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.layout = Layout(
             'email',
             'password1',
             'password2',
             ButtonHolder(
-                Submit('submit', 'Continue Registration', css_class='button white')
+                Submit('submit', 'Continue Registration', css_class='button white'),
+                HTML('<a href="{}"><input type="button" name="button" value="Already Have an Account?" class="btn button btn-secondary" id="button-id-button"></a>'.format(login_url)),
             )
         )
 

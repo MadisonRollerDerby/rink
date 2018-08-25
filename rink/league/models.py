@@ -135,6 +135,11 @@ class League(models.Model):
         processors=[ResizeToFit(300, 300)],
         format='PNG',
     )
+    logo_social = ImageSpecField(
+        source='logo',
+        processors=[ResizeToFit(1200, 630)],
+        format='PNG',
+    )
 
 
     # Payment Settings

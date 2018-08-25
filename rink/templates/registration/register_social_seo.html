@@ -1,0 +1,19 @@
+    <meta name="description" content="Sign up for {{ event.name }}. Hosted by {{ league.name }}.">
+
+    <meta itemprop="name" content="{{ event.name }} Registration - {{ event.league.name }}">
+    <meta itemprop="description" content="Sign up for {{ event.name }}. Hosted by {{ league.name }}.">
+    {% if league.logo_social %}<meta itemprop="image" content="{{ league.logo_social.url }}">{% endif %}
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ event.name }} Registration - {{ event.league.name }}">
+    <meta name="twitter:description" content="Sign up for {{ event.name }}. Hosted by {{ league.name }}.">
+    <meta name="twitter:site" content="@madwreckindolls">
+    {% if league.logo_social %}<meta name="twitter:image" content="{{ league.logo_social.url }}">{% endif %}
+
+    <meta name="og:title" content="{{ event.name }} Registration - {{ event.league.name }}">
+    <meta name="og:description" content="Sign up for {{ event.name }}. Hosted by {{ league.name }}.">
+    {% if league.logo_social %}<meta name="og:image" content="{{ league.logo_social.url }}">{% endif %}
+    <meta name="og:url" content="https://rink.madisonrollerderby.org{{ request.path }}">
+    <meta name="og:site_name" content="{{ league.name }} Rink">
+    <meta name="og:locale" content="en_US">
+    <meta name="og:type" content="website">

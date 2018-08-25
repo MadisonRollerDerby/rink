@@ -6,7 +6,8 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>{% block title %}Rink{% endblock title %}{% if league_template %} - {{ league_template.name }}{% endif %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block description %}{% endblock description %}">
+    {% block social %}{% endblock %}
+    
 
     <link rel="apple-touch-icon" sizes="57x57" href="{% static "/images/favicon/apple-icon-57x57.png" %}">
     <link rel="apple-touch-icon" sizes="60x60" href="{% static "/images/favicon/apple-icon-60x60.png" %}">
@@ -25,6 +26,8 @@
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="{% static "/images/favicon/ms-icon-144x144.png" %}">
     <meta name="theme-color" content="#ffffff">
+
+
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -72,6 +75,11 @@
             <img src="{{ league_template.logo_thumbnail_header.url }}" alt="{{ league_template.name }}">
           {% endif %}
           <span>{{ league_template.name }}</span>
+        {% elif event %}
+          {% if event.league.logo_thumbnail %}
+            <img src="{{ event.league.logo_thumbnail_header.url }}" alt="{{ event.league.name }}">
+          {% endif %}
+          <span>{{ event.league.name }}</span>        
         {% else %}
           Rink
         {% endif %}
@@ -145,7 +153,7 @@
             {% else %}
               <li class="nav-item">
                 {# URL provided by django-allauth/account/urls.py #}
-                <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% trans "Sign In" %}</a>
+                <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}?next={{ request.path }}">{% trans "Sign In" %}</a>
               </li>
             {% endif %}
           </ul>
