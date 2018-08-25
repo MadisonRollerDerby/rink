@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from league.models import League
 
 
@@ -11,3 +13,7 @@ def league_processor(request):
             pass
 
     return {'league_template': league, }
+
+
+def debug(context):
+    return {'DEBUG': settings.DEBUG}
