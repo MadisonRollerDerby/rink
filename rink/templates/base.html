@@ -79,6 +79,17 @@
                 </li>
               {% endif %}
 
+              {% if request.session.league_switcher_menu %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Switch</a>
+                  <div class="dropdown-menu">
+                    {% for league_switch in request.session.league_switcher_menu %}
+                    <a class="dropdown-item" href="{% url 'league:switch_league_view' league_slug=league_switch.1 %}">{{ league_switch.2 }}</a>
+                    {% endfor %}
+                  </div>
+                </li>
+              {% endif %}
+
               {% if request.session.league_admin %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">League</a>

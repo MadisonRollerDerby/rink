@@ -1,15 +1,16 @@
-from django.conf import settings
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.signals import user_logged_in
 from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.db import models
-from django.urls import reverse
+from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 
-from guardian.shortcuts import assign_perm, get_perms, get_perms_for_model
+from league.models import League
+
+from guardian.shortcuts import (
+    assign_perm, get_perms, get_perms_for_model, get_objects_for_user)
 
 
 class RinkUserManager(BaseUserManager):
@@ -241,26 +242,39 @@ def set_rink_session_data(sender, user, request, **kwargs):
     # Assist in figuring out which sections of the nav to show for admins
     # This pretty much just makes the permissions pretty and caches them for
     # future use.
-    try:
-        request.session['view_organization'] = user.organization.pk
-        request.session['view_organization_slug'] = user.organization.slug
-        request.session['organization_permissions'] = get_perms(user, user.organization)
-    except AttributeError:
-        request.session['view_organization'] = None
-        request.session['view_organization_slug'] = ""
-        request.session['organization_permissions'] = []
-        
-    try:
-        request.session['view_league'] = user.league.pk
-        request.session['view_league_slug'] = user.league.slug
-        request.session['league_permissions'] = get_perms(user, user.league)
-    except AttributeError:
-        request.session['view_league'] = None
-        request.session['view_league_slug'] = None
-        request.session['league_permissions'] = []
 
+    try:
+        view_league = kwargs.get('league', user.league)
+    except AttributeError:
+        raise PermissionDenied("You do not appear to have access to this league. Please contact your league admin for assistance. Sorry.")
+
+    view_organization = view_league.organization
+
+    user_member_leagues = get_objects_for_user(user, 'league_member', League)
+    if view_league not in user_member_leagues:
+        raise PermissionDenied("You do not appear to have access to this league. Please contact your league admin for assistance. Sorry.")
+
+    # Organization
+    request.session['view_organization'] = view_organization.pk
+    request.session['view_organization_slug'] = view_organization.slug
+    request.session['organization_permissions'] = get_perms(user, view_organization)
+
+    # League
+    request.session['view_league'] = view_league.pk
+    request.session['view_league_slug'] = view_league.slug
+    request.session['league_permissions'] = get_perms(user, view_league)
+
+    # Is user an admin?
     request.session['organization_admin'] = False
     request.session['league_admin'] = False
+
+    # League switcher menu cache
+    request.session['league_switcher_menu'] = []
+    for league in user_member_leagues:
+        if league != view_league:
+            request.session['league_switcher_menu'].append(
+                [league.pk, league.slug, league.name]
+            )
 
     if "org_admin" in request.session['organization_permissions']:
         # Org admin gets to be tagged as one here.
@@ -271,7 +285,7 @@ def set_rink_session_data(sender, user, request, **kwargs):
         request.session['league_admin'] = True
         request.session['league_permissions'] = []
         if user.league:
-            for perm in get_perms_for_model(user.league):
+            for perm in get_perms_for_model(view_league):
                 request.session['league_permissions'].append(perm.codename)
 
 

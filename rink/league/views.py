@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.views.generic.edit import CreateView, UpdateView
@@ -18,7 +19,14 @@ from .models import League, Organization, InsuranceType
 from .mixins import RinkOrgAdminPermissionRequired, RinkLeagueAdminPermissionRequired
 from billing.models import BillingGroup
 from league.utils import send_email
-from users.models import User
+from users.models import User, set_rink_session_data
+
+
+class SwitchLeagueView(LoginRequiredMixin, View):
+    def get(self, request, league_slug):
+        league = get_object_or_404(League, slug=league_slug)
+        set_rink_session_data(None, request.user, request, league=league)
+        return redirect("home")
 
 
 class LeagueAdminList(RinkOrgAdminPermissionRequired, View):

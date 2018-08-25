@@ -15,6 +15,9 @@ urlpatterns = [
     path('<slug:organization_slug>/permission/<int:user_id>', views.OrganizationPermissionsChange.as_view(), name="organization_permissions_update"),
     path('<slug:organization_slug>/create-user/', views.CreateUserView.as_view(), name="create_rink_user"),
 
+    # League view switcher
+    path('switch-leagues-view/<slug:league_slug>', views.SwitchLeagueView.as_view(), name="switch_league_view"),
+
     # Insurance Types Admin
     path('<slug:organization_slug>/league/<slug:slug>/insurance',
         views.LeagueInsuranceTypesListView.as_view(),
