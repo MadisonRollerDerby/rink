@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load bootstrap4 %}
+
+
+{% block title %}Signed Forms - {{ user }}{% endblock %}
+
+
+{% block content %}
+{% include 'roster/submenu.html' with submenu_selected="legal" %}
+
+
+{% if registration_data %}
+<p>Forms signed during event registration by <strong>{{ user }}</strong>:</p>
+{% for reg in registration_data %}
+<div class="card">
+  <h5 class="card-header">{{ reg.event }}</h5>
+    <ul class="list-group list-group-flush">
+    {% for signature in reg.legalsignature_set.all %}
+        <li class="list-group-item">
+            <a href="{% url 'legal:view_legal_document' document_slug=signature.document.slug league_slug=signature.document.league.slug %}" target="_blank" class="card-link">{{ signature.document.name }} ({{ signature.document.date }})</a>
+            <p class="card-text"><small class="text-muted">Signed on {{ signature.agree_date }}</small></p>
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+{% else %}
+<p>Apparently, we have no signed forms for {{ user }} to show you here. They might be on hard copy.</p>
+{% endif %}
+
+
+{% endblock %}

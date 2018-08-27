@@ -2,11 +2,13 @@ from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.views.generic import TemplateView
+from django.urls import reverse
+from django.views.generic import TemplateView, RedirectView
 from django.views import defaults as default_views
 
 urlpatterns = [
-    url(r'^$', TemplateView.as_view(template_name='pages/home.html'), name='home'),
+    #url(r'^$', TemplateView.as_view(template_name='pages/home.html'), name='home'),
+    url(r'^$', RedirectView.as_view(url='/billing/pay', permanent=False), name="home"),
 
     # Django Admin, use {% url 'admin:index' %}
     url(settings.ADMIN_URL, admin.site.urls),
@@ -19,6 +21,7 @@ urlpatterns = [
     url(r'^organization/', include('league.urls', namespace='league')),
     url(r'^register/', include('registration.urls', namespace="register")),
     url(r'^registration/', include('registration.urls_admin', namespace='registration')),
+    url(r'^roster/', include('roster.urls', namespace='roster')),
 
     url(r'^robots.txt',
         TemplateView.as_view(template_name='robots.txt', content_type='text/plain'), 

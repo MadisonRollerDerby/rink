@@ -1,0 +1,21 @@
+from django.urls import path
+
+from . import views
+
+app_name = 'roster'
+urlpatterns = [
+    #path('admin', views_admin.BillingAdminView.as_view(), name="billing_admin"),
+    #path('admin/<int:pk>', views_admin.BillingAdminDetailView.as_view(), name="billing_admin_detail"),
+
+    path('', views.RosterList.as_view(), name="list"),
+
+    path('<int:pk>/profile', views.RosterAdminProfile.as_view(), name="admin_profile"),
+    path('<int:pk>/events', views.RosterAdminEvents.as_view(), name="admin_events"),
+    path('<int:pk>/billing', views.RosterAdminBilling.as_view(), name="admin_billing"),
+    path('<int:pk>/billing/<int:invoice_id>', views.RosterAdminBilling.as_view(), name="admin_billing_invoice"),
+    path('<int:pk>/billing/group', views.RosterAdminBillingGroup.as_view(), name="admin_billing_group"),
+    path('<int:pk>/legal', views.RosterAdminLegal.as_view(), name="admin_legal"),
+    path('<int:pk>/tags', views.RosterAdminTags.as_view(), name="admin_tags"),
+    #path('<int:pk>/notes', views.RosterAdminBilling.as_view(), name="admin_notes"),
+    
+]

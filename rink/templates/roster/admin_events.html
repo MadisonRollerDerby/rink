@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load bootstrap4 %}
+
+
+{% block title %}View Events - {{ user }}{% endblock %}
+
+
+{% block content %}
+{% include 'roster/submenu.html' with submenu_selected="events" %}
+
+{% if event_signups %}
+<div class="container">
+    <div class="row">
+        <div class="col-3">
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                {% for signup in event_signups %}
+                <a class="nav-link {% if forloop.first %}active{% endif %}" id="v-pills-event{{ signup.pk }}-tab" data-toggle="pill" href="#v-pills-event{{ signup.pk }}" role="tab" aria-controls="v-pills-event{{ signup.pk }}" {% if forloop.first %}aria-selected="true"{% endif %}>
+                    {{ signup.event.name }}
+                    <br>
+                    <small>Reg'd on <i>{{ signup.registration_date }}</i></small>
+                </a>
+                {% endfor %}
+        </div>
+        </div>
+        <div class="col-9">
+            <div class="tab-content" id="v-pills-tabContent">
+                {% for signup in event_signups %}
+                <div class="tab-pane fade show {% if forloop.first %}active{% endif %}" id="v-pills-event{{ signup.pk }}" role="tabpanel" aria-labelledby="v-pills-event{{ signup.pk }}-tab">
+                    <fieldset>
+                        <legend>Signup Details</legend>
+                        <dl class="row">
+                            <dt class="col-sm-3">Event:</dt>
+                            <dd class="col-sm-9">{{ signup.event }}</dd>
+
+                            <dt class="col-sm-3">Signup Date:</dt>
+                            <dd class="col-sm-9">{{ signup.registration_date}}</dd>
+
+                            <dt class="col-sm-3">Signup Source:</dt>
+                            <dd class="col-sm-9">
+                                {% if signup.invite.public_registration %}
+                                    Public Registration
+                                {% else %}
+                                    Invited
+                                {% endif %}
+                            </dd>
+                        </dl>                         
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Contact Details</legend>
+                        <dl class="row">
+                            <dt class="col-sm-3">Email:</dt>
+                            <dd class="col-sm-9">{{ signup.contact_email}}</dd>
+                            <dt class="col-sm-3">First Name:</dt>
+                            <dd class="col-sm-9">{{ signup.contact_first_name }}</dd>
+                            <dt class="col-sm-3">Last Name:</dt>
+                            <dd class="col-sm-9">{{ signup.contact_last_name }}</dd>
+                            <dt class="col-sm-3">Address:</dt>
+                            <dd class="col-sm-9">
+                                <address>
+                                    {{ signup.contact_address1 }}<br>
+                                    {% if signup.contact_address2 %}{{ signup.contact_address2 }}<br>{% endif %}
+                                    {{ signup.contact_city }}, {{ signup.contact_state }} {{ signup.contact_zipcode }}
+                                </address>
+                            </dd>
+                            <dt class="col-sm-2">Phone:</dt>
+                            <dd class="col-sm-10">{{ signup.contact_phone }}</dd>
+                        </dl>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Derby Details</legend>
+                        <dl class="row">
+                            <dt class="col-sm-3">Derby Name:</dt>
+                            <dd class="col-sm-9">{{ signup.derby_name}}</dd>
+                            <dt class="col-sm-3">Derby Number:</dt>
+                            <dd class="col-sm-9">{{ signup.derby_number}}</dd>                            
+                            <dt class="col-sm-3">Insurance Type:</dt>
+                            <dd class="col-sm-9">{{ signup.derby_insurance_type}}</dd>    
+                            <dt class="col-sm-3">Insurance Number:</dt>
+                            <dd class="col-sm-9">{{ signup.derby_insurance_number}}</dd>
+                            <dt class="col-sm-3">Personal Pronoun:</dt>
+                            <dd class="col-sm-9">{{ signup.derby_pronoun}}</dd>
+                        </dl>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Emergency Contact Details</legend>
+                        <dl class="row">
+                            <dt class="col-sm-3">Date of Birth:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_date_of_birth}}</dd>
+                            <dt class="col-sm-3">Emergency Contact:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_contact}}</dd>                            
+                            <dt class="col-sm-3">Contact Relationship:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_relationship}}</dd>    
+                            <dt class="col-sm-3">Contact Phone:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_phone}}</dd>
+                            <dt class="col-sm-3">Hospital:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_hospital}}</dd>
+                            <dt class="col-sm-3">Allergies/Medical Detail:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_allergies}}</dd>
+                        </dl>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Legal Forms Signed</legend>
+                            {% if signup.legalsignature_set.count > 0 %}
+                                {% for legal_form in signup.legalsignature_set.all %}
+                                    <p>{{ legal_form.document.name }} ({{ legal_form.document.date }})</p>
+                                {% endfor %}
+                            {% else %}
+                                No legal documents signed online.
+                            {% endif %}
+                    </fieldset>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<p>This user has not signed up for any events.</p>
+{% endif %}
+{% endblock %}

@@ -7,6 +7,7 @@
             <a class="nav-item nav-link" id="nav-email-tab" {% if not base_settings_url %}data-toggle="tab"{% endif %}href="{{ base_settings_url }}#nav-email" role="tab" aria-controls="nav-contact" aria-selected="false">Email</a>
             <a class="nav-item nav-link {% if selected_tab == "billing_groups"%} active{% endif %}" id="nav-groups-tab" href="{% url 'league:billing_groups_list' organization_slug=organization_slug slug=league_slug %}" role="tab">Billing Groups</a>
             <a class="nav-item nav-link {% if selected_tab == "insurance"%} active{% endif %}" id="nav-insurance-tab" href="{% url 'league:insurance_list' organization_slug=organization_slug slug=league_slug %}" role="tab" >Insurance</a>
+            <a class="nav-item nav-link {% if selected_tab == "tags"%} active{% endif %}" id="nav-tags-tab" href="{% url 'league:tags_list' organization_slug=organization_slug slug=league_slug %}" role="tab" >User Tags</a>
           </div>
         </nav>
     </div>

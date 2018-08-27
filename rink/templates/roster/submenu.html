@@ -1,0 +1,38 @@
+<h4>League Roster - {{ user.legal_name }} {% if user.derby_name %}<span class="text-muted">({{ user.derby_name }})</span>{% endif %}</h4>
+
+<div class="mb-3">
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "profile" %}active{% endif %}" href="{% url 'roster:admin_profile' pk=user.pk %}">
+        Profile
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "events" %}active{% endif %}" href="{% url 'roster:admin_events' pk=user.pk %}">
+        Events
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "billing" %}active{% endif %}" href="{% url 'roster:admin_billing' pk=user.pk %}">
+        Billing
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "legal" %}active{% endif %}" href="{% url 'roster:admin_legal' pk=user.pk %}">
+        Legal
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "tags" %}active{% endif %}" href="{% url 'roster:admin_tags' pk=user.pk %}">
+        Tags
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "notes" %}active{% endif %}" href="#">
+        Notes
+      </a>
+    </li>
+  </ul>
+</div>
+
+{% include 'utils/messages.html' %}

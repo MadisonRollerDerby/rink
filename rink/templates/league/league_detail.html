@@ -43,6 +43,8 @@
             {% else %}
                 {% include 'league/league_billing_groups_list.html' with billinggroup_list=billinggroup_list organization_slug=league.organization.slug league_slug=league.slug %}
             {% endif %}
+        {% elif selected_tab == "tags" %}
+            {% include 'league/league_tags_list.html' with tags_list=tags_list organization_slug=league.organization.slug league_slug=league.slug %}
         {% else %}
         <div class="tab-content" id="nav-tabContent">
             <div class="tab-pane fade show active" id="nav-name" role="tabpanel" aria-labelledby="nav-name-tab">

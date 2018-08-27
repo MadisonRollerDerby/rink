@@ -342,6 +342,8 @@ class Invoice(models.Model):
     billing_period = models.ForeignKey(
         'billing.BillingPeriod',
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
 
     description = models.CharField(
@@ -429,10 +431,12 @@ class Invoice(models.Model):
 
     def __str__(self):
         #  1234 - Billing Period - Event Name - League Name - $AMOUNT (STATUS)
-        return "#{} - {} - {} - {} - ${} ({})".format(
+        description = self.description
+        if not self.description:
+            description = "(No Description)"
+        return "#{} - {} - {} - ${} ({})".format(
             self.pk,
-            self.billing_period.name,
-            self.billing_period.event.name,
+            description,
             self.league.name,
             self.invoice_date,
             self.status

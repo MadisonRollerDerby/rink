@@ -3,7 +3,7 @@ from django_tables2.utils import A
 
 import django_filters
 
-from .models import Roster
+from registration.models import Roster
 
 
 class RosterFilter(django_filters.FilterSet):

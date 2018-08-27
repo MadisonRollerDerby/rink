@@ -157,6 +157,7 @@ class Tag(models.Model):
     color = models.CharField(
         "Tag Color",
         max_length=50,
+        blank=True,
     )
 
     def __str__(self):
@@ -164,6 +165,7 @@ class Tag(models.Model):
 
     class Meta:
         unique_together = ['league', 'text']
+        ordering = ['league', 'text']
 
 
 class UserTag(models.Model):

@@ -1,0 +1,16 @@
+<h4>User Tags</h4>
+
+<div class="container mt-3">
+    <div class="row">
+    </div>
+</div>
+
+<div class="container mt-3">
+    <div class="row">
+        <div class="list-group">
+        {% for tag in object_list %}
+            {{ tag.text }}<br>
+        {% endfor %}
+        </div>
+    </div>
+</div>

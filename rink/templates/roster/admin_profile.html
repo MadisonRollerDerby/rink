@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load bootstrap4 %}
+
+
+{% block title %}View Profile - {{ user }}{% endblock %}
+
+
+{% block content %}
+{% include 'roster/submenu.html' with submenu_selected="profile" %}
+
+{% crispy form %}
+
+{% endblock %}

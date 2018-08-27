@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load bootstrap4 %}
+
+
+{% block title %}Tags - {{ user }}{% endblock %}
+
+
+{% block content %}
+{% include 'roster/submenu.html' with submenu_selected="tags" %}
+
+
+{% if league_tags %}
+<form action="" method="post">{% csrf_token %}
+<fieldset>
+    <legend>Assign tags to <strong>{{ user }}</strong></legend>
+    {% for tag in league_tags %}
+    <div class="form-group row">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="tag{{ tag.pk }}" value="{{ tag.pk }}" id="tag{{ tag.pk }}" {% if tag.pk in user_tags %}checked="checked"{% endif %}>
+          <label class="form-check-label" for="tag{{ tag.pk }}">
+            {{ tag.text }}
+          </label>
+        </div>
+    </div>
+    {% endfor %}
+    <input type="submit" class="btn btn-primary" value="Assign Tags">
+</fieldset>
+</form>
+
+{% else %}
+<p>There are no tags available for this league to set.</p>
+{% endif %}
+
+
+{% endblock %}

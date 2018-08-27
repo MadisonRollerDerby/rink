@@ -44,4 +44,9 @@ urlpatterns = [
     path('<slug:organization_slug>/league/<slug:slug>/billing-groups/new',
         views.LeagueBillingGroupsCreateView.as_view(),
         name="billing_groups_create"),
+
+    # User Tags
+    path('<slug:organization_slug>/league/<slug:slug>/tags',
+        views.LeagueTagsListView.as_view(),
+        name="tags_list"),
 ]

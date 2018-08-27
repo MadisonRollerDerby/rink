@@ -19,7 +19,7 @@ from .models import League, Organization, InsuranceType
 from .mixins import RinkOrgAdminPermissionRequired, RinkLeagueAdminPermissionRequired
 from billing.models import BillingGroup
 from league.utils import send_email
-from users.models import User, set_rink_session_data
+from users.models import User, set_rink_session_data, Tag
 
 
 class SwitchLeagueView(LoginRequiredMixin, View):
@@ -299,3 +299,12 @@ class LeagueBillingGroupsCreateView(GenericRinkView, RinkOrgAdminPermissionRequi
         form.instance.league = get_object_or_404(League, pk=self.request.session['view_league'])
         return super().form_valid(form)
 
+
+class LeagueTagsListView(GenericRinkView, RinkOrgAdminPermissionRequired, ListView):
+    template_name = "league/league_detail.html"
+    selected_tab = "tags"
+
+    def get_queryset(self):
+        return Tag.objects.filter(
+            league=get_object_or_404(League, pk=self.request.session['view_league'])
+        )

@@ -83,7 +83,11 @@ class BillingAdminDetailView(RinkLeagueAdminPermissionRequired, DetailView):
 
 class BillingAdminInvoiceEditView(View):
     def get_invoice_admin_url(self, pk):
-        return redirect('billing:billing_admin_detail', pk=pk)
+        return_to_roster_view = self.request.GET.get('roster_view', None)
+        if return_to_roster_view:
+            return redirect('roster:admin_billing_invoice', pk=return_to_roster_view, invoice_id=pk)
+        else:
+            return redirect('billing:billing_admin_detail', pk=pk)
 
     def get(self, request, *args, **kwargs):
         return self.get_invoice_admin_url(kwargs['pk'])
