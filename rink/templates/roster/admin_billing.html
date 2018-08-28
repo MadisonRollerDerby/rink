@@ -18,8 +18,11 @@
 <div class="container">
     <div class="row">
         <div class="col-3">
+          <button type="button" class="float-right btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#createInvoiceModal">Create Invoice</button>
             <h5>Invoices</h5>
-            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            
+
+            <div class="mt-4 nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
                 {% for invoice in invoices %}
                 <a class="nav-link {% if object.pk == invoice.pk %}active{% endif %}" id="v-pills-invoice{{ invoice.pk }}-tab" href="{% url 'roster:admin_billing_invoice' pk=user.pk invoice_id=invoice.pk %}" role="tab" {% if object.pk == invoice.pk %}aria-selected="true"{% endif %}>
                     {% if not invoice.description %}(No Description){% else %}{{ invoice.description }}{% endif %} <br>
@@ -159,6 +162,34 @@
   </div>
 </div>
 {% endif %}
+
+
+
+
+<div class="modal fade" id="createInvoiceModal" tabindex="-1" role="dialog" aria-labelledby="createInvoiceLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="createInvoiceForm"  action="{% url 'roster:admin_billing_create' pk=user.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createInvoiceLabel">Create Invoice for {{ user }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% csrf_token %}
+        {% crispy create_invoice_form %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-warning" type="submit" value="Create Invoice" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#createInvoiceForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
 
 
 {% endblock %}

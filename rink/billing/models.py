@@ -434,13 +434,18 @@ class Invoice(models.Model):
         description = self.description
         if not self.description:
             description = "(No Description)"
-        return "#{} - {} - {} - ${} ({})".format(
+        return "#{} - {} - {} - ${} - {} ({})".format(
             self.pk,
             description,
             self.league.name,
+            self.invoice_amount,
             self.invoice_date,
             self.status
         )
+
+    def get_admin_url(self):
+        return reverse('roster:admin_billing_invoice', 
+            kwargs={'pk': self.user.pk, 'invoice_id': self.pk})
 
     @property
     def status_class(self):
@@ -611,7 +616,7 @@ class Payment(models.Model):
             transaction_id = " - {}".format(transaction_id)
 
         return "{} - {} - {} - ${}{}{}".format(
-            self.payment_date.date(),
+            self.payment_date,
             self.user,
             self.processor,
             self.amount,

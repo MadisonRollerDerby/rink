@@ -3,9 +3,9 @@ from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, H
 from django import forms
 from django.urls import reverse
 
-from billing.models import BillingGroup, BillingGroupMembership
+from billing.models import BillingGroup, BillingGroupMembership, Invoice
 from registration.models import RegistrationEvent
-from users.models import User, Tag
+from users.models import User, Tag, UserLog
 
 
 class RosterProfileForm(forms.ModelForm):
@@ -120,3 +120,18 @@ class RosterFilterForm(forms.Form):
                     label=billing_group.name, initial=False, required=False)
                 billing_group_div.append('billing_group{}'.format(billing_group.pk))
             self.helper.layout.append(billing_group_div)
+
+
+class RosterAddNoteForm(forms.Form):
+    message = forms.CharField(widget=forms.Textarea)
+
+
+class RosterCreateInvoiceForm(forms.ModelForm):
+    send_email = forms.BooleanField(
+        initial=True,
+        help_text="If checked, an email will be sent to user alerting them an invoice has been created."
+    )
+
+    class Meta:
+        model = Invoice
+        fields = ['description', 'invoice_amount', 'invoice_date', 'due_date']

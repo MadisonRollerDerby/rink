@@ -1,11 +1,11 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, UpdateView
+from django.views.generic import DetailView, UpdateView, ListView, FormView
 
 from django_tables2 import SingleTableView
 from django_filters.views import FilterView
@@ -15,9 +15,11 @@ from billing.forms import QuickPaymentForm, QuickInvoiceForm, QuickRefundForm
 from billing.models import Invoice, BillingGroupMembership, BillingGroup
 from league.mixins import RinkLeagueAdminPermissionRequired
 from registration.models import RegistrationData
-from users.models import User, Tag, UserTag
+from taskapp.celery import app as celery_app
+from users.models import User, Tag, UserTag, UserLog
 
-from .forms import RosterProfileForm, BillingGroupForm, RosterFilterForm
+from .forms import (RosterProfileForm, BillingGroupForm,
+    RosterFilterForm, RosterAddNoteForm, RosterCreateInvoiceForm)
 from .tables import RosterTable
 
 
@@ -183,7 +185,34 @@ class RosterAdminBilling(RinkLeagueAdminPermissionRequired, DetailView):
         context['user'] = user
         context['invoices'] = Invoice.objects.filter(league=self.league, user=user).order_by('-invoice_date')
         context['billing_group_form'] = BillingGroupForm(league=self.league, user=user)
+        context['create_invoice_form'] = RosterCreateInvoiceForm(initial={
+            'invoice_amount': 0,
+            'invoice_date': timezone.now(),
+            'due_date': timezone.now() + timezone.timedelta(days=7),
+        })
         return context
+
+
+class RosterAdminCreateInvoice(RinkLeagueAdminPermissionRequired, FormView):
+    form_class = RosterCreateInvoiceForm
+
+    def form_valid(self, form):
+        self.invoice = form.save(commit=False)
+        self.invoice.user = get_object_or_404(User, pk=self.kwargs['pk'])
+        self.invoice.league = self.league
+        self.invoice.save()
+
+        if form.cleaned_data['send_email']:
+            celery_app.send_task('billing.tasks.email_invoice',
+                args=[self.invoice.pk], kwargs={})
+
+        return self.success_url()
+
+    def success_url(self):
+        return redirect('roster:admin_billing_invoice', pk=self.kwargs['pk'], invoice_id=self.invoice.pk)
+
+    def get(self):
+        return self.success_url()
 
 
 class RosterAdminBillingGroup(RinkLeagueAdminPermissionRequired, View):
@@ -287,3 +316,41 @@ class RosterAdminTags(RinkLeagueAdminPermissionRequired, DetailView):
         messages.success(self.request, "User tags saved.")
         return redirect('roster:admin_tags', pk=user.pk)
 
+
+class RosterAdminUserLog(RinkLeagueAdminPermissionRequired, ListView):
+    template_name = 'roster/admin_notes.html'
+    model = UserLog
+
+    def get_context_data(self, **kwargs):
+        return {
+            **super().get_context_data(**kwargs),
+            **{'note_form': RosterAddNoteForm()}
+        }
+
+    def get_queryset(self):
+        return UserLog.objects.filter(
+            league=self.league,
+            user=get_object_or_404(User, pk=self.kwargs['pk']),
+        )
+
+
+class RosterAdminAddMessageUserLog(RinkLeagueAdminPermissionRequired, FormView):
+    form_class = RosterAddNoteForm
+
+    def form_valid(self, form):
+        user = get_object_or_404(User, pk=self.kwargs['pk'])
+
+        UserLog.objects.create(
+            user=user,
+            league=self.league,
+            message=form.cleaned_data['message'],
+            admin_user=self.request.user,
+        )
+
+        return self.success_url()
+
+    def success_url(self):
+        return redirect('roster:admin_notes', pk=self.kwargs['pk'])
+
+    def get(self):
+        return self.success_url()

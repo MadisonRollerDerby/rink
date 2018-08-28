@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.signals import user_logged_in
@@ -6,6 +7,7 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
+from markdownx.utils import markdownify
 
 from league.models import League
 
@@ -220,7 +222,14 @@ class UserLog(models.Model):
     )
 
     message = models.TextField(
-        "Log Message",
+        "User Note",
+        help_text="Some notes or messages to keep on hand for this user. These notes are NOT viewable by the user."
+    )
+
+    group = models.CharField(
+        "Message Group",
+        max_length=50,
+        default='note',
     )
 
     message_type = models.CharField(
@@ -237,10 +246,29 @@ class UserLog(models.Model):
         blank=True,
     )
     object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    admin_user = models.ForeignKey(
+        'users.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admin_user",
+    )
 
     date = models.DateTimeField(
         auto_now_add=True,
     )
+
+    @property
+    def message_html(self):
+        return markdownify(self.message)
+
+    def __str__(self):
+        return "{} - {} - {} - {}".format(self.league, self.user, self.message_type, self.message[:75])
+
+    class Meta:
+        ordering = ['-date']
 
 
 def set_rink_session_data(sender, user, request, **kwargs):

@@ -13,9 +13,10 @@ urlpatterns = [
     path('<int:pk>/events', views.RosterAdminEvents.as_view(), name="admin_events"),
     path('<int:pk>/billing', views.RosterAdminBilling.as_view(), name="admin_billing"),
     path('<int:pk>/billing/<int:invoice_id>', views.RosterAdminBilling.as_view(), name="admin_billing_invoice"),
+    path('<int:pk>/billing/new', views.RosterAdminCreateInvoice.as_view(), name="admin_billing_create"),
     path('<int:pk>/billing/group', views.RosterAdminBillingGroup.as_view(), name="admin_billing_group"),
     path('<int:pk>/legal', views.RosterAdminLegal.as_view(), name="admin_legal"),
     path('<int:pk>/tags', views.RosterAdminTags.as_view(), name="admin_tags"),
-    #path('<int:pk>/notes', views.RosterAdminBilling.as_view(), name="admin_notes"),
-    
+    path('<int:pk>/notes', views.RosterAdminUserLog.as_view(), name="admin_notes"),
+    path('<int:pk>/notes/add', views.RosterAdminAddMessageUserLog.as_view(), name="admin_notes_add"),
 ]

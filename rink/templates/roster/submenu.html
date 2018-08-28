@@ -35,7 +35,7 @@
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if submenu_selected == "notes" %}active{% endif %}" href="#">
+      <a class="nav-link {% if submenu_selected == "notes" %}active{% endif %}" href="{% url 'roster:admin_notes' pk=user.pk %}">
         Notes
       </a>
     </li>
