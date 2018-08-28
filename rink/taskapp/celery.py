@@ -11,22 +11,22 @@ if not settings.configured:
 app = Celery(
     'rink',
 
-    task_always_eager=False,
+    task_always_eager=True,
     task_time_limit=10,
     redis_socket_connect_timeout=10,
     redis_socket_timeout=8,
     broker_connection_timeout=9,
-    #broker="amqp://guest:guest@localhost:5672/test_rink",
-    #backend="amqp://guest:guest@localhost:5672/test_rink",
+    broker="amqp://guest:guest@localhost:5672/test_rink",
+    backend="amqp://guest:guest@localhost:5672/test_rink",
 
-    broker="redis://",
-    broker_transport="redis",
-    broker_url='redis://localhost:6379',
-    result_backend='redis',  #://localhost:6379',
+    #broker="redis://",
+    #broker_transport="redis",
+    #broker_url='redis://localhost:6379',
+    #result_backend='redis',  #://localhost:6379',
 
-    #accept_content=['json'],
-    #task_serializer='json',
-    #result_serializer='json',
+    accept_content=['json'],
+    task_serializer='json',
+    result_serializer='json',
 )
 
 

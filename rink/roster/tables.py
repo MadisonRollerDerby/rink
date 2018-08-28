@@ -5,7 +5,7 @@ from users.models import User
 
 
 class RosterTable(tables.Table):
-    full_name = tables.Column(order_by=('first_name', 'last_name'))
+    legal_name = tables.Column(accessor='legal_name', order_by=('first_name', 'last_name'))
     derby_name = tables.Column()
     email = tables.Column()
     edit = tables.LinkColumn(
@@ -16,4 +16,4 @@ class RosterTable(tables.Table):
 
     class Meta:
         model = User
-        fields = ['full_name', 'derby_name', 'email', 'edit']
+        fields = ['legal_name', 'derby_name', 'email', 'edit']

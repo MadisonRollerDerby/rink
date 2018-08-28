@@ -24,7 +24,7 @@ from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
     EventInviteEmailForm, EventInviteAjaxForm
 from .models import RegistrationEvent, RegistrationInvite, Roster
 from .resources import RosterResource
-from .tables import RosterTable, RosterFilter
+from .tables import RosterTable
 from billing.models import (
     BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, Invoice,
     BillingSubscription, UserStripeCard)

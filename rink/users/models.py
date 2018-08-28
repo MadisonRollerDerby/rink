@@ -93,6 +93,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = RinkUserManager()
 
+    class Meta:
+        ordering = ['last_name', 'first_name']
+
     def __str__(self):
         if self.first_name and self.last_name:
             name = "{} {}".format(self.first_name, self.last_name)

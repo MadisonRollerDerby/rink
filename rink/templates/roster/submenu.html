@@ -1,3 +1,10 @@
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'roster:list'%}">Roster List</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ user.legal_name }}</li>
+  </ol>
+</nav>
+
 <h4>League Roster - {{ user.legal_name }} {% if user.derby_name %}<span class="text-muted">({{ user.derby_name }})</span>{% endif %}</h4>
 
 <div class="mb-3">

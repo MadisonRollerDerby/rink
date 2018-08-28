@@ -1,7 +1,15 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% load render_table from django_tables2 %}
-{% load bootstrap4 %}
+
+{% block css %}
+<style type="text/css">
+.filter-inline .form-group {
+    padding: 6px 4px 8px 4px;
+    margin-right: 6px;
+}
+</style>
+{% endblock %}
 
 
 {% block title %}League Roster{% endblock %}
@@ -10,6 +18,16 @@
 {% block content %}
 
 <h4>League Roster</h4>
+
+{% if filter_form %}
+    <fieldset>
+        <form action="" method="get" class="form filter-form">
+            {% crispy filter_form %}
+            <input type="submit" class="btn btn-primary btn-sm filter-button" value="Filter">
+            <a href="?filtered=True"><button type="button" class="btn btn-secondary btn-sm">Clear</button></a>
+        </form>
+    </fieldset>
+{% endif %}
 
 {% render_table table %}
 
