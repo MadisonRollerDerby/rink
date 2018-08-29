@@ -1,14 +1,16 @@
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML
+from crispy_forms.layout import Submit, Layout, Fieldset, ButtonHolder, Field, HTML, Div
 from django import forms
 from django.contrib.auth import (
     authenticate, password_validation,
 )
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import RegistrationData
 from users.models import User
 from registration.models import Roster
+from rink.utils.forms import get_date_months, get_date_days, get_date_years
 
 
 class RegistrationSignupForm(forms.ModelForm):
@@ -91,10 +93,14 @@ class RegistrationSignupForm(forms.ModelForm):
 
 
 class RegistrationDataForm(forms.ModelForm):
+    birth_day = forms.ChoiceField(widget=forms.Select(), choices=get_date_days(), required=True)
+    birth_month = forms.ChoiceField(widget=forms.Select(), choices=get_date_months(), required=True)
+    birth_year = forms.ChoiceField(widget=forms.Select(), choices=get_date_years(), required=True)
+
     def __init__(self, *args, **kwargs):
         self.logged_in_user_id = kwargs.pop('logged_in_user_id', None)
         super().__init__(*args, **kwargs)
-        
+
         self.helper = FormHelper(self)
 
         #for field_name, field in self.fields.items():
@@ -104,6 +110,16 @@ class RegistrationDataForm(forms.ModelForm):
             widget=forms.HiddenInput(),
             required=False,
         )
+        self.fields['emergency_date_of_birth'].widget = forms.HiddenInput()
+
+        if kwargs.get('instance', None):
+            self.fields['birth_month'].initial = kwargs['instance'].emergency_date_of_birth.month
+            self.fields['birth_day'].initial = kwargs['instance'].emergency_date_of_birth.day
+            self.fields['birth_year'].initial = kwargs['instance'].emergency_date_of_birth.year
+
+        self.fields['birth_month'].label = ""
+        self.fields['birth_day'].label = ""
+        self.fields['birth_year'].label = ""
 
         self.helper.form_show_labels = True
         self.helper.form_tag = False
@@ -130,7 +146,15 @@ class RegistrationDataForm(forms.ModelForm):
             ),
             Fieldset(
                 'Emergency Details',
-                'emergency_date_of_birth',
+                Div(
+                    HTML('<label for="id_birth_month" class="col-form-label requiredField">Birth Date:</label>')
+                ),
+                Div(
+                    Div(Field('birth_month'), css_class="col", style="max-width:120px;"),
+                    Div(Field('birth_day'), css_class="col", style="max-width:120px;"),
+                    Div(Field('birth_year'), css_class="col", style="max-width:120px;"),
+                    css_class="form-row",
+                ),
                 'emergency_contact',
                 'emergency_phone',
                 'emergency_relationship',
@@ -138,6 +162,7 @@ class RegistrationDataForm(forms.ModelForm):
                 'emergency_allergies',
             ),
             'stripe_token',
+            'emergency_date_of_birth',
         )
 
     class Meta:
@@ -166,10 +191,6 @@ class RegistrationDataForm(forms.ModelForm):
             'emergency_hospital',
             'emergency_allergies',
         ]
-
-        widgets = {
-            'emergency_date_of_birth': forms.DateInput(format=('%-m/%-d/%Y'), attrs={'class': 'datepicker'}),
-        }
 
     def clean_contact_email(self):
         if self.logged_in_user_id:
