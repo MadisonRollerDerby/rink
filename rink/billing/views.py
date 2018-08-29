@@ -31,7 +31,7 @@ class PayView(LoginRequiredMixin, View):
             event__billingsubscription__user=request.user,
             event__billingsubscription__status='active',
             invoice_date__gte=timezone.now(),
-        ).distinct()
+        )
 
         for invoice in future_invoices:
             invoice.invoice_amount = invoice.get_invoice_amount(user=request.user)

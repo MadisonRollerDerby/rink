@@ -6,6 +6,7 @@ from django.template.loader import render_to_string
 
 def send_email(league, template, to_email, context={}):
     context['league'] = league
+    context['url_domain'] = settings.URL_DOMAIN
 
     if league.email_from_name:
         from_email = "{} <{}>".format(league.email_from_name, league.email_from_address)

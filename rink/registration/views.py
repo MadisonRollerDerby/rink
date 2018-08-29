@@ -102,7 +102,8 @@ class RegisterCreateAccount(RegistrationView):
         return render(request, self.template, {'form': form, 'event': self.event})
 
     def post(self, request, event_slug, league_slug):
-        form = RegistrationSignupForm(data=request.POST, event=self.event, )
+        form = RegistrationSignupForm(data=request.POST, event=self.event)
+
         if form.is_valid():
             user = form.save(league=self.event.league)
             auth_user = authenticate(request, username=user.email, password=form.cleaned_data['password1'])
@@ -178,11 +179,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             preview_mode = True
 
         # Check if the user has already registered
-        try:
-            data = RegistrationData.objects.filter(user=request.user, event=self.event).first()
-        except RegistrationData.DoesNotExist:
-            pass
-        else:
+        if RegistrationData.objects.filter(user=request.user, event=self.event).exists():
             if preview_mode:
                 messages.info(request, "<strong>You have already registered.</strong> You are currently logged in as an administrator. You are allowed to preview this form to review changes to it.")
                 #preview_mode_disable_button = True
@@ -252,6 +249,8 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 user=request.user,
                 league=self.event.league,
                 billing_period=billing_period,
+                subscription=None,
+                status='unpaid',
                 defaults={
                     'invoice_amount': billing_amount,
                     'invoice_date': timezone.now(),
@@ -320,6 +319,9 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                     event=self.event,
                     roster=registration_data.roster,
                 )
+
+                invoice.subscription = registration_data.billing_subscription
+                invoice.save()
 
                 # Save legal signatures
                 for document in self.event.legal_forms.all():

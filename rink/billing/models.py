@@ -183,14 +183,15 @@ class BillingPeriod(models.Model):
         else:
             return "{} Dues / Registration".format(self.name)
 
-    def generate_invoice(self, user):
+    def generate_invoice(self, subscription):
         # returns (object, created_True_or_False)
         return Invoice.objects.get_or_create(
             league=self.league,
             billing_period=self,
-            user=user,
+            user=subscription.user,
+            subscription=subscription,
             defaults={
-                'invoice_amount': self.get_invoice_amount(user=user),
+                'invoice_amount': self.get_invoice_amount(user=subscription.user),
                 'invoice_date': timezone.now(),
                 'due_date': self.due_date,
                 'description': self.get_invoice_description(),
@@ -346,6 +347,13 @@ class Invoice(models.Model):
         blank=True,
     )
 
+    subscription = models.ForeignKey(
+        'billing.BillingSubscription',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
     description = models.CharField(
         "Invoice Description",
         max_length=200,
@@ -426,7 +434,7 @@ class Invoice(models.Model):
     )
 
     class Meta:
-        unique_together = ['user', 'league', 'billing_period']
+        unique_together = ['user', 'league', 'billing_period', 'subscription']
         ordering = ['invoice_date']
 
     def __str__(self):

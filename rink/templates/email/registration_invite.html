@@ -1,13 +1,22 @@
 {{ header_html }}
 
-<p>{% if invite.user %}Hi {{ invite.user }},{% else %}Hi there,{% endif %}</p>
+<p>{% if invite.user %}Hi {{ invite.user }},{% else %}Hi,{% endif %}</p>
 
-<p>Here's your invite to register for <b>{{ invite.event }}</b>.</p>
+<p>Here's your invite link to register for <b>{{ invite.event }}</b>.</p>
 
-<p><a href="http://localhost:8000{{ invite.get_invite_url }}">Click here to register!</a></p>
+<p><a style="font-size:larger" href="{{ url_domain }}{{ invite.get_invite_url }}">Click HERE to Register!</a></p>
 
-<p>If you have an existing account, you will have to login to your account or reset your password.</p>
+{% if invite.event.description %}
+<div style="border: 1px solid #cecece;margin: 5px 20px 10px 20px; padding: 4px 20px 10px 20px;">
+    <p style="font-size:smaller"><strong>EVENT DETAILS:</strong></p>
+    {{ invite.event.description_html|safe }}
+</div>
+{% endif %}
 
-<p>If you do not have an account, you will be prompted to create an account.</p>
+<p>If you have an existing Rink account, you will need to <a href="{{ url_domain }}{% url 'account_login' %}">login to your account</a> or <a href="{{ url_domain }}{% url 'account_reset_password' %}">reset your password.</a></p>
+
+<p>If you do not have a Rink account, you will be prompted to create an account.</p>
+
+<p>Please contact {% if event.league.email_from_name %}{{ event.league.email_from_name }} at {% endif %}<a href="mailto:{{ event.league.email_from_address }}">{{ event.league.email_from_address }}</a> or reply to this email if you have any questions.</p>
 
 {{ footer_html }}

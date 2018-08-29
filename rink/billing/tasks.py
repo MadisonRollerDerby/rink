@@ -82,7 +82,7 @@ def generate_invoices():
         for subscription in subscriptions:
             if subscription.create_date.date() < bp.invoice_date:
                 # generate_invoice is a shortcut for create or get this Invoice.
-                invoice, created = bp.generate_invoice(subscription.user)
+                invoice, created = bp.generate_invoice(subscription)
                 if created:
                     email_invoice.delay(invoice.pk)
 

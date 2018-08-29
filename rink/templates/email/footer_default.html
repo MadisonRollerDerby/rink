@@ -1,16 +1,16 @@
-
-        <div>
-            {{ league.email_signature }}
+        <hr>
+        <div style="font-size:smaller">
+            {{ league.email_signature|safe }}
         </div>
     </div>
 </div>
 
 <div style="height:18px;background-color:#F9FC69;"></div>
-<div style="height:18px;background-color:#35E5F4;"></div>
+<div style="height:18px;background-color:#35E5F4;box-shadow:2px 5px 6px #888;"></div>
 
 {% if league.logo_thumbnail_footer.url %}
-<div style="margin:0 auto 0 auto;width:300px;">
-    <img src="{{ league.logo_thumbnail_footer.url }}" alt="{{ league.name }}">
+<div style="margin:10px auto 0 auto;width:300px;">
+    <img src="{{ url_domain }}{{ league.logo_thumbnail_footer.url }}" alt="{{ league.name }}">
 </div>
 {% endif %}
 

@@ -4,41 +4,42 @@
 
 <p>Hi {{ user }},</p>
 
-<p>You've successfully register for {{ event.name }} - {{ league.name }}</b>.</p>
+<p>You are registered for <strong>{{ event.name }} - {{ league.name }}</strong>.</p>
 
 {% if event.description %}
-<h4>Details</h4>
-{{ event.description_html }}
+<h4>EVENT DETAILS</h4>
+{{ event.description_html|safe }}
 {% endif %}
 
 
 <h4>Your Information</h4>
-
 <b>ABOUT YOU:</b><br>
-Derby Name: {% if user.derby_name %}{{ user.derby_name }}{% else %}<empty, you can decide later>{% endif %}<br>
-Derby Number: {% if user.derby_number %}{{ user.derby_number }}{% else %}<empty, you can decide later>{% endif %}<br>
+Derby Name: {% if registration.derby_name %}{{ registration.derby_name }}{% else %}<empty, you can decide later>{% endif %}<br>
+Derby Number: {% if registration.derby_number %}{{ registration.derby_number }}{% else %}<empty, you can decide later>{% endif %}<br>
 <br>
-{{ user.first_name }} {{ user.last_name }}<br>
-{{ registration.address1 }} {{ registration.address2 }}<br>
-{{ registration.city }}, {{ registration.state }} {{ registration.zip }}<br>
+{{ registration.contact_first_name }} {{ registration.lcontact_ast_name }}<br>
+{{ registration.contact_address1 }} {{ registration.contact_address2 }}<br>
+{{ registration.contact_city }}, {{ registration.contact_state }} {{ registration.contact_zip }}<br>
 <br>
-Phone: {{ user.phone }}<br>
-Email: {{ user.email }}<br>
+Phone: {{ registration.contact_phone }}<br>
+Email: {{ registration.contact_email }}<br>
 <br>
 <br>
-<b>EMERGENCY CONTACT INFO:</b><br>
+<b>EMERGENCY CONTACT INFO</b><br>
 <br>
-Contact: {{ user.emergency_contact }} [{{ user.emergency_relationship }}]<br>
-Phone: {{ user.emergency_phone }}<br>
+Contact: {{ registration.emergency_contact }} [{{ registration.emergency_relationship }}]<br>
+Phone: {{ registration.emergency_phone }}<br>
+<br>
 
 {% if payment %}
 <h4>PAYMENT</h4>
-You paid ${{ payment.amount }} using {{ payment.get_card }}<br>
+<p>You paid ${{ payment.amount }} using {{ payment.get_card }}</p>
 {% endif %}
-
+<br>
 
 {% if event.legal_forms.count > 0 %}
-You signed the following legal docs:
+<h4>LEGAL STUFF</h4>
+<p>You agreed to the following legal documents:</p>
 <ol>
     {% for form in event.legal_forms.all %}
     <li><a href="{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
@@ -47,6 +48,7 @@ You signed the following legal docs:
 {% endif %}
 
 
+<p>Please let us know if you have any questions. Thanks!</p>
 
 
 {{ footer_html }}

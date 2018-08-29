@@ -284,8 +284,8 @@ def set_rink_session_data(sender, user, request, **kwargs):
     view_organization = view_league.organization
 
     user_member_leagues = get_objects_for_user(user, 'league_member', League)
-    if view_league not in user_member_leagues:
-        raise PermissionDenied("You do not appear to have access to this league. Please contact your league admin for assistance. Sorry.")
+    #if view_league not in user_member_leagues:
+    #    raise PermissionDenied("You do not appear to have access to this league. Please contact your league admin for assistance. Sorry.")
 
     # Organization
     request.session['view_organization'] = view_organization.pk

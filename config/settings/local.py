@@ -14,6 +14,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
+URL_DOMAIN = env("URL_DOMAIN", default="http://localhost:8000")
+
 # CACHES
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#caches

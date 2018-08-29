@@ -17,3 +17,7 @@ def league_processor(request):
 
 def debug(context):
     return {'DEBUG': settings.DEBUG}
+
+
+def url_domain(request):
+    return {'url_domain': settings.URL_DOMAIN}

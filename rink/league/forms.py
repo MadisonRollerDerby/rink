@@ -74,6 +74,7 @@ class LeagueEmailForm(LeagueSettingsBaseForm, forms.ModelForm):
             'email_from_address',
             'email_cc_address',
             'email_header',
+            'email_signature',
             'email_footer',
         ]
 

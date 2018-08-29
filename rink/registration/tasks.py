@@ -6,7 +6,7 @@ from league.utils import send_email
 from registration.models import RegistrationInvite, RegistrationData
 
 
-@shared_task(ignore_result=True)
+@shared_task
 def send_registration_invite_email(invite_ids=[]):
     for invite_id in invite_ids:
         try:
@@ -34,7 +34,7 @@ def send_registration_invite_email(invite_ids=[]):
         invite.save()
 
 
-@shared_task(ignore_result=True)
+@shared_task
 def send_registration_confirmation(registration_data_id, payment_data_id=None):
     #try:
     registration_data = RegistrationData.objects.get(pk=registration_data_id)
