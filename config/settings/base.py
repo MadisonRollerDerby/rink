@@ -249,8 +249,8 @@ INSTALLED_APPS += ['taskapp.celery.CeleryConfig']
 #CELERY_RESULT_BACKEND = 'redis://'
 
 #CELERY_BROKER_TRANSPORT = "redis"
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/rink'  # 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'rpc://'  # 'redis://localhost:6379/0'
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@localhost:5672/rink')  # 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='rpc://')  # 'redis://localhost:6379/0'
 
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
 CELERY_ACCEPT_CONTENT = ['json']
@@ -259,7 +259,7 @@ CELERY_TASK_SERIALIZER = 'json'
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_serializer
 CELERY_RESULT_SERIALIZER = 'json'
 
-CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ALWAYS_EAGER = env('CELERY_TASK_ALWAYS_EAGER', default=False)
 
 # django-allauth
 # ------------------------------------------------------------------------------
