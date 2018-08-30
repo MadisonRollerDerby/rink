@@ -66,6 +66,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
             ),
             Fieldset(
                 'Settings',
+                'max_capacity',
                 'minimum_registration_age',
                 'maximum_registration_age',
             ),
@@ -108,6 +109,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
             'public_registration_open_date',
             'public_registration_closes_date',
             'invite_expiration_date',
+            'max_capacity',
             'minimum_registration_age',
             'maximum_registration_age',
             'legal_forms',

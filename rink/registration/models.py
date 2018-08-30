@@ -75,6 +75,13 @@ class RegistrationEvent(models.Model):
         help_text="Last day of this session.",
     )
 
+    max_capacity = models.PositiveIntegerField(
+        "Maximum Event Signups",
+        blank=True,
+        null=True,
+        help_text="Maximum number of signups until registration is closed. Setting zero or blank allows unlimited signups."
+    )
+
     public_registration_open_date = models.DateTimeField(
         "Registration Opens On",
         blank=True,
