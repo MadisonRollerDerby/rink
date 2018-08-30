@@ -8,8 +8,23 @@
     padding: 6px 4px 8px 4px;
     margin-right: 6px;
 }
+table tbody tr:hover {
+    cursor: pointer;
+    background-color: #fafafa;
+}
 </style>
 {% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    $('table tbody tr').click(function(){
+        location.href='/roster/' + $(this).attr('data-id') + '/profile';
+    })
+});
+</script>
+{% endblock %}
+
 
 
 {% block title %}League Roster{% endblock %}

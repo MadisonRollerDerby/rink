@@ -8,12 +8,10 @@ class RosterTable(tables.Table):
     legal_name = tables.Column(accessor='legal_name', order_by=('first_name', 'last_name'))
     derby_name = tables.Column()
     email = tables.Column()
-    edit = tables.LinkColumn(
-        'roster:admin_profile',
-        text=lambda record: "View User", kwargs={
-            'pk': A('pk'),
-        })
 
     class Meta:
         model = User
-        fields = ['legal_name', 'derby_name', 'email', 'edit']
+        fields = ['legal_name', 'derby_name', 'email']
+        row_attrs = {
+            'data-id': lambda record: record.pk
+        }
