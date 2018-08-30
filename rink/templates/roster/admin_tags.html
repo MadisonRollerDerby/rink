@@ -10,6 +10,9 @@
 {% block content %}
 {% include 'roster/submenu.html' with submenu_selected="tags" %}
 
+<div class="row">
+  <div class="col-md-6 offset-md-3">
+
 
 {% if league_tags %}
 <form action="" method="post">{% csrf_token %}
@@ -34,4 +37,6 @@
 {% endif %}
 
 
+</div>
+</div>
 {% endblock %}

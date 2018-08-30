@@ -8,18 +8,19 @@
 {% block content %}
 {% include 'roster/submenu.html' with submenu_selected="notes" %}
 
+
+<div class="row">
+  <div class="col-md-6 offset-md-3">
+
 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addNoteModal">Add Note</button>
 
 <hr>
 
-<div class="container">
-
 {% if userlog_list %}
     {% for userlog in userlog_list %}
 
-<div class="row">
-  <div class="col-sm-6 mb-3">
-    <div class="card" class="">
+
+    <div class="card" style="margin-bottom:10px">
         <div class="card-header bg-{{ userlog.message_type }}">{{ userlog.group|title }}</div>
         <div class="card-body">
             {{ userlog.message_html|safe }}
@@ -28,15 +29,15 @@
             <small class="text-muted">{{ userlog.date }}{% if userlog.admin_user %} by {{ userlog.admin_user }}{% endif %}</small>
         </div>
     </div>
-  </div>
-</div>
+
     {% endfor %}
 {% else %}
 <p>We have no notes or logs for {{ user }} to show you here.</p>
 {% endif %}
 
-</div>
 
+</div>
+</div>
 
 
 

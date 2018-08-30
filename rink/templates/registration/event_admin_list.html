@@ -1,31 +1,35 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
 
-<div class="container mb-5">
-    <div class="row">
-        <h3>Manage Registration Events</h3>
+<div class="row mt-3 mb-3">
+    <div class="col">
+        <h3>Registration Events</h3>
     </div>
-    <div class="row mt-3 mb-3">
+    <div class="col text-right">
         <a href="{% url 'registration:event_admin_create' %}">
             <button type="button" class="btn btn-primary btn-sm">Create Registration Event</button>
         </a>
     </div>
-    <div class="row">
-        {% if current_events %}
-            <div class="list-group">
-                {% for event in current_events %}
-                    <a href="{% url 'registration:event_admin_invites' event_slug=event.slug %}" class="list-group-item list-group-item-action">
-                        {{ event.name }}
-                    </a>
-                {% endfor %}
-            </div>
-        {% else %}
-            No current registration events found.
-        {% endif %}
-    </div>
-
 </div>
+
+<div class="row">
+    {% if current_events %}
+        <div class="list-group">
+            {% for event in current_events %}
+                <a href="{% url 'registration:event_admin_invites' event_slug=event.slug %}" class="list-group-item list-group-item-action">
+                    {{ event.name }}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        No current registration events found.
+    {% endif %}
+</div>
+
+
 
 
 
@@ -45,4 +49,9 @@
     </div>
 </div>
 {% endif %}
+
+
+</div>
+</div>
+
 {% endblock %}
