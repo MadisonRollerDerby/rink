@@ -29,6 +29,12 @@
     </fieldset>
 {% endif %}
 
+<div class="text-right mb-3">
+    <a href="?{{ request.GET.urlencode }}&csv=please">
+        <button type="button" class="btn btn-primary btn-sm">CSV</button>
+    </a>
+</div>
+
 {% render_table table %}
 
 {% endblock %}
