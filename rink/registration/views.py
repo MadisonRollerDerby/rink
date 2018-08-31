@@ -28,7 +28,8 @@ def registration_error(request, event, error_code):
 
 
 def check_event_at_capacity(request, event):
-    if (event.max_capacity > 0 and Roster.objects.filter(event=event).count()) >= event.max_capacity:
+    if (event.max_capacity and event.max_capacity > 0 and
+            Roster.objects.filter(event=event).count() >= event.max_capacity):
         return registration_error(request, event, "registration_capacity")
     else:
         return False

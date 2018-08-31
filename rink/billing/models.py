@@ -317,7 +317,7 @@ class BillingSubscription(models.Model):
     def check_completed(self):
         if self.active:
             # Find all invoices related to this subscription
-            invoices = Invoice.objects.filter(subscription=self).values_list('billing_period__pk').get()
+            invoices = Invoice.objects.filter(subscription=self).values_list('billing_period__pk').all()
 
             # Compare invoices paid to billing periods to find if there are any
             # FUTURE billing periods that will be invoiced

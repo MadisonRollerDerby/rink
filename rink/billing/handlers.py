@@ -21,7 +21,7 @@ def user_log_invoice_created(sender, instance, created, **kwargs):
     # Check if this invoice is the last remaining invoice in a billing subscription.
     # This will set the status to 'completed', deactivating the subscription.
     if instance.subscription:
-        instance.check_completed()
+        instance.subscription.check_completed()
 
 
 @receiver(post_save, sender=Payment)
