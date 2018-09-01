@@ -4,6 +4,8 @@
 {% block title %}User Profile{% endblock %}
 
 {% block content %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
 
   <h2>{{ user.email }}</h2>
 
@@ -11,4 +13,6 @@
 
   {% crispy form %}
 
+  </div>
+</div>
 {% endblock %}

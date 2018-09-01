@@ -1,7 +1,9 @@
 import logging
+import raven
 
 from .base import *  # noqa
 from .base import env
+
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -145,6 +147,15 @@ INSTALLED_APPS += ['gunicorn']  # noqa F405
 # http://whitenoise.evans.io/en/latest/django.html#enable-whitenoise
 MIDDLEWARE = ['whitenoise.middleware.WhiteNoiseMiddleware'] + MIDDLEWARE  # noqa F405
 
+
+# Sentry
+INSTALLED_APPS += ['raven.contrib.django.raven_compat']
+RAVEN_CONFIG = {
+    'dsn': env('RAVEN_DSN'),
+    # If you are using git, you can also automatically configure the
+    # release based on the git info.
+    'release': raven.fetch_git_sha(ROOT_DIR),
+}
 
 
 # LOGGING

@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -20,6 +20,7 @@ from users.models import User, Tag, UserTag, UserLog
 
 from .forms import (RosterProfileForm, BillingGroupForm,
     RosterFilterForm, RosterAddNoteForm, RosterCreateInvoiceForm)
+from .resources import RosterResource
 from .tables import RosterTable
 
 
@@ -28,6 +29,17 @@ class RosterList(RinkLeagueAdminPermissionRequired, SingleTableView, FilterView)
     paginate_by = 50
     table_class = RosterTable
     filter_form = None
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('csv', None):
+            roster = self.get_queryset()
+            roster_resource = RosterResource()
+            dataset = roster_resource.export(queryset=roster)
+            response = HttpResponse(dataset.csv, content_type='text/csv')
+            response['Content-Disposition'] = 'attachment;filename=Roster-{}-{}.csv'.format(self.league.name, timezone.now().date())
+            return response
+
+        return super().get(request, *args, **kwargs)
 
     def get_filter_form(self):
         if not self.filter_form:

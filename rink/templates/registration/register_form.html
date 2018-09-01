@@ -10,10 +10,9 @@
 {% block css %}
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <style type="text/css">
-/**
- * The CSS shown here will not be introduced in the Quickstart guide, but shows
- * how you can use CSS to style your Element's container.
- */
+
+
+
 .StripeElement {
   background-color: white;
   height: 40px;
@@ -42,13 +41,8 @@
 
 {% block javascript %}
 <script src="https://js.stripe.com/v3/"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
 <script>
-$(".datepicker").each(function() {    
-    $(this).datepicker({ dateFormat: "m/d/yy", changeMonth: true, changeYear: true }).datepicker('setDate', $(this).val());
-});
-
 // Create a Stripe client.
 var stripe = Stripe('{{ event.league.get_stripe_public_key }}');
 
@@ -110,6 +104,11 @@ form.addEventListener('submit', function(event) {
 
 function stripeTokenHandler(token) {
   $('#id_stripe_token').val(token.id);
+  $('#id_emergency_date_of_birth').val(
+    $('#id_birth_month').val() + "/" +
+    $('#id_birth_day').val() + "/" +
+    $('#id_birth_year').val()
+  );
   form.submit();
 }
 </script>
@@ -117,6 +116,8 @@ function stripeTokenHandler(token) {
 
 
 {% block content %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
 
 <h2>{{ event.name }} Registration</h2>
 
@@ -219,4 +220,6 @@ function stripeTokenHandler(token) {
 
 </form>
 
+  </div>
+</div>
 {% endblock %}

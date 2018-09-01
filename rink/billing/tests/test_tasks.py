@@ -61,6 +61,9 @@ class TestAutomaticBilling(TransactionTestCase):
         registration_data = copy_model_to_dict(registration_data_obj)
         registration_data_obj.delete()
 
+        registration_data['birth_month'] = 11
+        registration_data['birth_day'] = 3
+        registration_data['birth_year'] = 1987
         registration_data['legal_agree'] = 'checked'
         registration_data['stripe_token'] = 'tok_visa'
         return registration_data
@@ -85,6 +88,7 @@ class TestAutomaticBilling(TransactionTestCase):
         generate_invoices()
         self.assertEqual(Invoice.objects.count(), 1)
         self.assertEqual(Invoice.objects.all()[0].status, "paid")
+        self.assertEqual(Invoice.objects.all()[0].subscription.status, "active")
 
         # Invoice should be generated
         freezer.stop()
@@ -94,6 +98,7 @@ class TestAutomaticBilling(TransactionTestCase):
         capture_invoices()
 
         self.assertEqual(Invoice.objects.all()[1].status, "unpaid")
+        self.assertEqual(Invoice.objects.all()[1].subscription.status, "active")
 
         # Card should be automatically charged
         freezer.stop()
@@ -105,3 +110,43 @@ class TestAutomaticBilling(TransactionTestCase):
         invoices = Invoice.objects.all()
         self.assertEqual(invoices.count(), 2)
         self.assertEqual(invoices[1].status, "paid")
+        self.assertEqual(Invoice.objects.all()[1].subscription.status, "active")
+
+        freezer = freeze_time("2018-04-22 12:00:01")
+        freezer.start()
+        generate_invoices()
+        capture_invoices()
+        freezer.stop()
+        self.assertEqual(invoices.count(), 3)
+        self.assertEqual(invoices[2].status, "unpaid")
+        self.assertEqual(Invoice.objects.all()[1].subscription.status, "active")
+
+
+        freezer = freeze_time("2018-05-01 12:00:01")
+        freezer.start()
+        generate_invoices()
+        capture_invoices()
+        freezer.stop()
+        self.assertEqual(invoices.count(), 3)
+        self.assertEqual(invoices[2].status, "paid")
+        self.assertEqual(Invoice.objects.all()[2].subscription.status, "active")
+
+
+        freezer = freeze_time("2018-05-22 12:00:01")
+        freezer.start()
+        generate_invoices()
+        capture_invoices()
+        freezer.stop()
+        self.assertEqual(invoices.count(), 4)
+        self.assertEqual(invoices[3].status, "unpaid")
+        self.assertEqual(Invoice.objects.all()[3].subscription.status, "complete")
+
+
+        freezer = freeze_time("2018-06-01 12:00:01")
+        freezer.start()
+        generate_invoices()
+        capture_invoices()
+        freezer.stop()
+        self.assertEqual(invoices.count(), 4)
+        self.assertEqual(invoices[3].status, "paid")
+        self.assertEqual(Invoice.objects.all()[3].subscription.status, "complete")

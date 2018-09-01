@@ -6,6 +6,24 @@
 
 {% block title %}Roster{% endblock %}
 
+{% block css %}
+<style type="text/css">
+table tbody tr:hover {
+    cursor: pointer;
+    background-color: #fafafa;
+}
+</style>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    $('table tbody tr').click(function(){
+        location.href='/registration/test-event/roster/' + $(this).attr('data-id');
+    })
+});
+</script>
+{% endblock %}
 
 {% block content %}
 

@@ -3,6 +3,8 @@
 {% block title %}Registration Error - {{ event.name }}{% endblock %}
 
 {% block content %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
 
 <h2>{{ event.name }} Registration</h2>
 
@@ -25,6 +27,11 @@
     <p><strong>Registration Closed</strong></p>
     <p>Sorry, but registration for this event is currently closed. Please contact us if you need to get in touch.</p>
 
+  {% elif error_code == "registration_capacity" %}
+    <p><strong>Registration at Capacity!</strong>
+    <p>Sorry, <i>{{ event.name }}</i> has reached the maximum number of participants signed up.</p>
+    <p>Please email <a href="mailto:{{ event.league.email_from_address }}">{{ event.league.email_from_address }}</a> to ask about being placed on the waitlist. We hope you can still join us. :(</p>
+
   {% else %}
     Some unspecified, weird error occured here. That might be the issue. Wait, what?
   {% endif %}
@@ -32,4 +39,6 @@
 
 <p>If you continue to be confused about the error message above, please contact the person(s) in charge of your event for help. Thanks!</p>
 
+  </div>
+</div>
 {% endblock %}

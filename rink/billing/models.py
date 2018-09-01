@@ -257,6 +257,7 @@ class BillingPeriodCustomPaymentAmount(models.Model):
 BILLING_SUBSCRIPTION_CHOICES = [
     ('active', 'Active'),
     ('inactive', 'Inactive'),
+    ('completed', 'Completed'),
 ]
 
 
@@ -312,6 +313,23 @@ class BillingSubscription(models.Model):
             self.status = 'inactive'
             self.deactivate_date = timezone.now()
             self.save()
+
+    def check_completed(self):
+        if self.active:
+            # Find all invoices related to this subscription
+            invoices = Invoice.objects.filter(subscription=self).values_list('billing_period__pk').all()
+
+            # Compare invoices paid to billing periods to find if there are any
+            # FUTURE billing periods that will be invoiced
+            billing_periods_future_uninvoiced = BillingPeriod.objects.filter(
+                event=self.event,
+                due_date__gte=timezone.now().date()
+            ).exclude(pk__in=invoices).count()
+
+            if billing_periods_future_uninvoiced == 0:
+                self.status = 'complete'
+                self.deactivate_date = timezone.now()
+                self.save()
 
 
 INVOICE_STATUS_CHOICES = [

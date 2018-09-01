@@ -11,6 +11,9 @@
 {% include 'roster/submenu.html' with submenu_selected="legal" %}
 
 
+<div class="row">
+  <div class="col-md-6 offset-md-3">
+
 {% if registration_data %}
 <p>Forms signed during event registration by <strong>{{ user }}</strong>:</p>
 {% for reg in registration_data %}
@@ -29,6 +32,9 @@
 {% else %}
 <p>Apparently, we have no signed forms for {{ user }} to show you here. They might be on hard copy.</p>
 {% endif %}
+
+</div>
+</div>
 
 
 {% endblock %}

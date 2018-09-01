@@ -3,18 +3,20 @@
 {% block title %}Signed Forms{% endblock %}
 
 {% block content %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
 
 <h2>Signed Forms</h2>
 
 {% if registration_data %}
 {% for reg in registration_data %}
-<div class="card">
+<div class="card mb-4">
   <h5 class="card-header">{{ reg.event }}</h5>
     <ul class="list-group list-group-flush">
     {% for signature in reg.legalsignature_set.all %}
         <li class="list-group-item">
             <a href="{% url 'legal:view_legal_document' document_slug=signature.document.slug league_slug=signature.document.league.slug %}" target="_blank" class="card-link">{{ signature.document.name }} ({{ signature.document.date }})</a>
-            <p class="card-text"><small class="text-muted">Signed on {{ signature.agree_date }}</small></p>
+            <p class="card-text"><small class="text-muted">Signed on {{ signature.agree_date }} for {{ reg.event }}</small></p>
         </li>
     {% endfor %}
     </ul>
@@ -24,4 +26,6 @@
 <p>Apparently, we have no signed forms to show you here. They might be on hard copy.</p>
 {% endif %}
 
+</div>
+</div>
 {% endblock %}

@@ -11,7 +11,7 @@ from guardian.mixins import LoginRequiredMixin
 from stripe.error import CardError
 
 from .forms import RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
-from .models import RegistrationEvent, RegistrationInvite, RegistrationData
+from .models import RegistrationEvent, RegistrationInvite, RegistrationData, Roster
 from billing.models import (
     BillingPeriod, UserStripeCard, Invoice, BillingSubscription
 )
@@ -25,6 +25,14 @@ def registration_error(request, event, error_code):
         'event': event,
         'error_code': error_code,
     })
+
+
+def check_event_at_capacity(request, event):
+    if (event.max_capacity and event.max_capacity > 0 and
+            Roster.objects.filter(event=event).count() >= event.max_capacity):
+        return registration_error(request, event, "registration_capacity")
+    else:
+        return False
 
 
 class RegistrationView(View):
@@ -78,6 +86,10 @@ class RegisterBegin(RegistrationView):
                     messages.info(request, "This form is currently closed to registration. You are logged in as an administrator, so you are allowed to view it.")
                 else:
                     return registration_error(request, self.event, "registration_closed")
+
+        at_capacity = check_event_at_capacity(request, self.event)
+        if at_capacity:
+            return at_capacity
 
         request.session['register_event_id'] = self.event.pk
         if invite:
@@ -172,6 +184,10 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         return (num_billing_periods, billing_period, billing_amount)
 
     def get(self, request, event_slug, league_slug):
+        at_capacity = check_event_at_capacity(request, self.event)
+        if at_capacity:
+            return at_capacity
+
         preview_mode = False
         preview_mode_disable_button = False
         if 'org_admin' in request.session['organization_permissions'] or \
@@ -235,6 +251,10 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         })
 
     def post(self, request, event_slug, league_slug):
+        at_capacity = check_event_at_capacity(request, self.event)
+        if at_capacity:
+            return at_capacity
+
         form = RegistrationDataForm(logged_in_user_id=request.user.pk, data=request.POST)
         legal_form = LegalDocumentAgreeForm(data=request.POST)
 

@@ -5,6 +5,7 @@ whitenoise  # https://github.com/evansd/whitenoise
 redis  # https://github.com/antirez/redis
 celery  # pyup: <4.0  # https://github.com/celery/celery
 python-slugify
+raven==6.9.0
 beautifulsoup4
 django-filter
 django-tables2==2.0.0a5
