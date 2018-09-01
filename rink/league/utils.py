@@ -51,12 +51,17 @@ def send_email(league, template, to_email, context={}):
         from bs4 import BeautifulSoup
         message_txt = BeautifulSoup(message_html, "html.parser").get_text("\n", strip=True)
 
+    cc = None
+    if league.email_cc_address:
+        cc = [league.email_cc_address, ]
+
     msg = EmailMultiAlternatives(
         subject=subject,
         body=message_txt,
         from_email=from_email,
         to=[to_email, ],
         reply_to=[from_email, ],
+        cc=cc,
     )
     msg.attach_alternative(message_html, "text/html")
     msg.send(fail_silently=False)
