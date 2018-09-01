@@ -314,13 +314,13 @@ class RegistrationData(models.Model):
     derby_name = models.CharField(
         "Derby Name",
         max_length=100,
-        help_text="Not required. Guidance document link is where?",
+        help_text="Not required for new skaters. Choose it later if you would like. The general rule of thumb is if it's not used in your home league, <a href='http://www.derbyrollcall.com' target='_blank'>or someone you will likely never play</a>, then it's probably OK.",
         blank=True
     )
     derby_number = models.CharField(
         "Derby Number",
         max_length=10,
-        help_text="Not required. Guidance document link is where?",
+        help_text="Not required for new skaters. Choose it later if you would like. <a href='https://docs.google.com/document/d/1wQmQsOdMiTe3T8sHmZ3yQmUJQP9mZqLr_9e_I_zjwfI/edit?ts=5b8ae478' target='_blank'>Here are some tips for picking your derby number.</a>",
         blank=True
     )
     
@@ -329,13 +329,13 @@ class RegistrationData(models.Model):
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
-        help_text="If you have Derby insurance, specify it here. Insurance may not be required."
+        help_text="If you have Derby insurance, specify it here. Insurance may not be required, depending on your skating level."
     )
 
     derby_insurance_number = models.CharField(
         "Derby Insurance Number",
         max_length=50,
-        help_text="Derby insurance details. Insurance may not be required.",
+        help_text="Derby insurance details. Insurance may not be required, depending on your skating level.",
         blank=True,
     )
 

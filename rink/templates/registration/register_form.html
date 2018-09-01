@@ -141,7 +141,7 @@ function stripeTokenHandler(token) {
 
 
 {% if legal_form %}
-    <legend>Legal Forms</legend>
+    <legend>Legal Documents</legend>
 
   {% if event.legal_blurb %}
     <div class="container">
@@ -159,22 +159,28 @@ function stripeTokenHandler(token) {
       </div>
     {% endif %}
     
-    You must read and agree to the following {{ event.legal_forms.all.count }} documents to particapte in this event:
+    <p>
+      You must read and agree to the following {% if event.legal_forms.all.count > 1 %}{{ event.legal_forms.all.count }} documents{% else %}document{% endif %} to particapte in this event. <i>Please review them.</i> <mark><strong>It is extremely important that you actually read them!</strong></mark>
+    </p>
+
 
     <div id="div_id_legal_forms" class="form-group"> 
-     <div class="">
-        <div class="form-check">
-          <input type="checkbox" class="form-check-input" name="legal_agree" id="legal_agree" value="legal_agree" required>
-          <label>
-            <strong>I have read and agree to the following documents:</strong>
-          </label> 
-        </div>
-      </div>
+
       <ol> 
       {% for document in event.legal_forms.all %}
         <li><a href="{% url 'legal:view_event_legal_documents' league_slug=event.league.slug event_slug=event.slug %}#doc{{ document.id }}" target="_blank">{{ document.name }} ({{ document.date }})</a></li>
         {% endfor %}
       </ol>
+
+     <div class="">
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" name="legal_agree" id="legal_agree" value="legal_agree" required>
+          <label>
+            <strong>I have read and agree to the {% if event.legal_forms.all.count > 1 %}{{ event.legal_forms.all.count }} documents{% else %}document{% endif %} above.</strong>
+          </label> 
+        </div>
+      </div>
+
     </div>
 {% endif %}
 
@@ -201,7 +207,7 @@ function stripeTokenHandler(token) {
     <div id="card-element">
       <!-- A Stripe Element will be inserted here. -->
     </div>
-    <small class="form-text text-muted">Please enter your credit card, expiration date and CVC code</small>
+    <small class="form-text text-muted">Please enter your credit card, expiration date, CVC code and zip code.</small>
 
     <!-- Used to display form errors. -->
     <div id="card-errors" role="alert"></div>
