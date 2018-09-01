@@ -42,7 +42,7 @@ Phone: {{ registration.emergency_phone }}<br>
 <p>You agreed to the following legal documents:</p>
 <ol>
     {% for form in event.legal_forms.all %}
-    <li><a href="{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
+    <li><a href="{{ url_domain }}{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
     {% endfor %}
 </ol>
 {% endif %}

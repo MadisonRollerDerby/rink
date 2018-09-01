@@ -9,6 +9,8 @@
 
 
 {% block content %}
+<div class="row">
+  <div class="col-md-6 offset-md-3">
 
 <h2>{{ event.name }} Registration</h2>
 
@@ -16,4 +18,6 @@
 
 {% crispy form %}
 
+    </div>
+</div>
 {% endblock %}
