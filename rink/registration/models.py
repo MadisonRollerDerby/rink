@@ -41,6 +41,12 @@ class RegistrationEvent(models.Model):
         help_text="Blurb of text shown at the <strong>top of the registration form</strong> and <strong>included in the registration confirmation email.</strong> You can use <a target='_blank' href='https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet'>Markdown Code</a> to format the document."
     )
 
+    invite_blurb = models.TextField(
+        "Invite Blurb",
+        blank=True,
+        help_text="Text shown in the <strong>invite email</strong>. Could be used for communicating some details about the event, invite or signup system. You can use <a target='_blank' href='https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet'>Markdown Code</a> to format the document."
+    )
+
     legal_blurb = models.TextField(
         "Legal Blurb",
         blank=True,
@@ -56,6 +62,10 @@ class RegistrationEvent(models.Model):
     @property
     def description_html(self):
         return markdownify(self.description)
+
+    @property
+    def invite_blurb_html(self):
+        return markdownify(self.invite_blurb)
 
     @property
     def legal_blurb_html(self):

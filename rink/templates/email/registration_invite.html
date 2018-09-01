@@ -6,10 +6,10 @@
 
 <p><a style="font-size:larger" href="{{ url_domain }}{{ invite.get_invite_url }}">Click HERE to Register!</a></p>
 
-{% if invite.event.description %}
+{% if invite.event.invite_blurb %}
 <div style="border: 1px solid #cecece;margin: 5px 20px 10px 20px; padding: 4px 20px 10px 20px;">
-    <p style="font-size:smaller"><strong>EVENT DETAILS:</strong></p>
-    {{ invite.event.description_html|safe }}
+    <p style="font-size:smaller"><strong>REGISTRATION DETAILS:</strong></p>
+    {{ invite.event.invite_blurb_html|safe }}
 </div>
 {% endif %}
 

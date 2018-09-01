@@ -61,6 +61,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
             Fieldset(
                 'Blurbs',
                 'description',
+                'invite_blurb',
                 'legal_blurb',
                 'payment_blurb',
             ),
@@ -104,6 +105,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
             'start_date',
             'end_date',
             'description',
+            'invite_blurb',
             'legal_blurb',
             'payment_blurb',
             'public_registration_open_date',
