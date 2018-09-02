@@ -284,9 +284,13 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 user=request.user,
                 league=self.event.league,
             )
+
             try:
-                card_profile.update_from_token(form.cleaned_data['stripe_token'])
-                payment = card_profile.charge(invoice=invoice, send_receipt=False)
+                if billing_amount > 0:
+                    card_profile.update_from_token(form.cleaned_data['stripe_token'])
+                    payment = card_profile.charge(invoice=invoice, send_receipt=False)
+                else:
+                    payment = None
             except CardError as e:
                 invoice.delete()
                 body = e.json_body
