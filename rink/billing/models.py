@@ -168,7 +168,21 @@ class BillingPeriod(models.Model):
         except BillingGroup.DoesNotExist:
             pass
         else:
-            return default_group_for_league.invoice_amount
+            billing_group = default_group_for_league
+
+        if billing_group:
+            try:
+                billing_schedule_obj = BillingPeriodCustomPaymentAmount.objects.get(
+                    group=billing_group,
+                    period=self,
+                )
+            except BillingPeriodCustomPaymentAmount.DoesNotExist:
+                pass
+            else:
+                return billing_schedule_obj.invoice_amount
+        
+        if billing_group:
+            return billing_group.invoice_amount
 
         # If we are STILL here, that means NO valid billing group set and
         # the billing period/group through table doesn't have an entry.
