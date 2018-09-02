@@ -43,6 +43,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 
 <script>
+{% if billing_amount > 0 %}
 // Create a Stripe client.
 var stripe = Stripe('{{ event.league.get_stripe_public_key }}');
 
@@ -80,6 +81,7 @@ card.addEventListener('change', function(event) {
     displayError.textContent = '';
   }
 });
+{% endif %}
 
 var form = document.getElementById('payment-form');
 form.addEventListener('submit', function(event) {
@@ -87,7 +89,7 @@ form.addEventListener('submit', function(event) {
 
   $('#submit-id-submit').prop("disabled", true).val("Please wait...");
 
-
+  {% if billing_amount > 0 %}
   stripe.createToken(card).then(function(result) {
     if (result.error) {
       // Inform the customer that there was an error.
@@ -100,10 +102,17 @@ form.addEventListener('submit', function(event) {
       $('#submit-id-submit').val("Almost done...");
     }
   });
+  {% else %}
+      stripeTokenHandler(false);
+      $('#submit-id-submit').val("Almost done...");
+  {% endif %}
 });
 
 function stripeTokenHandler(token) {
-  $('#id_stripe_token').val(token.id);
+  if(token) {
+    $('#id_stripe_token').val(token.id);
+  }
+
   $('#id_emergency_date_of_birth').val(
     $('#id_birth_month').val() + "/" +
     $('#id_birth_day').val() + "/" +
