@@ -1,1 +1,1 @@
-[Rink] {{ initial }} has updated their user details at {{ league }}
+[Rink] {{ initial.email }} has updated their user details at {{ league }}
