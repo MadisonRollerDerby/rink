@@ -73,9 +73,21 @@ class LeagueEmailForm(LeagueSettingsBaseForm, forms.ModelForm):
             'email_from_name',
             'email_from_address',
             'email_cc_address',
-            'email_header',
             'email_signature',
-            'email_footer',
+        ]
+
+
+class LeagueBrandingForm(LeagueSettingsBaseForm, forms.ModelForm):
+    form_name = forms.CharField(widget=forms.HiddenInput(), required=True, initial="branding_form")
+
+    class Meta:
+        model = League
+        fields = [
+            'style_color_one',
+            'style_color_two',
+            'style_email_font',
+            'style_header_font_name',
+            'style_header_font_css',
         ]
 
 

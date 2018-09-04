@@ -14,7 +14,7 @@ from guardian.shortcuts import get_perms_for_model, get_users_with_perms
 from users.models import User
 
 from .forms import (LeagueNameForm, LeagueBillingForm, LeagueRegistrationForm,
-    LeagueEmailForm, PermissionsForm, CreateRinkUserForm)
+    LeagueEmailForm, PermissionsForm, CreateRinkUserForm, LeagueBrandingForm)
 from .models import League, Organization, InsuranceType
 from .mixins import RinkOrgAdminPermissionRequired, RinkLeagueAdminPermissionRequired
 from billing.models import BillingGroup
@@ -65,6 +65,7 @@ class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, View):
                 'name_form': LeagueNameForm(instance=league),
                 'billing_form': LeagueBillingForm(instance=league),
                 'registration_form': LeagueRegistrationForm(instance=league, league=league),
+                'branding_form': LeagueBrandingForm(instance=league),
                 'email_form': LeagueEmailForm(instance=league),
             },
             'warning': warning,
@@ -76,6 +77,7 @@ class LeagueAdminUpdate(RinkLeagueAdminPermissionRequired, View):
             'name_form': LeagueNameForm(data=request.POST, instance=league),
             'billing_form': LeagueBillingForm(data=request.POST, instance=league),
             'registration_form': LeagueRegistrationForm(data=request.POST, instance=league, league=league),
+            'branding_form': LeagueBrandingForm(data=request.POST, instance=league),
             'email_form': LeagueEmailForm(data=request.POST, instance=league),
         }
 

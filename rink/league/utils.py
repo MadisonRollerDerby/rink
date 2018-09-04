@@ -29,16 +29,16 @@ def send_email(league, template, to_email, context={}):
     #context['to_email'] = name, etc? 
 
     # Get header HTML
-    if league.email_header:
-        context['header_html'] = league.email_header
-    else:
-        context['header_html'] = render_to_string('email/header_default.html', context)
+    #if league.email_header:
+    #    context['header_html'] = league.email_header
+    #else:
+    context['header_html'] = render_to_string('email/header_default.html', context)
 
     # Get footer HTML
-    if league.email_footer:
-        context['footer_html'] = league.email_footer
-    else:
-        context['footer_html'] = render_to_string('email/footer_default.html', context)
+    #if league.email_footer:
+    #    context['footer_html'] = league.email_footer
+    #else:
+    context['footer_html'] = render_to_string('email/footer_default.html', context)
 
     subject = render_to_string('email/{}.subject'.format(template), context)
     message_html = render_to_string('email/{}.html'.format(template), context)

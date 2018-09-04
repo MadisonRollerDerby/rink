@@ -213,23 +213,48 @@ class League(models.Model):
         blank=True,
     )
 
-    email_header = models.TextField(
-        "Email Header",
-        help_text="Custom header design HTML for all emails sent from this system.",
-        blank=True,
-    )
-
     email_signature = models.TextField(
         "Email Signature",
         help_text="Custom signature in HTML for all emails sent from this system.",
         blank=True,
     )
 
-    email_footer = models.TextField(
-        "Email Footer",
-        help_text="Custom header design HTML (bottom) for all emails sent from this system.",
+    style_color_one = models.CharField(
+        "Style Color #1",
+        max_length=20,
+        help_text="First color for custom theme for this league. Default is '#F9FC69'.",
         blank=True,
     )
+
+    style_color_two = models.CharField(
+        "Style Color #2",
+        max_length=20,
+        help_text="Second color for custom theme for this league. Default is '#35E5F4'.",
+        blank=True,
+    )
+
+    style_email_font = models.CharField(
+        "Email Font CSS Name",
+        max_length=100,
+        help_text="The font to use for branding the logo in emails. Default is 'Lucida Sans Unicode', 'Lucida Grande', sans-serif'",
+        blank=True,
+    )
+
+    style_header_font_name = models.CharField(
+        "Header Font Google Font Name",
+        max_length=100,
+        help_text="The name of the font to use when loading the google font to use for the league name in the header. Default is 'Lobster'.",
+        blank=True,
+    )
+
+    style_header_font_css = models.CharField(
+        "Header Font Google Font CSS Font-Family",
+        max_length=100,
+        help_text="The font-face CSS to use for branding the league name in the header. Default is 'Lobster, cursive'.",
+        blank=True,
+    )
+
+
 
     def __str__(self):
         return self.name
