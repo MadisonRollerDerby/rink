@@ -284,12 +284,17 @@ class RegistrationDataForm(forms.ModelForm):
         return self.cleaned_data['contact_email']
 
     def update_user(self, user):
-        user.first_name = self.cleaned_data['contact_first_name']
-        user.last_name = self.cleaned_data['contact_last_name']
-        user.email = self.cleaned_data['contact_email']
-        user.derby_name = self.cleaned_data['derby_name']
-        user.derby_number = self.cleaned_data['derby_number']
-        user.save()
+        if self.event.form_type == 'minor':
+            if not user.first_name and not user.last_name:
+                user.first_name = self.cleaned_data['parent1_name']
+                user.save()
+        else:
+            user.first_name = self.cleaned_data['contact_first_name']
+            user.last_name = self.cleaned_data['contact_last_name']
+            user.email = self.cleaned_data['contact_email']
+            user.derby_name = self.cleaned_data['derby_name']
+            user.derby_number = self.cleaned_data['derby_number']
+            user.save()
 
     def create_roster(self, user, event):
         return Roster.objects.create(
