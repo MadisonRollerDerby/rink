@@ -397,8 +397,23 @@ class RegistrationData(models.Model):
         max_length=25
     )
     emergency_relationship = models.CharField(
-        "Emergency Contact Relationship", 
+        "Emergency Contact Relationship",
         max_length=100,
+    )
+    emergency_contact_second = models.CharField(
+        "Second Emergency Contact Name",
+        max_length=100,
+        blank=True,
+    )
+    emergency_phone_second = models.CharField(
+        "Second Emergency Phone Contact",
+        max_length=25,
+        blank=True,
+    )
+    emergency_relationship_second = models.CharField(
+        "Second Emergency Contact Relationship",
+        max_length=100,
+        blank=True,
     )
     emergency_hospital = models.CharField(
         "Preferred Hospital Name",

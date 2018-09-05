@@ -10,7 +10,7 @@
 <div style="height:18px;background-color:{{ league.style_color_one|default:'#F9FC69' }};"></div>
 <div style="height:18px;background-color:{{ league.style_color_two|default:'#35E5F4' }};box-shadow:2px 5px 6px #888;"></div>
 
-{% if league.logo_thumbnail_footer.url %}
+{% if league.logo_thumbnail_footer %}
 <div style="margin:20px auto 0 auto;width:300px;">
     <img src="{{ url_domain }}{{ league.logo_thumbnail_footer.url }}" alt="{{ league.name }}">
 </div>

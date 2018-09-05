@@ -51,10 +51,7 @@ class LeagueRegistrationForm(LeagueSettingsBaseForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         league = kwargs.pop('league', None)
         super().__init__(*args, **kwargs)
-        if InsuranceType.objects.filter(league=league).count() > 0:
-            self.fields['default_insurance_type'].queryset = InsuranceType.objects.filter(league=league)
-        else:
-            self.fields['default_insurance_type'].queryset = None
+        self.fields['default_insurance_type'].queryset = InsuranceType.objects.filter(league=league)
 
     class Meta:
         model = League

@@ -119,7 +119,13 @@ class BillingPeriod(models.Model):
 
     def clean(self):
         if not self.start_date or not self.end_date:
-            raise ValidationError("Start and End Dates are required.")
+            raise ValidationError("Start and End Dates are required, or they are invalid somehow (bad date, extra spaces).")
+
+        if not self.invoice_date:
+            raise ValidationError("Invoice date is required, or it invalid somehow (bad date, extra spaces).")
+
+        if not self.due_date:
+            raise ValidationError("Due date is required, or it is invalid somehow (bad date, extra spaces).")
 
         # Start date needs to come before End date
         if self.start_date > self.end_date:
@@ -841,6 +847,9 @@ class UserStripeCard(models.Model):
         if invoice and invoices:
             raise ValueError("You cannot charge both one invoice and multiple invoices at the same time.")
 
+        if not self.customer_id:
+            raise ValueError("Please add a credit card below. No credit card is saved on file.")
+
         if self.card_num_failures >= USER_CARD_MAX_FAILURES:
             raise ValueError("Card has the maximum number of failures ({}) and more charge attempts. User needs to update their card.".format(USER_CARD_MAX_FAILURES))
 
@@ -856,8 +865,11 @@ class UserStripeCard(models.Model):
                 raise ValueError("You cannot charge an invoice to a card that does not belong to you.")
 
             invoice_numbers.append('#{}'.format(invoice.pk))
-            invoice_description.append("#{} {} - {}".format(
-                invoice.pk, invoice.billing_period.name, invoice.billing_period.event.name))
+            if invoice.billing_period:
+                invoice_description.append("#{} {} - {}".format(
+                    invoice.pk, invoice.billing_period.name, invoice.billing_period.event.name))
+            else:
+                invoice_description.append("#{}".format(invoice.pk))
             payment_total += int(invoice.invoice_amount * 100)
 
         payment_date = timezone.now()

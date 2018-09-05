@@ -12,6 +12,7 @@
 {% for reg in registration_data %}
 <div class="card mb-4">
   <h5 class="card-header">{{ reg.event }}</h5>
+    {% if reg.legalsignature_set.all.count > 0 %}
     <ul class="list-group list-group-flush">
     {% for signature in reg.legalsignature_set.all %}
         <li class="list-group-item">
@@ -33,6 +34,9 @@
         </li>
     {% endfor %}
     </ul>
+    {% else %}
+    <small class="m-3">No forms signed online for this event. They might be on hard copy.</small>
+    {% endif %}
 </div>
 {% endfor %}
 {% else %}

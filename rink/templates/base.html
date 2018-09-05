@@ -41,7 +41,7 @@
     
     <!-- This file stores project-specific CSS -->
     
-    <link href="{% static 'css/project.css' %}" rel="stylesheet">
+    <link href="{% static 'css/project.css' %}?2018-05-05" rel="stylesheet">
     <style type="text/css">
     .navbar-brand {
       font-family: {{ league_template.style_header_font_css|safe|default:"'Lobster', cursive" }} !important;
@@ -180,24 +180,32 @@
     <footer class="footer">
     <div class="bottom_color_splash2"></div>
     <div class="bottom_color_splash1"></div>
-      {% if league_template and league_template.logo_thumbnail_footer %}<div class="footer-background" style="background-image:url('{{ league_template.logo_thumbnail_footer.url }}');"</div>{% endif %}
-      <div class="container">
+    <div class="container">
         <div class="row">
-          <div class="col-sm-8">
+
+          <div class="col-lg-4 col-md-6 col-sm-12  order-sm-6 order-md-6 order-lg-1">
             <ul class="list-unstyled footer-list">
               <li><strong>Wrecker Rink</strong></li>
               <li><a href="/about">About</a></li>
               <br>
-              <li><a href="http://madisonrollerderby.org/teams/wreckers/" target="_blank">Madison Wreckers</a></li>
-              <li><a href="https://juniors.madisonrollerderby.org/" target="_blank">Madison Juniors</a></li>
+              <li><a href="https://madisonrollerderby.org/teams/wreckers/" target="_blank">Madison Wreckers</a></li>
+              <li><a href="https://juniors.madisonrollerderby.org/" target="_blank">Mad Calves Junior Derby</a></li>
+              <li><a href="https://madisonrollerderby.org" target="_blank">Madison Roller Derby</a></li>
+              <br>
+              <li><a href="https://www.juniorrollerderby.org/" target="_blank">Junior Roller Derby Assocation</a></li>
+              <li><a href="https://wftda.org/" target="_blank">Women's Flat Track Derby Association</a></li>
             </ul>
           </div>
-          <div class="col-sm-4">
+
+          <div class="footer-background-image col-lg-4 col-md-6 order-sm-first order-first order-md-1 " {% if league_template and league_template.logo_thumbnail_footer %}style="background-image:url('{{ league_template.logo_thumbnail_footer.url }}');"{% endif %}>
+          </div>
+
+          <div class="col-lg-4 col-md-6 col-sm-12 order-sm-12 order-md-12  pt-3">
             <ul class="list-unstyled footer-list">
               <li>Custom Web Development by <a href="https://silvers.net" target="_blank">Silvers.Networks</a></li>
             </ul>
         </span>
-      </div>
+    </div>
     </footer>
 
     {% block modal %}{% endblock modal %}

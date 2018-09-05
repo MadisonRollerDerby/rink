@@ -15,19 +15,20 @@ class PayView(LoginRequiredMixin, View):
     template_name = "billing/pay.html"
 
     def get(self, request):
+        league = League.objects.get(pk=request.session['view_league'])
         try:
-            user_stripe_card = UserStripeCard.objects.get(user=request.user)
+            user_stripe_card = UserStripeCard.objects.get(user=request.user, league=league)
         except UserStripeCard.DoesNotExist:
             user_stripe_card = None
 
         invoices = Invoice.objects.filter(
             user=request.user,
-            league=League.objects.get(pk=request.session['view_league']),
+            league=league,
             status='unpaid',
         )
 
         future_invoices = BillingPeriod.objects.filter(
-            event__league=League.objects.get(pk=request.session['view_league']),
+            event__league=league,
             event__billingsubscription__user=request.user,
             event__billingsubscription__status='active',
             invoice_date__gte=timezone.now(),
@@ -45,28 +46,37 @@ class PayView(LoginRequiredMixin, View):
 
     def post(self, request):
         # I suppose we could show form errors here, but whatever
+        league = League.objects.get(pk=request.session['view_league'])
         form = PayNowForm(data=request.POST)
 
         if form.is_valid():
             try:
-                user_stripe_card = UserStripeCard.objects.get(user=request.user)
-            except UserStripeCard.DoesNotExist:
-                messages.error(request, "You do not have a credit card saved. Please save a credit card before attempting to pay an invoice. Sorry. Thanks.")
-                return redirect('billing:pay')
-
-            try:
                 invoice = Invoice.objects.get(
                     pk=form.cleaned_data['invoice_id'],
                     user=request.user,
-                    league=League.objects.get(pk=request.session['view_league']),
+                    league=league,
                     status='unpaid',
                 )
             except Invoice.DoesNotExist:
                 return redirect('billing:pay')
 
+            if invoice.invoice_amount == 0:
+                invoice.pay()
+                messages.success(request, "<strong>$0 Payment successful!</strong> Thanks.</p>")
+                return redirect('billing:pay')
+
+            try:
+                user_stripe_card = UserStripeCard.objects.get(user=request.user, league=league)
+            except UserStripeCard.DoesNotExist:
+                messages.error(request, "You do not have a credit card saved. Please save a credit card before attempting to pay an invoice. Sorry. Thanks.")
+                return redirect('billing:pay')
+
             try:
                 user_stripe_card.charge(invoice=invoice)
-                messages.success(request, "<strong>>Payment successful!</strong> We emailed you a receipt. Thanks.</p>")
+                messages.success(request, "<strong>Payment successful!</strong> We emailed you a receipt. Thanks.</p>")
+            except ValueError as e:
+                messages.error(request, e)
+                return redirect('billing:pay')
             except CardError as e:
                 body = e.json_body
                 err = body.get('error', {})
@@ -97,7 +107,10 @@ class UpdateUserStripeCardView(LoginRequiredMixin, View):
 
     def get(self, request):
         try:
-            user_stripe_card = UserStripeCard.objects.get(user=request.user)
+            user_stripe_card = UserStripeCard.objects.get(
+                user=request.user,
+                league=League.objects.get(pk=request.session['view_league']),
+            )
         except UserStripeCard.DoesNotExist:
             user_stripe_card = None
 

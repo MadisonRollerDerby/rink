@@ -203,7 +203,27 @@ class RegistrationDataForm(forms.ModelForm):
 
         self.helper.layout.append(
             Fieldset(
-                'Emergency Details',
+                'Emergency Contact',
+                'emergency_contact',
+                'emergency_phone',
+                'emergency_relationship',
+            )
+        )
+
+        if self.event.form_type == "minor":
+            self.helper.layout.append(
+                Fieldset(
+                    'Emergency Contact (Backup)',
+                    HTML("<small>Please specify a second emergency contact in the event we are unable to reach the primary emergency contact.</small>"),
+                    Field('emergency_contact_second', required=True),
+                    Field('emergency_phone_second', required=True),
+                    Field('emergency_relationship_second', required=True),
+                )
+            )
+
+        self.helper.layout.append(
+            Fieldset(
+                "Emergency/Medical Details",
                 Div(
                     HTML('<label for="id_birth_month" class="col-form-label requiredField">Birth Date:</label>')
                 ),
@@ -213,9 +233,6 @@ class RegistrationDataForm(forms.ModelForm):
                     Div(Field('birth_year'), css_class="col", style="max-width:120px;"),
                     css_class="form-row",
                 ),
-                'emergency_contact',
-                'emergency_phone',
-                'emergency_relationship',
                 'emergency_hospital',
                 'emergency_allergies',
             )
@@ -263,10 +280,13 @@ class RegistrationDataForm(forms.ModelForm):
             'derby_insurance_number',
             'derby_pronoun',
 
-            'emergency_date_of_birth',
             'emergency_contact',
             'emergency_phone',
             'emergency_relationship',
+            'emergency_contact_second',
+            'emergency_phone_second',
+            'emergency_relationship_second',
+            'emergency_date_of_birth',
             'emergency_hospital',
             'emergency_allergies',
         ]

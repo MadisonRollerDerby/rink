@@ -50,9 +50,16 @@
 
                 <fieldset>
                     <legend>Emergency Details</legend>
-                    <label>Emergency Contact:</label>
+                    <label>Emergency Contact #1:</label>
                         {{ registration_data.emergency_contact }} ({{ registration_data.emergency_relationship }})<br>
-                    <label>Emergency Phone #:</label> {{ registration_data.emergency_phone }}<br>
+                    <label>Emergency Phone #1:</label> {{ registration_data.emergency_phone }}<br>
+                    {% if event.form_type == 'minor' %}
+                    <br>
+                    <label>Emergency Contact #2:</label>
+                        {{ registration_data.emergency_contact_second }} ({{ registration_data.emergency_relationship_second }})<br>
+                    <label>Emergency Phone #2:</label> {{ registration_data.emergency_phone_second }}<br>
+                    {% endif %}
+                    <br>
                     <label>Hospital Preference:</label> {{ registration_data.emergency_hospital }}<br>
                     <label>Date of Birth:</label> {{ registration_data.emergency_date_of_birth }}<br>
                     <label>Allergies/Medical Conditions:</label> {{ registration_data.emergency_allergies }}<br>
