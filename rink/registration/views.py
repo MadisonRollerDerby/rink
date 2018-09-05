@@ -182,7 +182,12 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
     def get_billing_contexts(self, request):
         num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
         billing_period = self.get_billing_period()
-        billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
+
+        if billing_period:
+            billing_amount = billing_period.get_invoice_amount(self.get_invite_billing_group(request))
+        else:
+            billing_amount = 0
+
         return (num_billing_periods, billing_period, billing_amount)
 
     def get(self, request, event_slug, league_slug):
@@ -275,13 +280,28 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         else:
             legal_form = LegalDocumentAgreeForm(data=request.POST)
 
+        # Sometimes we might have no legal forms
+        if self.event.legal_forms.count() == 0 and \
+            (self.event.form_type != 'minor' or
+                (self.event.form_type == 'minor' and self.event.legal_forms_guardian.count() == 0)):
+            legal_form_valid = True
+        else:
+            legal_form_valid = legal_form.is_valid()
+
         num_billing_periods, billing_period, billing_amount = self.get_billing_contexts(request)
 
-        if form.is_valid() and legal_form.is_valid():
-            invoice_description = billing_period.get_invoice_description()
+        if form.is_valid() and legal_form_valid:
+            if billing_period:
+                invoice_description = billing_period.get_invoice_description()
+            else:
+                invoice_description = self.event.name
 
             # Create an invoice for this billing period
             payment = None
+            due_date = timezone.now()
+            if billing_period:
+                due_date = billing_period.due_date
+
             invoice, created = Invoice.objects.get_or_create(
                 user=request.user,
                 league=self.event.league,
@@ -291,7 +311,7 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 defaults={
                     'invoice_amount': billing_amount,
                     'invoice_date': timezone.now(),
-                    'due_date': billing_period.due_date,
+                    'due_date': due_date,
                     'autopay_disabled': True,
                     'description': invoice_description,
                 }
