@@ -7,8 +7,10 @@
 <p>You are registered for <strong>{{ event.name }} - {{ league.name }}</strong>.</p>
 
 {% if event.description %}
-<h4>EVENT DETAILS</h4>
-{{ event.description_html|safe }}
+<div style="border-bottom: 1px solid #eaeaea;margin: 15px 0 5px 0;"></div>
+    <h4>EVENT DETAILS</h4>
+    {{ event.description_html|safe }}
+    <div style="border-bottom: 1px solid #eaeaea;margin: 5px 0 15px 0;"></div>
 {% endif %}
 
 
@@ -30,6 +32,23 @@ Email: {{ registration.contact_email }}<br>
 Contact: {{ registration.emergency_contact }} [{{ registration.emergency_relationship }}]<br>
 Phone: {{ registration.emergency_phone }}<br>
 <br>
+<br>
+{% if event.form_type == 'minor' %}
+    <b>PRIMARY PARENT/GUARDIAN CONTACT</b><br>
+    <br>
+    Name: {{ registration.parent1_name }} <i>({{ registration.parent1_relationship}})</i><br>
+    Phone: {{ registration.parent1_phone }}<br>
+    Email: {{ registration.parent1_email }}<br>
+    <br>
+    {% if registration.parent2_name %}
+        <b>SECOND PARENT/GUARDIAN CONTACT</b><br>
+        <br>
+        Name: {{ registration.parent2_name }}{% if registration.parent2_relationship %} <i>({{ registration.parent2_relationship }})</i>{% endif %}<br>
+        {% if registration.parent2_phone %}Phone: {{ registration.parent2_phone }}<br>{% endif %}
+        {% if registration.parent2_email %}Email: {{ registration.parent2_email }}<br>{% endif %}
+        <br>
+    {% endif %}
+{% endif %}
 
 {% if payment %}
 <h4>PAYMENT</h4>
@@ -37,14 +56,31 @@ Phone: {{ registration.emergency_phone }}<br>
 {% endif %}
 <br>
 
-{% if event.legal_forms.count > 0 %}
-<h4>LEGAL STUFF</h4>
-<p>You agreed to the following legal documents:</p>
-<ol>
-    {% for form in event.legal_forms.all %}
-    <li><a href="{{ url_domain }}{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
-    {% endfor %}
-</ol>
+{% if event.legal_forms.count > 0 or event.legal_forms_guardian.count > 0 %}
+    <h4>LEGAL STUFF</h4>
+    <p>You read and agreed to the following documents:</p>
+    {% if event.form_type == 'minor' %}
+        {% if event.legal_forms_guardian.count > 0 %}
+        <i>Parent/Guardian:</i><br>
+        <ol>
+            {% for form in event.legal_forms_guardian.all %}
+            <li><a href="{{ url_domain }}{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
+            {% endfor %}
+        </ol><br>
+        {% endif %}
+
+        {% if event.legal_forms.count > 0 %}
+        <i>Skater/Participant:</i><br>
+        {% endif %}
+    {% endif %}
+
+    {% if event.legal_forms.count > 0 %}
+    <ol>
+        {% for form in event.legal_forms.all %}
+        <li><a href="{{ url_domain }}{{ event.get_legal_forms_url }}" target="_blank">{{ form.name }} ({{ form.date}})</a></li>
+        {% endfor %}
+    </ol><br>
+    {% endif %}
 {% endif %}
 
 

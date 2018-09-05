@@ -2,27 +2,95 @@
 
 {% block title %}Legal Forms - {{ event.name }}{% endblock %}
 
-{% block content %}
 
+
+{% block content %}
 <h2 id="doclist">Legal Forms for {{ event.name }}</h2>
 
-{% if not event.legal_forms %}
+{% if event.legal_forms.count == 0 and event.legal_forms_guardian.count == 0 %}
     No forms are attached to this event. There may be forms required to be signed on paper.
+
+
+
 {% else %}
+<p>Participating in this event requires agreement to the following documents.</p>
 
-<p>This event requires agreement to the following {{ event.legal_forms.all.count }} documents:</p>
+{% if event.form_type == 'minor' %}
 
-<div class="list-group">
-        {% for document in event.legal_forms.all %}
-        <a class="list-group-item" href="#doc{{ document.id }}">
-            {{ document.name }} - {{ document.date }}
-        </a>
-        {% endfor %}
-</div>
+    {% if event.legal_forms_guardian.count > 0 %}
+    <h5>Parent / Guardian Documents</h5>
+    <div class="list-group" style="max-width:600px;">
+            {% for document in event.legal_forms_guardian.all %}
+            <a class="list-group-item" href="#doc{{ document.id }}-guardian">
+                {{ document.name }} - {{ document.date }}
+            </a>
+            {% endfor %}
+    </div>
+    {% endif %}
 
+    {% if event.legal_forms.count > 0 %}
+    <h5 class="mt-3">Skater / Participant Documents</h5>
+    <div class="list-group" style="max-width:600px;">
+            {% for document in event.legal_forms.all %}
+            <a class="list-group-item" href="#doc{{ document.id }}-participant">
+                {{ document.name }} - {{ document.date }}
+            </a>
+            {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="height:120px"></div>
+    <hr class="mt-5 mb-5">
+
+    {% if event.legal_forms_guardian.count > 0 %}
+    
+    <h5>Parent / Guardian - Documents</h5>
+
+    {% for document in event.legal_forms_guardian.all %}
+    <div class="container" style="margin-bottom:50px">
+        <div class="row">
+            <h4 id="doc{{ document.id }}-guardian">{{ document.name }} - {{ document.date }}</h4>
+        </div>
+        <div class="row">
+            {{ document.content_html|safe }}
+        </div>
+        <div class="row">
+            <a href="#doclist" class="text-muted" style="text-decoration:underline">Back to Document List</a>
+        </div>
+    </div>
+    <hr class="mt-5 mb-5">
+    {% endfor %}
+    {% endif %}
+
+    {% if event.legal_forms.count > 0 %}
+    <h5>Skater / Participant - Documents</h5>
+
+    {% for document in event.legal_forms.all %}
+    <div class="container" style="margin-bottom:50px">
+        <div class="row">
+            <h4 id="doc{{ document.id }}-participant">{{ document.name }} - {{ document.date }}</h4>
+        </div>
+        <div class="row">
+            {{ document.content_html|safe }}
+        </div>
+        <div class="row">
+            <a href="#doclist" class="text-muted" style="text-decoration:underline">Back to Document List</a>
+        </div>
+    </div>
+    <hr class="mt-5 mb-5">
+    {% endfor %}
+    {% endif %}
+
+{% else %}
+    <div class="list-group">
+            {% for document in event.legal_forms.all %}
+            <a class="list-group-item" href="#doc{{ document.id }}">
+                {{ document.name }} - {{ document.date }}
+            </a>
+            {% endfor %}
+    </div>
 
     <div style="height:30px"></div>
-
 
     {% for document in event.legal_forms.all %}
     <div class="container" style="margin-bottom:50px">
@@ -36,7 +104,10 @@
             <a href="#doclist" class="text-muted" style="text-decoration:underline">Back to Document List</a>
         </div>
     </div>
+    <hr class="mt-5 mb-5">
     {% endfor %}
+{% endif %}
+
 
 {% endif %}
 

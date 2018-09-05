@@ -99,6 +99,7 @@ class RegistrationDataForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.logged_in_user_id = kwargs.pop('logged_in_user_id', None)
+        self.event = kwargs.pop('event', None)
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper(self)
@@ -123,9 +124,10 @@ class RegistrationDataForm(forms.ModelForm):
 
         self.helper.form_show_labels = True
         self.helper.form_tag = False
-        self.helper.layout = Layout(
+        self.helper.layout = Layout()
+        self.helper.layout.append(
             Fieldset(
-                'Contact Details',
+                'Skater Details',
                 'contact_email',
                 'contact_first_name',
                 'contact_last_name',
@@ -135,15 +137,71 @@ class RegistrationDataForm(forms.ModelForm):
                 'contact_state',
                 'contact_zipcode',
                 'contact_phone',
-            ),
-            Fieldset(
-                'Derby Details',
-                'derby_name',
-                'derby_number',
-                'derby_insurance_type',
-                'derby_insurance_number',
-                'derby_pronoun',
-            ),
+            )
+        )
+
+        if self.event.form_type == "minor":
+            self.fields['parent1_address_same'] = forms.BooleanField(
+                label="Lives at Same Address as Skater",
+                initial=True,
+            )
+            self.fields['parent2_address_same'] = forms.BooleanField(
+                label="Lives at Same Address as Skater",
+                initial=True,
+            )
+            self.helper.layout.append(
+                Fieldset(
+                    'Primary Parent/Guardian',
+                    Field('parent1_name', required=True),
+                    Field('parent1_relationship', required=True, placeholder="Mother, Father, etc."),
+                    Field('parent1_email', required=True),
+                    Field('parent1_phone', required=True),
+                    'parent1_address_same',
+                    'parent1_address1',
+                    'parent1_address2',
+                    'parent1_city',
+                    'parent1_state',
+                    'parent1_zipcode',
+                )
+            )
+            self.helper.layout.append(
+                Fieldset(
+                    'Second Parent/Guardian (Optional)',
+                    Field('parent2_name', placeholder="Optional"),
+                    Field('parent2_relationship', placeholder="Optional - Mother, Father, etc."),
+                    Field('parent2_email', placeholder="Optional"),
+                    Field('parent2_phone', placeholder="Optional"),
+                    'parent2_address_same',
+                    'parent2_address1',
+                    'parent2_address2',
+                    'parent2_city',
+                    'parent2_state',
+                    'parent2_zipcode',
+                )
+            )
+
+        if self.event.form_type == "minor":
+            self.helper.layout.append(
+                Fieldset(
+                    'Derby Details',
+                    'derby_name',
+                    'derby_number',
+                    'derby_pronoun',
+                )
+            )
+        else:
+            self.helper.layout.append(
+                Fieldset(
+                    'Derby Details',
+                    'derby_name',
+                    'derby_number',
+                    'derby_insurance_type',
+                    'derby_insurance_number',
+                    'derby_pronoun',
+                )
+            )
+
+        self.helper.layout.append(
             Fieldset(
                 'Emergency Details',
                 Div(
@@ -160,10 +218,11 @@ class RegistrationDataForm(forms.ModelForm):
                 'emergency_relationship',
                 'emergency_hospital',
                 'emergency_allergies',
-            ),
-            'stripe_token',
-            'emergency_date_of_birth',
+            )
         )
+
+        self.helper.layout.append('stripe_token')
+        self.helper.layout.append('emergency_date_of_birth')
 
     class Meta:
         model = RegistrationData
@@ -177,6 +236,26 @@ class RegistrationDataForm(forms.ModelForm):
             'contact_state',
             'contact_zipcode',
             'contact_phone',
+
+            'parent1_email',
+            'parent1_phone',
+            'parent1_relationship',
+            'parent1_name',
+            'parent1_address1',
+            'parent1_address2',
+            'parent1_city',
+            'parent1_state',
+            'parent1_zipcode',
+
+            'parent2_email',
+            'parent2_phone',
+            'parent2_relationship',
+            'parent2_name',
+            'parent2_address1',
+            'parent2_address2',
+            'parent2_city',
+            'parent2_state',
+            'parent2_zipcode',
 
             'derby_name',
             'derby_number',
@@ -226,3 +305,17 @@ class RegistrationDataForm(forms.ModelForm):
 
 class LegalDocumentAgreeForm(forms.Form):
     legal_agree = forms.BooleanField(required=True)
+
+
+class LegalDocumentInitialsForm(forms.Form):
+    legal_initials_guardian = forms.CharField(
+        required=True,
+        max_length=3,
+        min_length=2,
+    )
+
+    legal_initials_participant = forms.CharField(
+        required=True,
+        max_length=3,
+        min_length=2,
+    )

@@ -104,6 +104,54 @@
                         </dl>
                     </fieldset>
 
+                    {% if signup.event.form_type == 'minor' %}
+                    <fieldset>
+                        <legend>Primary Parent/Guardian</legend>
+                        <dl class="row">
+                            <dt class="col-sm-3">Name:</dt>
+                            <dd class="col-sm-9">{{ signup.parent1_name}}</dd>
+                            <dt class="col-sm-3">Email:</dt>
+                            <dd class="col-sm-9">{{ signup.parent1_email }}</dd>
+                            <dt class="col-sm-3">Phone:</dt>
+                            <dd class="col-sm-9">{{ signup.parent1_phone }}</dd>
+
+                            {% if parent1_address1 %}
+                            <dt class="col-sm-3">Address:</dt>
+                            <dd class="col-sm-9">
+                                <address>
+                                    {{ signup.parent1_address1 }}<br>
+                                    {% if signup.parent1_address2 %}{{ signup.parent1_address2 }}<br>{% endif %}
+                                    {{ signup.parent1_city }}, {{ signup.parent1_state }} {{ signup.parent1_zipcode }}
+                                </address>
+                            </dd>
+                            {% endif %}
+                        </dl>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Second Parent/Guardian</legend>
+                        <dl class="row">
+                            <dt class="col-sm-3">Name:</dt>
+                            <dd class="col-sm-9">{{ signup.parent2_name}}</dd>
+                            <dt class="col-sm-3">Email:</dt>
+                            <dd class="col-sm-9">{{ signup.parent2_email }}</dd>
+                            <dt class="col-sm-3">Phone:</dt>
+                            <dd class="col-sm-9">{{ signup.parent2_phone }}</dd>
+
+                            {% if parent2_address1 %}
+                            <dt class="col-sm-3">Address:</dt>
+                            <dd class="col-sm-9">
+                                <address>
+                                    {{ signup.parent2_address1 }}<br>
+                                    {% if signup.parent2_address2 %}{{ signup.parent2_address2 }}<br>{% endif %}
+                                    {{ signup.parent2_city }}, {{ signup.parent2_state }} {{ signup.parent2_zipcode }}
+                                </address>
+                            </dd>
+                            {% endif %}
+                        </dl>
+                    </fieldset>
+                    {% endif %}
+
                     <fieldset>
                         <legend>Legal Forms Signed</legend>
                             {% if signup.legalsignature_set.count > 0 %}

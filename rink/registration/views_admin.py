@@ -253,7 +253,7 @@ class EventAdminRosterDetail(EventAdminBaseView):
         billing_periods_future = BillingPeriod.objects.filter(event=self.event, invoice_date__gt=timezone.now())
         signatures = LegalSignature.objects.filter(registration=registration_data)
 
-        update_info_form = RegistrationDataForm(instance=registration_data)
+        update_info_form = RegistrationDataForm(instance=registration_data, event=self.event)
 
         try:
             card_on_file = UserStripeCard.objects.get(league=self.event.league, user=roster.user)

@@ -58,6 +58,40 @@
                     <label>Allergies/Medical Conditions:</label> {{ registration_data.emergency_allergies }}<br>
                 </fieldset>
 
+                {% if event.form_type == 'minor' %}
+                <fieldset>
+                    <legend>Primary Parent Details</legend>
+                    <address>
+                        <strong>{{ registration_data.parent1_name }} <i>({{ registration_data.parent1_relationship }})</i></strong><br>
+                        {% if registration_data.parent1_address1 %}
+                            {{ registration_data.parent1_address1 }}<br>
+                            {% if registration_data.parent1_address2 %}{{ registration_data.parent1_address2 }}<br>{% endif %}
+                            {{ registration_data.parent1_city }}, {{ registration_data.parent1_state }} {{ registration_data.parent1_zip }}<br>
+                        {% endif %}
+                        <abbr title="Phone">P:</abbr> {{ registration_data.parent1_phone }}<br>
+                        <abbr title="Email">E:</abbr> {{ registration_data.parent1_email }}<br>
+                    </address>
+                </fieldset>
+
+                {% if registration_data.parent2_name %}
+                <fieldset>
+                    <legend>Second Parent Details</legend>
+                    <address>
+                        <strong>{{ registration_data.parent2_name }} <i>({{ registration_data.parent2_relationship }})</i></strong><br>
+                        {% if registration_data.parent2_address1 %}
+                            {{ registration_data.parent2_address1 }}<br>
+                            {% if registration_data.parent2_address2 %}{{ registration_data.parent2_address2 }}<br>{% endif %}
+                            {{ registration_data.parent2_city }}, {{ registration_data.parent2_state }} {{ registration_data.parent2_zip }}<br>
+                        {% endif %}
+                        <abbr title="Phone">P:</abbr> {{ registration_data.parent2_phone }}<br>
+                        <abbr title="Email">E:</abbr> {{ registration_data.parent2_email }}<br>
+                    </address>
+                </fieldset>
+                {% endif %}
+
+
+                {% endif %}
+
                 <span class="text-muted">Registration was submitted on {{ registration_data.registration_date }}
 
             </div>
@@ -144,7 +178,18 @@
                     {% for signature in signatures %}
                         <li class="list-group-item">
                             <a href="{% url 'legal:view_legal_document' document_slug=signature.document.slug league_slug=signature.document.league.slug %}" target="_blank" class="card-link">{{ signature.document.name }} ({{ signature.document.date }})</a>
-                            <p class="card-text"><small class="text-muted">Signed on {{ signature.agree_date }} by {{ registration_data.contact_first_name }} {{registration_data.contact_last_name }}</small></p>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    Agreed on {{ signature.agree_date }} by 
+                                        <i>'{{ signature.agreed_by }}'</i>
+                                    {% if event.form_type == 'minor' %}
+                                        . Initialed by <strong>{{ signature.agree_initials }}</strong>.
+                                    {% else %}
+                                        {{ registration_data.contact_first_name }} 
+                                        {{ registration_data.contact_last_name }}
+                                    {% endif %}
+                                </small>
+                            </p>
                         </li>
                     {% endfor %}
                     </ul>
