@@ -35,13 +35,20 @@
     <![endif]-->
     
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link href="https://fonts.googleapis.com/css?family=Lobster|Open+Sans:400,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family={{ league_template.style_header_font_name|default:'Lobster' }}|Open+Sans:400,700" rel="stylesheet">
 
     <!-- Your stuff: Third-party CSS libraries go here -->
     
     <!-- This file stores project-specific CSS -->
     
     <link href="{% static 'css/project.css' %}" rel="stylesheet">
+    <style type="text/css">
+    .navbar-brand {
+      font-family: {{ league_template.style_header_font_css|safe|default:"'Lobster', cursive" }} !important;
+    }
+    div.top_color_splash1 { background-color: {{ league_template.style_color_one|default:"#F9FC69" }} !important; }
+    div.top_color_splash2 { background-color: {{ league_template.style_color_two|default:"#35E5F4" }} !important; }
+    </style>
     
     {% block css %}
     {% endblock %}

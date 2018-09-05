@@ -15,6 +15,11 @@ from billing.models import BillingPeriod, BillingGroup
 from league.models import Organization, League
 from users.models import User
 
+REGISTRATION_FORM_TYPE_CHOICES = (
+    ('standard', 'Standard Registration'),
+    ('minor', 'Minor Registration with Parent/Guardian'),
+)
+
 
 class RegistrationEvent(models.Model):
     name = models.CharField(
@@ -33,6 +38,13 @@ class RegistrationEvent(models.Model):
     league = models.ForeignKey(
         'league.League',
         on_delete=models.CASCADE,
+    )
+
+    form_type = models.CharField(
+        "Registration Form Type",
+        max_length=50,
+        choices=REGISTRATION_FORM_TYPE_CHOICES,
+        default='standard',
     )
 
     description = models.TextField(
@@ -129,6 +141,13 @@ class RegistrationEvent(models.Model):
 
     legal_forms = models.ManyToManyField(
         'legal.LegalDocument',
+        help_text="The documents the participant of the event will need to agree to.",
+    )
+
+    legal_forms_guardian = models.ManyToManyField(
+        'legal.LegalDocument',
+        help_text="The documents the parent/guardian of the event will need to agree to.",
+        related_name="legal_forms_guardian",
     )
 
     class Meta:
@@ -310,6 +329,26 @@ class RegistrationData(models.Model):
     contact_state = models.CharField("State", choices=STATE_CHOICES, max_length=2)
     contact_zipcode = models.CharField("Zip Code", max_length=11)
     contact_phone = models.CharField("Phone Number", max_length=25)
+
+    parent1_email = models.EmailField("Email Address", blank=True)
+    parent1_relationship = models.CharField("Relationship", max_length=100, blank=True)
+    parent1_name = models.CharField("Name", max_length=100, blank=True)
+    parent1_address1 = models.CharField("Address 1", max_length=100, blank=True)
+    parent1_address2 = models.CharField("Address 2", max_length=100, blank=True)
+    parent1_city = models.CharField("City", max_length=100, blank=True)
+    parent1_state = models.CharField("State", choices=STATE_CHOICES, max_length=2, blank=True)
+    parent1_zipcode = models.CharField("Zip Code", max_length=11, blank=True)
+    parent1_phone = models.CharField("Phone Number", max_length=25, blank=True)
+
+    parent2_email = models.EmailField("Email Address", blank=True)
+    parent2_relationship = models.CharField("Relationship", max_length=100, blank=True)
+    parent2_name = models.CharField("Name", max_length=100, blank=True)
+    parent2_address1 = models.CharField("Address 1", max_length=100, blank=True)
+    parent2_address2 = models.CharField("Address 2", max_length=100, blank=True)
+    parent2_city = models.CharField("City", max_length=100, blank=True)
+    parent2_state = models.CharField("State", choices=STATE_CHOICES, max_length=2, blank=True)
+    parent2_zipcode = models.CharField("Zip Code", max_length=11, blank=True)
+    parent2_phone = models.CharField("Phone Number", max_length=25, blank=True)
 
     derby_name = models.CharField(
         "Derby Name",

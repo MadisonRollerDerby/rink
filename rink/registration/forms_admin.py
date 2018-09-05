@@ -36,10 +36,18 @@ class RegistrationAdminEventForm(forms.ModelForm):
             required=False,
         )
 
+        self.fields['legal_forms_guardian'] = forms.ModelMultipleChoiceField(
+            widget=forms.CheckboxSelectMultiple,
+            queryset=LegalDocument.objects.filter(league=league),
+            label="",
+            required=False,
+        )
+
         self.helper.layout = Layout(
             Fieldset(
                 'Details',
                 'name',
+                'form_type',
                 'start_date',
                 'end_date',
             ),
@@ -49,8 +57,12 @@ class RegistrationAdminEventForm(forms.ModelForm):
                 'automatic_billing_dates',
             ),
             Fieldset(
-                'Legal Forms Required',
+                'Participant - Legal Forms Required',
                 'legal_forms',
+            ),
+            Fieldset(
+                'Parent/Guardian - Legal Forms Required',
+                'legal_forms_guardian',
             ),
             Fieldset(
                 'Optional Dates',
@@ -71,12 +83,11 @@ class RegistrationAdminEventForm(forms.ModelForm):
                 'minimum_registration_age',
                 'maximum_registration_age',
             ),
-
             ButtonHolder(
                 Submit('submit', 'Save Event', css_class='button white')
             )
         )
-        
+
         if self.instance.id and BillingPeriod.objects.filter(event=self.instance).count() > 0:
             # Remove the Invoice and Billing section if we already have Billing Periods
             del self.helper.layout[1]
@@ -102,6 +113,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
 
         fields = [
             'name',
+            'form_type',
             'start_date',
             'end_date',
             'description',
@@ -115,6 +127,7 @@ class RegistrationAdminEventForm(forms.ModelForm):
             'minimum_registration_age',
             'maximum_registration_age',
             'legal_forms',
+            'legal_forms_guardian',
         ]
         widgets = {
             'start_date': TextInput(attrs={'type': 'date'}),

@@ -7,26 +7,23 @@ psycopg2-binary==2.7.4  # https://github.com/psycopg/psycopg2
 
 # Testing
 # ------------------------------------------------------------------------------
-pytest  # https://github.com/pytest-dev/pytest
-pytest-sugar # https://github.com/Frozenball/pytest-sugar
-selenium
-pytest-django
-pytest-cov
+pytest==3.7.4  # https://github.com/pytest-dev/pytest
+pytest-sugar==0.9.1 # https://github.com/Frozenball/pytest-sugar
+selenium==3.14.0
+pytest-cov==2.6.0
 
 # Code quality
 # ------------------------------------------------------------------------------
-flake8  # https://github.com/PyCQA/flake8
-coverage  # https://github.com/nedbat/coveragepy
+flake8==3.5.0  # https://github.com/PyCQA/flake8
+coverage==4.5.1  # https://github.com/nedbat/coveragepy
 
 # Django
 # ------------------------------------------------------------------------------
-factory-boy==2.10.0  # https://github.com/FactoryBoy/factory_boy
 django-test-plus==1.0.22  # https://github.com/revsys/django-test-plus
-
-
-
 django-debug-toolbar==1.9.1  # https://github.com/jazzband/django-debug-toolbar
 django-extensions==2.0.6  # https://github.com/django-extensions/django-extensions
 django-coverage-plugin==1.5.0  # https://github.com/nedbat/django_coverage_plugin
+factory-boy==2.10.0  # https://github.com/FactoryBoy/factory_boy
+freezegun==0.3.10
 pytest-django==3.1.2  # https://github.com/pytest-dev/pytest-django
-freezegun
+

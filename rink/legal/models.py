@@ -87,6 +87,20 @@ class LegalSignature(models.Model):
         null=True,
     )
 
+    agreed_by = models.CharField(
+        "Agreed To By",
+        max_length=20,
+        default="participant",
+        help_text="Typically this is either 'participant' or 'guardian', signifying who agreed to the document.",
+    )
+
+    agree_initials = models.CharField(
+        "Initials",
+        max_length=3,
+        blank=True,
+        help_text="If registration form requires user to initial agreeing to the documents, record that here.",
+    )
+
     agree_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

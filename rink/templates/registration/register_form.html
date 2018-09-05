@@ -43,6 +43,44 @@
 <script src="https://js.stripe.com/v3/"></script>
 
 <script>
+function show_hide_address_fields(group, show) {
+  $(`#div_id_${group}_address1, #div_id_${group}_address2, #div_id_${group}_city, #div_id_${group}_state, #div_id_${group}_zipcode`).each(function() {
+    if(show) {
+      $(this).show();
+    } else {
+      $(this).hide();
+    }
+  });
+}
+
+$(document).ready(function() {
+  if($('#id_parent1_address_same').prop('checked'))
+    show_hide_address_fields('parent1', false);
+  if($('#id_parent2_address_same').prop('checked'))
+    show_hide_address_fields('parent2', false);
+
+  $('#id_parent1_address_same, #id_parent2_address_same').click(function() {
+    checked = $(this).prop('checked');
+
+    if($(this).attr('id').includes('parent1'))
+      group = "parent1";
+    else
+      group = "parent2";
+    
+    if(checked) {
+      show_hide_address_fields(group, false);
+      $(`#id_${group}_address1`).val('');
+      $(`#id_${group}_address2`).val('');
+      $(`#id_${group}_city`).val('');
+      $(`#id_${group}_state`).val('');
+      $(`#id_${group}_zipcode`).val('');
+    } else {
+      show_hide_address_fields(group, true);
+      $(`#id_${group}_address1`).focus();
+    }
+  });
+});
+
 {% if billing_amount > 0 %}
 // Create a Stripe client.
 var stripe = Stripe('{{ event.league.get_stripe_public_key }}');
@@ -150,7 +188,7 @@ function stripeTokenHandler(token) {
 
 
 {% if legal_form %}
-    <legend>Legal Documents</legend>
+  <legend>Legal Documents</legend>
 
   {% if event.legal_blurb %}
     <div class="container">
@@ -167,14 +205,58 @@ function stripeTokenHandler(token) {
         You must agree to the legal documents below to register. Please contact us if you have any questions.
       </div>
     {% endif %}
-    
+
     <p>
-      You must read and agree to the following {% if event.legal_forms.all.count > 1 %}{{ event.legal_forms.all.count }} documents{% else %}document{% endif %} to particapte in this event. <i>Please review them.</i> <mark><strong>It is extremely important that you actually read them!</strong></mark>
+      You must read and agree to the following documents to particapte in this event. <i>Please review them.</i> <mark><strong>It is extremely important that you actually read them!</strong></mark>
     </p>
 
 
-    <div id="div_id_legal_forms" class="form-group"> 
+  {% if event.form_type == 'minor' %}
 
+  <fieldset>
+  <legend>PARENT / GUARDIAN - AGREE AND INITIAL HERE</legend>
+
+    <div id="div_id_guardian_input" class="form-group"> 
+      <ol> 
+      {% for document in event.legal_forms_guardian.all %}
+        <li><a href="{% url 'legal:view_event_legal_documents' league_slug=event.league.slug event_slug=event.slug %}#doc{{ document.id }}-guardian" target="_blank">{{ document.name }} ({{ document.date }})</a></li>
+        {% endfor %}
+      </ol>
+
+     <div class="">
+        <div class="form-check form-check-inline">
+          <input type="text" name="legal_initials_guardian" id="id_legal_initials_guardian" maxlength="3" minlength="2" required style="width:90px;font-size:larger;text-align:center;" placeholder="INITIALS">
+          <label class="ml-3">
+            <strong>By initialing here, I indicate that I have read and agree to the {% if event.legal_forms_guardian.all.count > 1 %}{{ event.legal_forms_guardian.all.count }} documents{% else %}document{% endif %} above.</strong>
+          </label> 
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+  <legend>SKATER PARTICIPANT - AGREE AND INITIAL HERE</legend>
+    <div id="div_id_participant_input" class="form-group"> 
+      <ol> 
+      {% for document in event.legal_forms.all %}
+        <li><a href="{% url 'legal:view_event_legal_documents' league_slug=event.league.slug event_slug=event.slug %}#doc{{ document.id }}-participant" target="_blank">{{ document.name }} ({{ document.date }})</a></li>
+        {% endfor %}
+      </ol>
+
+     <div class="">
+        <div class="form-check form-check-inline">
+          <input type="text" name="legal_initials_participant" maxlength="3" minlength="2" id="id_legal_initials_participant" required style="width:90px;font-size:larger;text-align:center;" placeholder="INITIALS">
+          <label class="ml-3">
+            <strong>By initialing here, I indicate that I have read and agree to the {% if event.legal_forms.all.count > 1 %}{{ event.legal_forms.all.count }} documents{% else %}document{% endif %} above.</strong>
+          </label> 
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+
+  {% else %}
+    <div id="div_id_legal_forms" class="form-group"> 
       <ol> 
       {% for document in event.legal_forms.all %}
         <li><a href="{% url 'legal:view_event_legal_documents' league_slug=event.league.slug event_slug=event.slug %}#doc{{ document.id }}" target="_blank">{{ document.name }} ({{ document.date }})</a></li>
@@ -189,8 +271,9 @@ function stripeTokenHandler(token) {
           </label> 
         </div>
       </div>
-
     </div>
+
+  {% endif %}
 {% endif %}
 
 

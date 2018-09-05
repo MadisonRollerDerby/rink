@@ -23,7 +23,18 @@
     {% for signature in reg.legalsignature_set.all %}
         <li class="list-group-item">
             <a href="{% url 'legal:view_legal_document' document_slug=signature.document.slug league_slug=signature.document.league.slug %}" target="_blank" class="card-link">{{ signature.document.name }} ({{ signature.document.date }})</a>
-            <p class="card-text"><small class="text-muted">Signed on {{ signature.agree_date }}</small></p>
+            <p class="card-text">
+                <small class="text-muted">
+                    Agreed on {{ signature.agree_date }} by 
+                    {% if reg.event.form_type == 'minor' %}
+                        <i>'{{ signature.agreed_by }}'</i>
+                        . Initialed by <strong>{{ signature.agree_initials }}</strong>.
+                    {% else %}
+                        {{ reg.contact_first_name }} 
+                        {{ reg.contact_last_name }}
+                    {% endif %}
+                </small>
+            </p>
         </li>
     {% endfor %}
     </ul>

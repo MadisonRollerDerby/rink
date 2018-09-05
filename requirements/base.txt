@@ -1,34 +1,41 @@
-pytz  # https://github.com/stub42/pytz
-Pillow  # https://github.com/python-pillow/Pillow
-argon2-cffi  # https://github.com/hynek/argon2_cffi
-whitenoise  # https://github.com/evansd/whitenoise
-redis  # https://github.com/antirez/redis
-celery  # pyup: <4.0  # https://github.com/celery/celery
-python-slugify
+pytz==2018.5  # https://github.com/stub42/pytz
+Pillow==5.2.0  # https://github.com/python-pillow/Pillow
+argon2-cffi==18.3.0  # https://github.com/hynek/argon2_cffi
+whitenoise==4.0  # https://github.com/evansd/whitenoise
+redis==2.10.6  # https://github.com/antirez/redis
+celery==4.2.1  # pyup: <4.0  # https://github.com/celery/celery
+python-slugify==1.2.6
 raven==6.9.0
-beautifulsoup4
-django-filter
+beautifulsoup4==4.6.3
+django-filter==2.0.0
 django-tables2==2.0.0a5
-django-bootstrap4
-django-import-export
+django-bootstrap4==0.0.7
+django-import-export==1.0.1
 
 # Django
 # ------------------------------------------------------------------------------
-django  # pyup: < 2.1  # https://www.djangoproject.com/
-django-environ  # https://github.com/joke2k/django-environ
-django-model-utils  # https://github.com/jazzband/django-model-utils
-django-allauth  # https://github.com/pennersr/django-allauth
-django-crispy-forms  # https://github.com/django-crispy-forms/django-crispy-forms
-django-redis  # https://github.com/niwinz/django-redis
-django-localflavor
-django-phonenumber-field
--e git+https://github.com/django-guardian/django-guardian.git@devel#egg=django-guardian
-django-fernet-fields
-django-imagekit
-django-markdownx
-stripe
+django==2.1.1  # pyup: < 2.1  # https://www.djangoproject.com/
+django-environ==0.4.5  # https://github.com/joke2k/django-environ
+django-model-utils==3.1.2  # https://github.com/jazzband/django-model-utils
+django-allauth==0.37.1  # https://github.com/pennersr/django-allauth
+django-crispy-forms==1.7.2  # https://github.com/django-crispy-forms/django-crispy-forms
+django-redis==4.9.0  # https://github.com/niwinz/django-redis
+django-localflavor==2.1
+django-phonenumber-field==2.0.1
+django-fernet-fields==0.5
+django-imagekit==4.0.2
+django-markdownx==2.0.23
+stripe==2.6.0
 
 
 # Django REST Framework
-djangorestframework  # https://github.com/encode/django-rest-framework
-coreapi  # https://github.com/core-api/python-client
+djangorestframework==3.8.2  # https://github.com/encode/django-rest-framework
+coreapi==2.3.3  # https://github.com/core-api/python-client
+
+
+# As of 9/2018, we need some extra beta shortcut functions that haven't been
+# released to pypi yet.
+# https://github.com/django-guardian/django-guardian/commit/12f65de0bcb26811568d30edad3a1826e08bedc1
+# Whenever a real django-guardian package gets released we should change
+# this.
+-e git+https://github.com/django-guardian/django-guardian.git@devel#egg=django-guardian

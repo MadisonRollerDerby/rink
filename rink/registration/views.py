@@ -10,7 +10,9 @@ from guardian.shortcuts import assign_perm
 from guardian.mixins import LoginRequiredMixin
 from stripe.error import CardError
 
-from .forms import RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm
+from .forms import (
+    RegistrationSignupForm, RegistrationDataForm, LegalDocumentAgreeForm,
+    LegalDocumentInitialsForm)
 from .models import RegistrationEvent, RegistrationInvite, RegistrationData, Roster
 from billing.models import (
     BillingPeriod, UserStripeCard, Invoice, BillingSubscription
@@ -220,10 +222,14 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
             existing_registration.email = request.user.email
 
             form = RegistrationDataForm(
-                logged_in_user_id=request.user.pk, instance=existing_registration)
+                logged_in_user_id=request.user.pk,
+                event=self.event,
+                instance=existing_registration,
+            )
         else:
             form = RegistrationDataForm(
                 logged_in_user_id=request.user.pk,
+                event=self.event,
                 initial={
                     'contact_email': request.user.email,
                     'contact_state': self.event.league.default_address_state,
@@ -232,7 +238,10 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
 
         # Legal documents that need to be agreed to
         if self.event.legal_forms.count() > 0:
-            legal_form = LegalDocumentAgreeForm()
+            if self.event.form_type == 'minor':
+                legal_form = LegalDocumentInitialsForm()
+            else:
+                legal_form = LegalDocumentAgreeForm()
         else:
             legal_form = None
 
@@ -255,8 +264,15 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
         if at_capacity:
             return at_capacity
 
-        form = RegistrationDataForm(logged_in_user_id=request.user.pk, data=request.POST)
-        legal_form = LegalDocumentAgreeForm(data=request.POST)
+        form = RegistrationDataForm(
+            logged_in_user_id=request.user.pk,
+            event=self.event,
+            data=request.POST,
+        )
+        if self.event.form_type == 'minor':
+            legal_form = LegalDocumentInitialsForm(data=request.POST)
+        else:
+            legal_form = LegalDocumentAgreeForm(data=request.POST)
 
         num_billing_periods, billing_period, billing_amount = self.get_billing_contexts(request)
 
@@ -348,14 +364,39 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 invoice.save()
 
                 # Save legal signatures
-                for document in self.event.legal_forms.all():
-                    LegalSignature.objects.create(
-                        user=user,
-                        document=document,
-                        league=self.event.league,
-                        event=self.event,
-                        registration=registration_data,
-                    )
+                # Partent/guardian form requires separate initialed boxes
+                if self.event.form_type == 'minor':
+                    for document in self.event.legal_forms.all():
+                        LegalSignature.objects.create(
+                            user=user,
+                            document=document,
+                            league=self.event.league,
+                            event=self.event,
+                            registration=registration_data,
+                            agreed_by='participant',
+                            agree_initials=legal_form.cleaned_data['legal_initials_participant']
+                        )
+                    for document in self.event.legal_forms_guardian.all():
+                        LegalSignature.objects.create(
+                            user=user,
+                            document=document,
+                            league=self.event.league,
+                            event=self.event,
+                            registration=registration_data,
+                            agreed_by='guardian',
+                            agree_initials=legal_form.cleaned_data['legal_initials_guardian']
+                        )
+
+                # Standard form is just a checkbox
+                else:
+                    for document in self.event.legal_forms.all():
+                        LegalSignature.objects.create(
+                            user=user,
+                            document=document,
+                            league=self.event.league,
+                            event=self.event,
+                            registration=registration_data,
+                        )
 
                 completed_time = timezone.now()
 

@@ -19,7 +19,6 @@
 
 .navbar-brand {
     font-size: 1.3em;
-    font-family: 'Lobster', cursive;
     text-shadow: 2px 2px 4px rgba(150, 150, 150, 0.56);
 }
 .navbar-brand span {
@@ -51,8 +50,8 @@ fieldset {
 /* branding */
 
 
-div.top_color_splash1 { height: 3px; background-color: #F9FC69; }
-div.top_color_splash2 { height: 3px; background-color: #35E5F4; }
+div.top_color_splash1 { height: 3px; } 
+div.top_color_splash2 { height: 3px; }
 
 .navbar {
     font-family: 'Open Sans', sans-serif;
