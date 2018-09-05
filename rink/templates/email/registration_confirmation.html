@@ -29,9 +29,13 @@ Email: {{ registration.contact_email }}<br>
 <br>
 <b>EMERGENCY CONTACT INFO</b><br>
 <br>
-Contact: {{ registration.emergency_contact }} [{{ registration.emergency_relationship }}]<br>
-Phone: {{ registration.emergency_phone }}<br>
+Contact #1: {{ registration.emergency_contact }} [{{ registration.emergency_relationship }}]<br>
+Phone #1: {{ registration.emergency_phone }}<br>
 <br>
+{% if event.form_type == 'minor' %}
+Contact #2: {{ registration.emergency_contact_second }} [{{ registration.emergency_relationship_second }}]<br>
+Phone #2: {{ registration.emergency_phone_second }}<br>
+{% endif %}
 <br>
 {% if event.form_type == 'minor' %}
     <b>PRIMARY PARENT/GUARDIAN CONTACT</b><br>

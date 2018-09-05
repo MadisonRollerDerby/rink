@@ -89,14 +89,24 @@
                     <fieldset>
                         <legend>Emergency Contact Details</legend>
                         <dl class="row">
-                            <dt class="col-sm-3">Date of Birth:</dt>
-                            <dd class="col-sm-9">{{ signup.emergency_date_of_birth}}</dd>
                             <dt class="col-sm-3">Emergency Contact:</dt>
                             <dd class="col-sm-9">{{ signup.emergency_contact}}</dd>                            
                             <dt class="col-sm-3">Contact Relationship:</dt>
                             <dd class="col-sm-9">{{ signup.emergency_relationship}}</dd>    
                             <dt class="col-sm-3">Contact Phone:</dt>
                             <dd class="col-sm-9">{{ signup.emergency_phone}}</dd>
+                            {% if signup.event.form_type == 'minor' %}
+                            <br>
+                            <dt class="col-sm-3">Emergency Contact #2:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_contact_second }}</dd>                            
+                            <dt class="col-sm-3">Contact Relationship #2:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_relationship_second }}</dd>    
+                            <dt class="col-sm-3">Contact Phone #2:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_phone_second }}</dd>                            
+                            {% endif %}
+                            <br>
+                            <dt class="col-sm-3">Date of Birth:</dt>
+                            <dd class="col-sm-9">{{ signup.emergency_date_of_birth}}</dd>
                             <dt class="col-sm-3">Hospital:</dt>
                             <dd class="col-sm-9">{{ signup.emergency_hospital}}</dd>
                             <dt class="col-sm-3">Allergies/Medical Detail:</dt>
