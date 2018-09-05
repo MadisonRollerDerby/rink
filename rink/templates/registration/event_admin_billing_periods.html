@@ -76,8 +76,6 @@ $('#add_period_button').click(function() {
 
 {% include "registration/event_admin_menu.html" with section_title="Billing Periods" %}
 
-{% include 'utils/messages.html' %}
-
 <form method="post">
 {% csrf_token %}
 
