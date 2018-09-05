@@ -119,7 +119,13 @@ class BillingPeriod(models.Model):
 
     def clean(self):
         if not self.start_date or not self.end_date:
-            raise ValidationError("Start and End Dates are required.")
+            raise ValidationError("Start and End Dates are required, or they are invalid somehow (bad date, extra spaces).")
+
+        if not self.invoice_date:
+            raise ValidationError("Invoice date is required, or it invalid somehow (bad date, extra spaces).")
+
+        if not self.due_date:
+            raise ValidationError("Due date is required, or it is invalid somehow (bad date, extra spaces).")
 
         # Start date needs to come before End date
         if self.start_date > self.end_date:
