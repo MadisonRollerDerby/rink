@@ -210,7 +210,7 @@ TEMPLATES = [
                 'league.context_processors.league_processor',
                 'league.context_processors.debug',
                 'league.context_processors.url_domain',
-                'roster.context_processors.unpaid_invoice_count',
+                'roster.context_processors.roster_billing_badges',
             ],
         },
     },

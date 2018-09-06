@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -12,7 +12,8 @@ from django_filters.views import FilterView
 from guardian.shortcuts import get_users_with_perms
 
 from billing.forms import QuickPaymentForm, QuickInvoiceForm, QuickRefundForm
-from billing.models import Invoice, BillingGroupMembership, BillingGroup
+from billing.models import (
+    Invoice, BillingGroupMembership, BillingGroup, BillingSubscription)
 from league.mixins import RinkLeagueAdminPermissionRequired
 from registration.models import RegistrationData
 from taskapp.celery import app as celery_app
@@ -203,6 +204,56 @@ class RosterAdminBilling(RinkLeagueAdminPermissionRequired, DetailView):
             'due_date': timezone.now() + timezone.timedelta(days=7),
         })
         return context
+
+
+class RosterAdminSubscriptionsList(RinkLeagueAdminPermissionRequired, ListView):
+    template_name = 'roster/admin_subscriptions.html'
+    model = BillingSubscription
+
+    def get_context_data(self, **kwargs):
+        inactive_subscriptions = BillingSubscription.objects.filter(
+            league=self.league,
+            user=get_object_or_404(User, pk=self.kwargs['pk']),
+        ).exclude(
+            status='active'
+        ).select_related('event').annotate(
+            billing_period_count=Count('event__billingperiod__pk'),
+        ).annotate(
+            invoice_count=Count('invoice'),
+        )
+
+        return {
+            **super().get_context_data(**kwargs),
+            **{'inactive_subscriptions': inactive_subscriptions}
+        }
+
+    def get_queryset(self):
+        return BillingSubscription.objects.filter(
+            league=self.league,
+            user=get_object_or_404(User, pk=self.kwargs['pk']),
+            status='active',
+        ).select_related('event').annotate(
+            billing_period_count=Count('event__billingperiod__pk'),
+        ).annotate(
+            invoice_count=Count('invoice'),
+        )
+
+
+class RosterAdminSubscriptionsDeactivate(RinkLeagueAdminPermissionRequired, View):
+    def get(self, request, *args, **kwargs):
+        subscription = get_object_or_404(BillingSubscription,
+            pk=kwargs['subscription_id'],
+            league=self.league,
+            user=get_object_or_404(User, pk=kwargs['pk']),
+        )
+
+        if subscription.status == 'active':
+            messages.success(request, "Subscription deactivated.")
+            subscription.deactivate()
+        else:
+            messages.error(request, "Subscription has already been deactivated.")
+
+        return redirect('roster:admin_subscriptions', pk=kwargs['pk'])
 
 
 class RosterAdminCreateInvoice(RinkLeagueAdminPermissionRequired, FormView):
