@@ -135,3 +135,7 @@ class RosterCreateInvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
         fields = ['description', 'invoice_amount', 'invoice_date', 'due_date']
+
+
+class RosterMembershipRemoveMembership(forms.Form):
+    roster_id = forms.IntegerField(widget=forms.HiddenInput(), required=True)

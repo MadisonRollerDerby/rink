@@ -9,18 +9,21 @@ from django.views.generic import DetailView, UpdateView, ListView, FormView
 
 from django_tables2 import SingleTableView
 from django_filters.views import FilterView
-from guardian.shortcuts import get_users_with_perms
+from guardian.shortcuts import get_users_with_perms, remove_perm, get_perms
 
 from billing.forms import QuickPaymentForm, QuickInvoiceForm, QuickRefundForm
 from billing.models import (
-    Invoice, BillingGroupMembership, BillingGroup, BillingSubscription)
+    Invoice, BillingGroupMembership, BillingGroup, BillingSubscription, Payment,
+    UserStripeCard)
 from league.mixins import RinkLeagueAdminPermissionRequired
-from registration.models import RegistrationData
+from legal.models import LegalSignature
+from registration.models import RegistrationData, Roster, RegistrationInvite
 from taskapp.celery import app as celery_app
 from users.models import User, Tag, UserTag, UserLog
 
 from .forms import (RosterProfileForm, BillingGroupForm,
-    RosterFilterForm, RosterAddNoteForm, RosterCreateInvoiceForm)
+    RosterFilterForm, RosterAddNoteForm, RosterCreateInvoiceForm,
+    RosterMembershipRemoveMembership)
 from .resources import RosterResource
 from .tables import RosterTable
 
@@ -211,9 +214,10 @@ class RosterAdminSubscriptionsList(RinkLeagueAdminPermissionRequired, ListView):
     model = BillingSubscription
 
     def get_context_data(self, **kwargs):
+        user = get_object_or_404(User, pk=self.kwargs['pk'])
         inactive_subscriptions = BillingSubscription.objects.filter(
             league=self.league,
-            user=get_object_or_404(User, pk=self.kwargs['pk']),
+            user=user,
         ).exclude(
             status='active'
         ).select_related('event').annotate(
@@ -224,7 +228,7 @@ class RosterAdminSubscriptionsList(RinkLeagueAdminPermissionRequired, ListView):
 
         return {
             **super().get_context_data(**kwargs),
-            **{'inactive_subscriptions': inactive_subscriptions}
+            **{'inactive_subscriptions': inactive_subscriptions, 'user': user}
         }
 
     def get_queryset(self):
@@ -417,3 +421,204 @@ class RosterAdminAddMessageUserLog(RinkLeagueAdminPermissionRequired, FormView):
 
     def get(self):
         return self.success_url()
+
+
+class RosterAdminMembership(RinkLeagueAdminPermissionRequired, DetailView):
+    template_name = 'roster/admin_membership.html'
+    model = User
+
+    def get_context_data(self, **kwargs):
+        additional_context = {
+            'active_rosters': Roster.objects.filter(
+                user=self.object,
+                event__league=self.league,
+                event__end_date__gt=timezone.now(),
+            ),
+            'remove_roster_form': RosterMembershipRemoveMembership(),
+        }
+        return {**super().get_context_data(**kwargs), **additional_context}
+
+
+class RosterAdminRemoveFromRoster(RinkLeagueAdminPermissionRequired, View):
+    def get(self, request, *args, **kwargs):
+        raise Http404("Invalid request")
+
+    def post(self, request, *args, **kwargs):
+        user = get_object_or_404(User, pk=kwargs['pk'])
+
+        form = RosterMembershipRemoveMembership(request.POST)
+        if form.is_valid():
+            roster = get_object_or_404(Roster,
+                pk=form.cleaned_data['roster_id'],
+                user=user,
+                event__league=self.league,
+            )
+            event_name = roster.event.name
+            roster_pk = roster.pk
+
+            try:
+                subscription = BillingSubscription.objects.get(
+                    roster=roster,
+                    league=self.league,
+                    user=user,
+                )
+            except BillingSubscription.DoesNotExist:
+                pass
+            else:
+                if subscription.active:
+                    subscription.deactivate()
+                    messages.success(request, "Billing Subscription deactivated for roster entry. (SUB #{})".format(subscription.pk))
+
+            roster.delete()
+            messages.success(request, "Removed {} from roster for {}. (ROSTER #{})".format(
+                user,
+                event_name,
+                roster_pk,
+            ))
+
+        return redirect('roster:admin_membership', pk=self.kwargs['pk'])
+
+
+class RosterAdminDeactivateUser(RinkLeagueAdminPermissionRequired, View):
+    def get(self, request, *args, **kwargs):
+        raise Http404("Invalid request")
+
+    def post(self, request, *args, **kwargs):
+        user = get_object_or_404(User, pk=kwargs['pk'])
+
+        # Cancel all unpaid invoices
+        Invoice.objects.filter(
+            user=user,
+            league=self.league,
+            status='unpaid',
+        ).update(status='canceled')
+
+        # Remove from all active event rosters
+        Roster.objects.filter(
+            user=user,
+            event__league=self.league,
+            event__end_date__gt=timezone.now(),
+        ).delete()
+
+        # Cancel all active subscriptions
+        subscriptions = BillingSubscription.objects.filter(
+            user=user,
+            league=self.league,
+            status='active',
+        )
+        for subscription in subscriptions:
+            subscription.deactivate()
+
+        # Set user back to default billing group
+        BillingGroupMembership.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        messages.success(request, "User {} has been made inactive.".format(user))
+        return redirect('roster:admin_membership', pk=self.kwargs['pk'])
+
+
+class RosterAdminDeleteUser(RinkLeagueAdminPermissionRequired, View):
+    def get(self, request, *args, **kwargs):
+        raise Http404("Invalid request")
+
+    def post(self, request, *args, **kwargs):
+        user = get_object_or_404(User, pk=kwargs['pk'])
+        user_name = str(user)
+
+        if request.user.pk == user.pk:
+            messages.error(request, "You cannot delete yourself. Sorry. That would be weird.")
+            return redirect('roster:admin_membership', pk=self.kwargs['pk'])
+
+
+        # Billing Subscriptions
+        BillingSubscription.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # Invoices
+        Invoice.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # Payments
+        Payment.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # Saved Cards
+        UserStripeCard.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # Custom Billing Groups
+        BillingGroupMembership.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # Roster
+        Roster.objects.filter(
+            user=user,
+            event__league=self.league,
+        ).delete()
+
+        # Registration Data
+        RegistrationData.objects.filter(
+            user=user,
+            event__league=self.league,
+        ).delete()
+
+        # Registration Invites
+        RegistrationInvite.objects.filter(
+            user=user,
+            event__league=self.league,
+        ).delete()
+
+        # Legal Signatures
+        # I suppose these could be emailed as a backup before they are deleted.
+        # Seems like something we wouldn't want to lose?
+        LegalSignature.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # User Logs
+        UserLog.objects.filter(
+            user=user,
+            league=self.league,
+        ).delete()
+
+        # User Tags
+        # currently no League field (uh... huh?) Can't delete now.
+
+        # Remove permissions
+        for perm in get_perms(user, self.league):
+            remove_perm(perm, user, self.league)
+        for perm in get_perms(user, self.league.organization):
+            remove_perm(perm, user, self.league.organization)
+
+        if BillingSubscription.objects.filter(user=user).exists() or \
+            Invoice.objects.filter(user=user).exists() or \
+            Payment.objects.filter(user=user).exists() or \
+            UserStripeCard.objects.filter(user=user).exists() or \
+            BillingGroupMembership.objects.filter(user=user).exists() or \
+            Roster.objects.filter(user=user).exists() or \
+            RegistrationData.objects.filter(user=user).exists() or \
+            RegistrationInvite.objects.filter(user=user).exists() or \
+            LegalSignature.objects.filter(user=user).exists() or \
+            UserLog.objects.filter(user=user).exists():
+
+                # User still exists in the system. Maybe we should care.
+                pass
+        else:
+            messages.success(request, "<strong>{}</strong> is not a member of any other leagues on the system. They have been completely removed.".format(user_name))
+            user.delete()
+
+        messages.success(request, "Deleted user <strong>{}</strong> from database. They are now gone.".format(user_name))
+        return redirect('roster:list')

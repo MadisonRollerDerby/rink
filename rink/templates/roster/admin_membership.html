@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load bootstrap4 %}
+
+
+{% block title %}Membership - {{ user }}{% endblock %}
+
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+  $('#removeMembershipModal').on('show.bs.modal', function(e) {
+      $(this).find('#id_roster_id').val($(e.relatedTarget).data('href'));
+  });
+});
+</script>
+{% endblock %}
+
+
+
+{% block content %}
+{% include 'roster/submenu.html' with submenu_selected="legal" %}
+
+
+<div class="row">
+  <div class="col-md-6 offset-md-3">
+
+    <h4>Active Roster Memberships</h4>
+
+    {% for roster in active_rosters %}
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <h5 class="card-title">{{ roster.event.name }} -- {{ roster.full_name }}</h5>
+            <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+            <a href="#" data-target="#removeMembershipModal" data-toggle="modal" data-href="{{ roster.pk }}" class="btn btn-sm btn-primary">Remove from Roster</a>
+          </div>
+        </div>
+    {% empty %}
+        <p>User is not a member of any future or current rosters.</p>
+        <small>(Future or Current means: Today's date is less than event end date).</small>
+    {% endfor %}
+    <div style="margin-bottom:100px;"></div>
+
+
+    <fieldset style="border: 1px solid #ffc107;" class="mb-5 pb-4">
+        <legend style="color: #ffc107;">Warning Zone</legend>
+
+        <h5>Make User Inactive</h5>
+        <p>Useful for when users need to temporarily leave the league, but we want to retain their data or there is a chance they will return to the league in the near future.</p>
+        <ul>
+            <li>Cancel all unpaid invoices</li>
+            <li>Remove from all active event rosters</li>
+            <li>Cancel all active subscriptions</li>
+            <li>Sets user back to default Billing Group</li>
+        </ul> 
+        <a href="#" data-target="#makeInactiveModal" data-toggle="modal" class="btn btn-warning">Make User Inactive</a>
+
+    </fieldset>
+
+    <fieldset style="border: 1px solid #dc3545;" class="mb-5 pb-4">
+        <legend style="color: #dc3545;">🎶 Danger Zone 🎶</legend>
+
+        <h5>Remove User Account and Data</h5>
+        <p>Useful if someone leaves the league and you need to purge them from the league for some reason.</p>
+        <ul>
+            <li>Completely remove user account and all information attached.</li>
+            <li>Remove all invoices</li>
+            <li>Remove all payment details (They will still exist at Stripe)</li>
+            <li>Remove all billing subscriptions</li>
+            <li>Remove all event signup data</li>
+            <li>Remove all legal signatures</li>
+            <li>Remove user account if it is not attached to any other leagues.</li>
+            <li>This action is not reversible!</li>
+        </ul>
+
+        <a href="#" data-target="#removeUserModal" data-toggle="modal"  class="btn btn-danger">Remove User Account and Data</a>
+    </fieldset>
+
+    </div>
+</div>
+
+
+<div class="modal fade" id="removeMembershipModal" tabindex="-1" role="dialog" aria-labelledby="removeMembershipLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="removeMembershipForm"  action="{% url 'roster:admin_membership_remove_roster' pk=user.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeMembershipLabel">Remove From Roster -- {{ user }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>{{ user }}</strong> will be removed from roster.</p>
+        <ul>
+            <li>Remove Roster entry.</li>
+            <li>Deactivate recurring billing subscription.</li>
+            <li><strong>Invoices will still be retained and not modified.</strong> Cancel them manually if you need to.</li>
+            <li>User will have to re-register to rejoin roster.</li>
+        </ul>
+        {% csrf_token %}
+        {{ remove_roster_form.roster_id }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-primary" type="submit" value="Remove from Roster" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#removeMembershipForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="makeInactiveModal" tabindex="-1" role="dialog" aria-labelledby="makeInactiveLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="makeInactiveForm"  action="{% url 'roster:admin_membership_make_inactive' pk=user.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="makeInactiveLabel">Make User Inactive -- {{ user }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% csrf_token %}
+        Did you read the warnings? Let's make <strong>{{ user }}</strong> inactive and do all the stuff listed in the warnings. Right?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-warning" type="submit" value="Make Inactive" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#makeInactiveForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="removeUserModal" tabindex="-1" role="dialog" aria-labelledby="removeUserLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="removeUserForm"  action="{% url 'roster:admin_membership_remove_user' pk=user.pk %}" method="post" class="form">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeUserLabel">REMOVE USER FROM LEAGUE -- {{ user }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% csrf_token %}
+        You do know this will delete all of <strong>{{ user }}'s</strong> data and is not recoverable. Right?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <input class="btn btn-danger" type="submit" value="Remove User" onclick="$(this).prop('disabled', 'disabled').val('Saving...');$('#removeUserForm').submit();">
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

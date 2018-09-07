@@ -299,7 +299,8 @@ class BillingSubscription(models.Model):
 
     roster = models.ForeignKey(
         "registration.Roster",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
     )
 
     status = models.CharField(
@@ -678,7 +679,7 @@ class Payment(models.Model):
             if amount > self.amount:
                 raise ValueError("Refund amount cannot be larger than the payment amount.")
             if amount <= 0:
-                raise valueError("Refund amount must be larger than zero.")
+                raise ValueError("Refund amount must be larger than zero.")
         else:
             amount = self.amount
 
