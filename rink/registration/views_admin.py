@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
 from django.http import HttpResponseRedirect, HttpResponse
 from django.middleware.csrf import get_token
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
@@ -20,11 +20,11 @@ from guardian.shortcuts import get_users_with_perms
 import re
 
 from .forms import RegistrationDataForm
-from .forms_admin import RegistrationAdminEventForm, BillingPeriodInlineForm, \
-    EventInviteEmailForm, EventInviteAjaxForm
+from .forms_admin import (RegistrationAdminEventForm, BillingPeriodInlineForm,
+    EventInviteEmailForm, EventInviteAjaxForm, EventInviteReminderForm)
 from .models import RegistrationEvent, RegistrationInvite, Roster
 from .resources import RosterResource
-from .tables import RosterTable
+from .tables import RosterTable, ReminderTable
 from billing.models import (
     BillingPeriod, BillingGroup, BillingPeriodCustomPaymentAmount, Invoice,
     BillingSubscription, UserStripeCard)
@@ -34,7 +34,7 @@ from legal.models import LegalSignature
 from registration.models import RegistrationData
 from users.models import User
 
-from registration.tasks import send_registration_invite_email
+from registration.tasks import send_registration_invite_email, send_registration_invite_reminder
 
 
 # Base class for permission checking and views here.
@@ -522,6 +522,35 @@ class EventAdminInviteUsers(EventAdminBaseView):
 
     def post(self, request, *args, **kwargs):
         pass
+
+
+class EventAdminInviteReminder(EventAdminBaseView):
+    template = 'registration/event_admin_invites.html'
+    event_menu_selected = "invites"
+    invites_menu_selected = "reminder"
+
+
+    def get(self, request, *args, **kwargs):
+        invites_table = ReminderTable(
+            RegistrationInvite.objects.filter(event=self.event, completed_date__isnull=True))
+        form = EventInviteReminderForm()
+        return self.render(request, {
+            'invites_table': invites_table,
+            'form': form,
+            'event_admin_template_include': 'registration/event_admin_reminder.html',
+        })
+
+    def post(self, request, *args, **kwargs):
+        form = EventInviteReminderForm(request.POST)
+        invite_ids = request.POST.getlist('checkbox')
+        if form.is_valid():
+            send_registration_invite_reminder.delay(
+                event_id=self.event.pk,
+                invite_ids=invite_ids,
+                custom_message=form.cleaned_data['custom_message'],
+            )
+        messages.success(request, "Sending {} invite reminder emails.".format(len(invite_ids)))
+        return redirect('registration:event_admin_invite_reminder', event_slug=self.event.slug)
 
 
 class EventAdminBillingPeriods(EventAdminBaseView):

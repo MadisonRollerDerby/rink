@@ -5,6 +5,8 @@ from billing.models import Payment
 from league.utils import send_email
 from registration.models import RegistrationInvite, RegistrationData
 
+from markdownx.utils import markdownify
+
 
 @shared_task
 def send_registration_invite_email(invite_ids=[]):
@@ -56,3 +58,25 @@ def send_registration_confirmation(registration_data_id, payment_data_id=None):
         },
     )
     return True
+
+
+@shared_task
+def send_registration_invite_reminder(event_id, invite_ids=[], custom_message=None):
+    for invite_id in invite_ids:
+        try:
+            invite = RegistrationInvite.objects.get(pk=invite_id, event__pk=event_id)
+        except RegistrationInvite.DoesNotExist:
+            continue
+
+        reminder_subject = "*REMINDER* "
+        custom_message_html = markdownify(custom_message)
+        send_email(
+            league=invite.event.league,
+            to_email=invite.email,
+            template="registration_invite",
+            context={
+                'invite': invite,
+                'reminder_subject': reminder_subject,
+                'custom_message': custom_message_html,
+            },
+        )

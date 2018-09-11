@@ -1,7 +1,7 @@
 import django_tables2 as tables
 from django_tables2.utils import A
 
-from registration.models import Roster
+from registration.models import Roster, RegistrationInvite
 
 
 class RosterTable(tables.Table):
@@ -14,3 +14,13 @@ class RosterTable(tables.Table):
         row_attrs = {
             'data-id': lambda record: record.pk
         }
+
+
+class ReminderTable(tables.Table):
+    checkbox = tables.CheckBoxColumn(accessor="pk")
+    email = tables.Column(accessor='email')
+    username = tables.Column(accessor='user')
+
+    class Meta:
+        model = RegistrationInvite
+        fields = ['checkbox', 'email', 'username']

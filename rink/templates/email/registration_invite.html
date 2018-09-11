@@ -2,6 +2,12 @@
 
 <p>{% if invite.user %}Hi {{ invite.user }},{% else %}Hi,{% endif %}</p>
 
+{% if custom_message %}
+<div style="border: 1px solid #ff5842;margin: 5px 20px 10px 20px; padding: 4px 20px 10px 20px;">
+    {{ custom_message|safe }}
+</div>
+{% endif %}
+
 <p>Here's your invite link to register for <b>{{ invite.event }}</b>.</p>
 
 <p><a style="font-size:larger" href="{{ url_domain }}{{ invite.get_invite_url }}">Click HERE to Register!</a></p>
