@@ -34,6 +34,11 @@ urlpatterns = [
         views_admin.EventAdminInviteEmails.as_view(),
         name="event_admin_invite_emails"),
 
+    # Event Invite Reminders
+    path('<slug:event_slug>/invite/reminders',
+        views_admin.EventAdminInviteReminder.as_view(),
+        name="event_admin_invite_reminder"),
+
     # Event Roster
     path('<slug:event_slug>/roster',
         views_admin.EventAdminRoster.as_view(),

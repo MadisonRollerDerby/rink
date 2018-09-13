@@ -21,7 +21,12 @@
     </li>
     <li class="nav-item">
       <a class="nav-link {% if submenu_selected == "billing" %}active{% endif %}" href="{% url 'roster:admin_billing' pk=user.pk %}">
-        Billing {% if unpaid_invoice_count %}<span class="badge badge-danger">{{ unpaid_invoice_count }}</span>{% endif %}
+        Invoices {% if unpaid_invoice_count %}<span class="badge badge-danger">{{ unpaid_invoice_count }}</span>{% endif %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "subscriptions" %}active{% endif %}" href="{% url 'roster:admin_subscriptions' pk=user.pk %}">
+        Subscriptions {% if active_subscription_count %}<span class="badge badge-primary">{{ active_subscription_count }}</span>{% endif %}
       </a>
     </li>
     <li class="nav-item">
@@ -37,6 +42,11 @@
     <li class="nav-item">
       <a class="nav-link {% if submenu_selected == "notes" %}active{% endif %}" href="{% url 'roster:admin_notes' pk=user.pk %}">
         Notes
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if submenu_selected == "membership" %}active{% endif %}" href="{% url 'roster:admin_membership' pk=user.pk %}">
+        Membership
       </a>
     </li>
   </ul>

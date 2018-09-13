@@ -18,9 +18,22 @@ table tbody tr:hover {
 {% block javascript %}
 <script>
 $(document).ready(function() {
-    $('table tbody tr').click(function(){
-        location.href='/roster/' + $(this).attr('data-id') + '/profile';
-    })
+    $('th input').click(function() {
+        if($(this).prop('checked'))
+            checked = true;
+        else
+            checked = false;
+
+        $('td :checkbox').each(function() { 
+            $(this).prop('checked', checked);
+        });
+    });
+
+    $('table tbody tr td').click(function(){
+        if($(this).find('input').attr('type') != 'checkbox') {
+            location.href='/roster/' + $(this).parent().attr('data-id') + '/profile';
+        }
+    });
 });
 </script>
 {% endblock %}
@@ -33,6 +46,8 @@ $(document).ready(function() {
 {% block content %}
 
 <h4>League Roster</h4>
+
+{% include 'utils/messages.html' %}
 
 {% if filter_form %}
     <fieldset>

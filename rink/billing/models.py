@@ -299,7 +299,8 @@ class BillingSubscription(models.Model):
 
     roster = models.ForeignKey(
         "registration.Roster",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
     )
 
     status = models.CharField(
@@ -322,6 +323,9 @@ class BillingSubscription(models.Model):
         null=True,
     )
 
+    class Meta:
+        ordering = ['-create_date']
+
     @property
     def active(self):
         if self.status == "active":
@@ -331,7 +335,7 @@ class BillingSubscription(models.Model):
     def deactivate(self):
         if self.active:
             self.status = 'inactive'
-            self.deactivate_date = timezone.now()
+            self.deactive_date = timezone.now()
             self.save()
 
     def check_completed(self):
@@ -348,7 +352,7 @@ class BillingSubscription(models.Model):
 
             if billing_periods_future_uninvoiced == 0:
                 self.status = 'complete'
-                self.deactivate_date = timezone.now()
+                self.deactive_date = timezone.now()
                 self.save()
 
 
@@ -675,7 +679,7 @@ class Payment(models.Model):
             if amount > self.amount:
                 raise ValueError("Refund amount cannot be larger than the payment amount.")
             if amount <= 0:
-                raise valueError("Refund amount must be larger than zero.")
+                raise ValueError("Refund amount must be larger than zero.")
         else:
             amount = self.amount
 

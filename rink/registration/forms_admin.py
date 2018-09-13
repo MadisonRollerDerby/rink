@@ -210,3 +210,12 @@ class EventInviteAjaxForm(forms.Form):
         required=True,  # Note: validators are not run against empty fields
         validators=[invite_or_user_validator]
     )
+
+
+class EventInviteReminderForm(forms.Form):
+    custom_message = forms.CharField(
+        label="Reminder Message",
+        required=False,
+        help_text="Optional additional message for invite reminder email.",
+        widget=forms.Textarea(),
+    )
