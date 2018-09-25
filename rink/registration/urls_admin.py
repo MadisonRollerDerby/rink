@@ -39,6 +39,11 @@ urlpatterns = [
         views_admin.EventAdminInviteReminder.as_view(),
         name="event_admin_invite_reminder"),
 
+    # Remove Invite
+    path('<slug:event_slug>/invite/delete',
+        views_admin.EventAdminInviteDelete.as_view(),
+        name="event_admin_invite_delete"),
+
     # Event Roster
     path('<slug:event_slug>/roster',
         views_admin.EventAdminRoster.as_view(),

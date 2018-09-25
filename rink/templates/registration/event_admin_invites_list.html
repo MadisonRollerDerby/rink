@@ -1,5 +1,6 @@
 <script>
 invite_ajax_url = '{% url "registration:event_admin_invites" event_slug=event.slug %}';
+delete_ajax_url = '{% url "registration:event_admin_invite_delete" event_slug=event.slug %}';
 </script>
 
 {% if invites_waiting > 0 %}
@@ -20,6 +21,7 @@ invite_ajax_url = '{% url "registration:event_admin_invites" event_slug=event.sl
           <th scope="col">Derby Name</th>
           <th scope="col">Email</th>
           <th scope="col"></th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
@@ -38,6 +40,13 @@ invite_ajax_url = '{% url "registration:event_admin_invites" event_slug=event.sl
                     &#9989; {{ invite.invite_text }}
                 {% endif %}
             </button>
+          </td>
+          <td>
+            {% if invite.invite_status != "Completed" %}
+            <button data-id="{{ invite.pk }}" type="button" class="btn btn-sm btn-outline-danger invite-delete-button">
+              Delete
+            </button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
