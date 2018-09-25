@@ -219,3 +219,9 @@ class EventInviteReminderForm(forms.Form):
         help_text="Optional additional message for invite reminder email.",
         widget=forms.Textarea(),
     )
+
+
+class EventInviteDeleteForm(forms.Form):
+    invite_id = forms.IntegerField(
+        required=True,
+    )

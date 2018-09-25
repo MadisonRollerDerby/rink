@@ -70,4 +70,18 @@ $(document).ready(function() {
             });
         }
     });
+
+    $('.invite-delete-button').click(function() {
+        var elem = this;
+        if(!$(this).hasClass('disabled')) {
+            $(this).addClass('disabled').html("Removing");
+            var req = $.post(delete_ajax_url, 
+                { invite_id: $(this).attr("data-id") }
+            ).done(function( data ) {
+                jQuery(elem).html("Deleted");
+                jQuery(elem).closest('tr').remove();
+            });
+        }
+    });
+
 });

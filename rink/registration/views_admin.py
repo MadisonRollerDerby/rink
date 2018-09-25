@@ -21,7 +21,8 @@ import re
 
 from .forms import RegistrationDataForm
 from .forms_admin import (RegistrationAdminEventForm, BillingPeriodInlineForm,
-    EventInviteEmailForm, EventInviteAjaxForm, EventInviteReminderForm)
+    EventInviteEmailForm, EventInviteAjaxForm, EventInviteReminderForm,
+    EventInviteDeleteForm)
 from .models import RegistrationEvent, RegistrationInvite, Roster
 from .resources import RosterResource
 from .tables import RosterTable, ReminderTable
@@ -405,6 +406,22 @@ class EventAdminInvites(EventAdminBaseView):
             send_registration_invite_email.delay(invite_ids=[invite.pk])
             return HttpResponse("OK")
 
+        raise HttpResponse(status=500)
+
+
+class EventAdminInviteDelete(EventAdminBaseView):
+    def post(self, request, *args, **kwargs):
+        form = EventInviteDeleteForm(request.POST)
+        if form.is_valid():
+            try:
+                invite = RegistrationInvite.objects.get(
+                    pk=form.cleaned_data['invite_id'], event=self.event)
+            except RegistrationInvite.DoesNotExist:
+                raise HttpResponse(status=500)
+
+            invite.delete()
+            return HttpResponse("OK")
+        
         raise HttpResponse(status=500)
 
 
