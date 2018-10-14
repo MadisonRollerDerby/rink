@@ -1,14 +1,8 @@
 from import_export import resources
-from users.models import User
+from registration.models import RegistrationData
 
 
 class RosterResource(resources.ModelResource):
     class Meta:
-        model = User
-        fields = [
-            'first_name',
-            'last_name',
-            'email',
-            'derby_name',
-            'derby_number',
-        ]
+        model = RegistrationData
+        exclude = ['invite', 'user', 'event', 'roster', 'billing_subscription', 'legal_forms', 'organization', ]

@@ -1,3 +1,4 @@
+
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.http import Http404, HttpResponse
@@ -36,7 +37,7 @@ class RosterList(RinkLeagueAdminPermissionRequired, SingleTableView, FilterView)
 
     def get(self, request, *args, **kwargs):
         if request.GET.get('csv', None):
-            roster = self.get_queryset()
+            roster = RegistrationData.objects.filter(organization__league=self.league)
             roster_resource = RosterResource()
             dataset = roster_resource.export(queryset=roster)
             response = HttpResponse(dataset.csv, content_type='text/csv')
