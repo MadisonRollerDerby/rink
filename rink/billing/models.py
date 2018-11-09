@@ -195,15 +195,10 @@ class BillingPeriod(models.Model):
         # I guess give them a free ride?
         return 0
 
-    def get_invoice_description(self):
-        num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
+    def get_invoice_description(self, description="Registration"):
+        return "{} {}".format(self.event.name, description)
 
-        if num_billing_periods == 1:
-            return "{} Registration".format(self.event.name)
-        else:
-            return "{} Dues / Registration".format(self.name)
-
-    def generate_invoice(self, subscription):
+    def generate_invoice(self, subscription, description="Registration"):
         # returns (object, created_True_or_False)
         return Invoice.objects.get_or_create(
             league=self.league,
@@ -214,7 +209,7 @@ class BillingPeriod(models.Model):
                 'invoice_amount': self.get_invoice_amount(user=subscription.user),
                 'invoice_date': timezone.now(),
                 'due_date': self.due_date,
-                'description': self.get_invoice_description(),
+                'description': self.get_invoice_description(description),
             }
         )
 
@@ -326,6 +321,14 @@ class BillingSubscription(models.Model):
     class Meta:
         ordering = ['-create_date']
 
+    def __str__(self):
+        return "{} - {} - {} [{}]".format(
+            self.league,
+            self.event.name,
+            self.user,
+            self.status,
+        )
+
     @property
     def active(self):
         if self.status == "active":
@@ -351,7 +354,7 @@ class BillingSubscription(models.Model):
             ).exclude(pk__in=invoices).count()
 
             if billing_periods_future_uninvoiced == 0:
-                self.status = 'complete'
+                self.status = 'completed'
                 self.deactive_date = timezone.now()
                 self.save()
 

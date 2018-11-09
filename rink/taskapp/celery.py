@@ -16,8 +16,8 @@ app = Celery(
     #redis_socket_connect_timeout=10,
     #redis_socket_timeout=8,
     #broker_connection_timeout=9,
-    #broker="amqp://guest:guest@localhost:5672/rink",
-    #backend="amqp://guest:guest@localhost:5672/rink",
+    broker="amqp://guest:guest@localhost:5672/rink",
+    backend="amqp://guest:guest@localhost:5672/rink",
 
     #broker="redis://127.0.0.1:6379/0",
     #broker_transport="redis",

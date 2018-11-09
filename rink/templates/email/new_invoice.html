@@ -1,0 +1,26 @@
+{{ header_html }}
+
+<p>Hi {{ user }},</p>
+
+<div style="border: 1px solid #ff5842;margin: 5px 20px 10px 20px; padding: 4px 20px 10px 20px;">
+    <strong>SEMI-IMPORTANT NOTE:</strong> Due to floor replacement at Fast Forward, dues invoices are being sent out late. November dues amounts will be billed at half the usual rate. Thanks!
+</div>
+
+<br>
+
+<p><strong>INVOICE #{{ invoice.pk }}</strong> - {{ invoice.invoice_date }}</p>
+
+<p><strong>Description:</strong> {{ invoice.description }}</p>
+
+<p><strong>Amount:</strong> ${{ invoice.invoice_amount }}</p>
+
+<p>Your card on file will be charged on {{ invoice.due_date }}.</p>
+<br>
+<hr>
+<br>
+
+<p>If you need to update your credit card, <a href="{{ url_domain }}{% url 'account_login' %}">login to your account</a> or <a href="{{ url_domain }}{% url 'account_reset_password' %}">reset your password.</a></p>
+
+<p>Please contact {% if invoice.league.email_from_name %}{{ invoice.league.email_from_name }} at {% endif %}<a href="mailto:{{ invoice.league.email_from_address }}">{{ invoice.league.email_from_address }}</a> or reply to this email if you have any questions.</p>
+
+{{ footer_html }}
