@@ -841,7 +841,7 @@ class UserStripeCard(models.Model):
             self.card_last4 = customer.active_card.last4
             self.card_expire_month = customer.active_card.exp_month
             self.card_expire_year = customer.active_card.exp_year
-        except KeyError:
+        except AttributeError:
             pass
 
         self.card_last_update_date = timezone.now()
