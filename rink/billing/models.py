@@ -836,10 +836,14 @@ class UserStripeCard(models.Model):
             customer.source = token
             customer.save()
 
-        self.card_type = customer.active_card.brand
-        self.card_last4 = customer.active_card.last4
-        self.card_expire_month = customer.active_card.exp_month
-        self.card_expire_year = customer.active_card.exp_year
+        try:
+            self.card_type = customer.active_card.brand
+            self.card_last4 = customer.active_card.last4
+            self.card_expire_month = customer.active_card.exp_month
+            self.card_expire_year = customer.active_card.exp_year
+        except KeyError:
+            pass
+
         self.card_last_update_date = timezone.now()
         self.card_last_charge_date = None
         self.card_last_fail_date = None
