@@ -84,7 +84,10 @@ def generate_invoices():
                 # generate_invoice is a shortcut for create or get this Invoice.
                 invoice, created = bp.generate_invoice(subscription, description="Dues")
                 if created:
-                    email_invoice.delay(invoice.pk)
+                    if invoice.invoice_amount == 0.0:
+                        invoice.pay()  # always mark $0 invoices as paid
+                    else:
+                        email_invoice.delay(invoice.pk)
 
 
 @shared_task(ignore_result=True)
