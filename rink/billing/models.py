@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from decimal import Decimal
 import stripe
-from stripe.error import CardError
+from stripe.error import CardError, InvalidRequestError
 
 from taskapp.celery import app as celery_app
 
@@ -818,6 +818,20 @@ class UserStripeCard(models.Model):
         # Create or update a stripe customer with a new credit card token
         stripe.api_key = self.league.get_stripe_private_key()
 
+        if self.customer_id:
+            customer = stripe.Customer.retrieve(self.customer_id)
+            if self.user.legal_name == "":
+                customer.description = None
+            else:
+                customer.description = self.user.legal_name
+            customer.email = self.user.email
+            customer.source = token
+            try:
+                customer.save()
+            except InvalidRequestError:
+                self.customer_id = ""
+                self.save()
+
         if not self.customer_id:
             # Need to create a stripe customer profile
             customer = stripe.Customer.create(
@@ -826,15 +840,6 @@ class UserStripeCard(models.Model):
                 source=token,
             )
             self.customer_id = customer.id
-        else:
-            customer = stripe.Customer.retrieve(self.customer_id)
-            if self.user.legal_name == "":
-                customer.description = None
-            else:
-                customer.description = self.user.legal_name
-            customer.email = self.user.email
-            customer.source = token
-            customer.save()
 
         try:
             self.card_type = customer.active_card.brand
