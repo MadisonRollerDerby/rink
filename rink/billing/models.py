@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -688,6 +689,8 @@ class Payment(models.Model):
 
         if self.processor == 'stripe':
             stripe.api_key = self.league.get_stripe_private_key()
+            stripe.api_version = settings.STRIPE_API_VERSION
+
             refund = stripe.Refund.create(
                 charge=self.transaction_id,
                 amount=int(amount * 100),
@@ -817,6 +820,7 @@ class UserStripeCard(models.Model):
     def update_from_token(self, token):
         # Create or update a stripe customer with a new credit card token
         stripe.api_key = self.league.get_stripe_private_key()
+        stripe.api_version = settings.STRIPE_API_VERSION
 
         if self.customer_id:
             try:
@@ -849,10 +853,12 @@ class UserStripeCard(models.Model):
             self.customer_id = customer.id
 
         try:
-            self.card_type = customer.active_card.brand
-            self.card_last4 = customer.active_card.last4
-            self.card_expire_month = customer.active_card.exp_month
-            self.card_expire_year = customer.active_card.exp_year
+            self.card_type = customer.sources.data[0].brand
+            self.card_last4 = customer.sources.data[0].last4
+            self.card_expire_month = customer.sources.data[0].exp_month
+            self.card_expire_year = customer.sources.data[0].exp_year
+        except KeyError:
+            pass
         except AttributeError:
             pass
 
@@ -899,6 +905,8 @@ class UserStripeCard(models.Model):
 
         if payment_total > 0:
             stripe.api_key = self.league.get_stripe_private_key()
+            stripe.api_version = settings.STRIPE_API_VERSION
+
             if not self.customer_id:
                 raise ValueError("Cannot charge card, this user does not have a card saved to Stripe.")
 

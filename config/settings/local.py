@@ -71,3 +71,4 @@ INSTALLED_APPS += ['django_extensions']  # noqa F405
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+STRIPE_API_VERSION = '2018-11-08'

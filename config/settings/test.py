@@ -66,3 +66,5 @@ EMAIL_PORT = 1025
 # ------------------------------------------------------------------------------
 STRIPE_TEST_SECRET="sk_test_JUmsyjIU3JTkQgmLL0sasu0z"
 STRIPE_TEST_PUBLIC="pk_test_ewB0eFxUAWV0cMJEV2UJcHJQ"
+
+STRIPE_API_VERSION = '2018-11-08'

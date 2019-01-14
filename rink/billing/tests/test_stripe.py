@@ -17,6 +17,7 @@ import stripe
 from stripe.error import InvalidRequestError, CardError
 
 stripe.api_key = settings.STRIPE_TEST_SECRET
+stripe.api_version = settings.STRIPE_API_VERSION
 
 
 """
