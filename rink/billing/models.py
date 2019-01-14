@@ -819,18 +819,25 @@ class UserStripeCard(models.Model):
         stripe.api_key = self.league.get_stripe_private_key()
 
         if self.customer_id:
-            customer = stripe.Customer.retrieve(self.customer_id)
-            if self.user.legal_name == "":
-                customer.description = None
-            else:
-                customer.description = self.user.legal_name
-            customer.email = self.user.email
-            customer.source = token
             try:
-                customer.save()
+                customer = stripe.Customer.retrieve(self.customer_id)
             except InvalidRequestError:
                 self.customer_id = ""
                 self.save()
+                customer = None
+
+            if customer:
+                if self.user.legal_name == "":
+                    customer.description = None
+                else:
+                    customer.description = self.user.legal_name
+                customer.email = self.user.email
+                customer.source = token
+                try:
+                    customer.save()
+                except InvalidRequestError:
+                    self.customer_id = ""
+                    self.save()
 
         if not self.customer_id:
             # Need to create a stripe customer profile
