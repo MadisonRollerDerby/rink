@@ -503,7 +503,7 @@ class EventAdminInviteUsers(EventAdminBaseView):
         league_users = get_users_with_perms(self.league).prefetch_related(
             Prefetch(
                 'registrationinvite_set',
-                queryset=RegistrationInvite.objects.filter(event__slug='test-event'),
+                queryset=RegistrationInvite.objects.filter(event=self.event),
                 to_attr='cached_invites',
             )
         )
