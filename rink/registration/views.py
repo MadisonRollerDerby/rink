@@ -15,7 +15,7 @@ from .forms import (
     LegalDocumentInitialsForm)
 from .models import RegistrationEvent, RegistrationInvite, RegistrationData, Roster
 from billing.models import (
-    BillingPeriod, UserStripeCard, Invoice, BillingSubscription
+    BillingPeriod, UserStripeCard, Invoice, BillingSubscription, BillingGroupMembership
 )
 from legal.models import LegalSignature
 
@@ -176,8 +176,25 @@ class RegisterShowForm(LoginRequiredMixin, RegistrationView):
                 return None
         except RegistrationInvite.DoesNotExist:
             return None
-        else:
+
+        # If somehow an invite has both a group and a user,
+        # return the group
+        if invite.billing_group:
             return invite.billing_group
+
+        # If there's a user attached to this invite, lookup if they have
+        # a custom billing group set and use that.
+        if invite.user:
+            try:
+                membership = BillingGroupMembership.objects.get(
+                    league=invite.event.league,
+                    user=invite.user
+                )
+            except BillingGroupMembership.DoesNotExist:
+                return None
+            else:
+                return membership.group
+        return None
 
     def get_billing_contexts(self, request):
         num_billing_periods = BillingPeriod.objects.filter(event=self.event).count()
