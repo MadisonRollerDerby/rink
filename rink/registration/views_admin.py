@@ -692,7 +692,10 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                     bpcpa.group = group
                     bpcpa.period = bp
                     try:
-                        bpcpa.invoice_amount = post['invoice_amount_group{}{}'.format(group.pk, bp_id)]
+                        if post['invoice_amount_group{}{}'.format(group.pk, bp_id)] is None:
+                            bpcpa.invoice_amount = Decimal('0.00')
+                        else:
+                            bpcpa.invoice_amount = post['invoice_amount_group{}{}'.format(group.pk, bp_id)]
                     except KeyError as e:
                         alert_messages.append("Field not found for NEW billing period. Error: {}".format(str(e)))
                         continue
@@ -802,7 +805,10 @@ class EventAdminBillingPeriods(EventAdminBaseView):
                         bpcpa.group = group
                         bpcpa.period = bp
                     try:
-                        new_invoice_amount = Decimal(post['invoice_amount_group{}_{}'.format(group.pk, bp_id)])
+                        if post['invoice_amount_group{}_{}'.format(group.pk, bp_id)] is None:
+                            new_invoice_amount = Decimal('0.00')
+                        else:
+                            new_invoice_amount = Decimal(post['invoice_amount_group{}_{}'.format(group.pk, bp_id)])
                     except KeyError as e:
                         alert_messages.append("Field not found saving invoice amount for group '{}' in billing period '{}'. Field was supposed to be '{}'. Error: {}".format(group.name, bp.name, 'invoice_amount_group{}_{}'.format(group.pk, bp_id), str(e)))
                         continue

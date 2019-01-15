@@ -249,6 +249,7 @@ class BillingPeriodCustomPaymentAmount(models.Model):
         max_digits=10,
         decimal_places=2,
         help_text="The amount we should bill a user matching this status for the billing period specified above.",
+        default=Decimal('0.00'),
     )
 
     period = models.ForeignKey(
@@ -266,6 +267,9 @@ class BillingPeriodCustomPaymentAmount(models.Model):
         return "{} - {} - ${}".format(self.group.name, self.period.name, self.invoice_amount)
 
     def clean(self):
+        if self.invoice_amount == "":
+            self.invoice_amount = Decimal('0.00')
+
         if self.invoice_amount < 0:
             raise ValidationError("Invoice amount must be a positive number.")
 
