@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Invite to Vote via Email Address{% endblock %}
+
+{% block content %}
+{% include "voting/admin_elections_header.html" %}
+
+{% include 'utils/messages.html' %}
+
+{% crispy form %}
+
+{% endblock %}

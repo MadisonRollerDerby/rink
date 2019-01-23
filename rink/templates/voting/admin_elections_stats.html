@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ election.name }} voting results {% endblock %}
+
+{% block content %}
+
+{% include "voting/admin_elections_header.html" %}
+
+<style type="text/css">
+.spacer { height: 40px; }
+</style>
+
+<table class="table table-hover table-condensed table-striped" style="width: 500px;">
+            <tbody>
+                <tr>
+                    <td style="width:125px;text-align:right;">Requests to Vote Sent:</td>
+                    <td style="width:50px;">{{ invites_sent.count }}</td>
+                </tr>
+                <tr>
+                    <td style="text-align:right;">Votes Waiting:</td>
+                    <td>{{ invites_waiting.count }}</td>
+                </tr>
+                <tr>
+                    <td style="text-align:right;">Votes Received:</td>
+                    <td>{{ invites_responded.count }} &nbsp;&nbsp;&nbsp;({{ invites_responded_percent }}%)</td>
+                </tr>
+            </tbody>
+</table>
+
+
+{% for question in questions %}
+<div class="spacer"></div>
+<h3><span>#{{forloop.counter}}</span> {{ question }}</h2>
+
+        <table class="table table-hover table-condensed table-striped">
+            <thead>
+                <tr>
+                    <th style="width:75px;">Votes</th>
+                    <th style="width:50px;">%</th>
+                    <th>Answer</th>
+                </tr>
+            </thead>
+            <tbody>
+    {% for answer in question.response_answers %}
+                <tr>
+                    <td>{{ answer.count }}</td>
+                    <td>{% if answer.percent > 0 %}{{ answer.percent }}%{% endif %}</td>
+                    <td>{{ answer.answer }}</td>
+                </tr>
+    {% endfor %}
+
+            </tbody>
+        </table>
+
+{% endfor %}
+
+<div style="border-bottom:1px dotted #eaeaea;margin:15px 0 10px 0;"></div>
+
+<h2>Comments</h2>
+
+{% if comments.count == 0 %}
+    <p class="muted">No comments have been submitted.</p>
+{% endif %}
+
+{% for comment in comments %}
+    <br>
+    <blockquote>
+        <p>{{ comment.comment }}</p>
+    </blockquote>
+{% endfor %}
+
+<div style="border-bottom:1px dotted #eaeaea;margin:15px 0 10px 0;"></div>
+
+
+<div class="row">
+    <div class="col">
+        <h2>Not Voted</h2>
+        <table class="table table-striped">
+            <tbody>
+                {% for waiting in invites_waiting %}
+                <tr>
+                    <td>{{ waiting.user }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col">
+        <h2>Done Voting</h2>
+        <table class="table table-striped">
+            <tbody>
+                {% for waiting in invites_responded %}
+                <tr>
+                    <td>{{ waiting.user }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

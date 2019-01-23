@@ -8,6 +8,7 @@ from unittest import skip
 
 from .factories import (
     BillingPeriodFactory, BillingGroupFactory, BillingGroupMembershipFactory,
+    RosterFactory, SubscriptionFactory
 )
 from .utils import BillingAppTestCase
 from billing.models import UserStripeCard, BillingPeriodCustomPaymentAmount

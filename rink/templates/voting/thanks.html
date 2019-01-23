@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="success">
+<h2>Vote Submitted - {{ election.name }}</h2>
+<br>
+<br>
+<strong>Hey, thanks, you're pretty great. We have recorded your vote.</strong>
+<br>
+<br>
+<div style="margin-top:40px;" >Please contact {% if league.email_from_name %}<strong>{{ league.email_from_name }}</strong> at {% endif %}<a href="mailto:{{ league.email_from_address }}">{{ league.email_from_address }}</a> if you have any comments or questions.</div>
+</div>
+
+{% endblock %}

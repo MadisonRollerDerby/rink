@@ -129,6 +129,7 @@
                     {% if "registration_manager" in request.session.league_permissions %}
                       <a class="dropdown-item" href="{% url 'registration:event_admin_list' %}">Registration</a>
                       <a class="dropdown-item" href="{% url 'legal:admin_document_list' %}">Legal Docs</a>
+                      <a class="dropdown-item" href="{% url 'voting:admin_voting' %}">Voting</a>
                     {% endif %}
 
                     {% if "league_admin" in request.session.league_permissions %}

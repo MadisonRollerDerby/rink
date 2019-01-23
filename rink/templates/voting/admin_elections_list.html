@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Elections and Voting{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+
+        <div class="row mt-3 mb-3">
+            <div class="col">
+                <h3>Elections and Voting</h3>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if elections %}
+                <div class="list-group">
+                    {% for election in elections %}
+                        <a href="{% url 'voting:admin_voting_stats_details' election_slug=election.slug %}" class="list-group-item list-group-item-action">
+                            {{ election.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                No elections found.
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

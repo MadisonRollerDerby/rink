@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="alert alert-error">
+{{ error }}
+</div>
+<br/>
+<br/>
+<p class="muted">Please contact {% if league.email_from_name %}<strong>{{ league.email_from_name }}</strong> at {% endif %}<a href="mailto:{{ league.email_from_address }}">{{ league.email_from_address }}</a> if you need help.</p>
+
+{% endblock %}

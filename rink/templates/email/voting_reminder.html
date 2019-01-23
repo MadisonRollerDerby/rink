@@ -1,0 +1,21 @@
+ {{ header_html }}
+
+<p>Hi {{ invite.user }},</p>
+
+{% if election.description %}
+<div style="border: 1px solid #ff5842;margin: 10px 20px 10px 20px; padding: 4px 20px 10px 20px;">
+    {{ election.description|safe }}
+</div>
+{% endif %}
+
+<p>It does not look like you have voted in this election yet.</p>
+
+<p>Please vote in the <strong>{{ election.name }}</strong>. Your participation is requested. <i>It's easy!</i> Just click the link to vote.</p>
+
+<p><a style="font-size:larger" href="{{ url_domain }}{% url 'voting:view_voting_invite' league_slug=league.slug vote_key=invite.uuid %}">Click HERE to Vote!</a></p>
+
+<p>Please <b>do not</b> share the special voting link above with anyone else. It only allows you to vote one time.</p>
+
+<p>Please contact {% if league.email_from_name %}{{ league.email_from_name }} at {% endif %}<a href="mailto:{{ league.email_from_address }}">{{ league.email_from_address }}</a> or reply to this email if you have any questions.</p>
+
+{{ footer_html }}

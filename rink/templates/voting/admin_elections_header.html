@@ -1,0 +1,12 @@
+<a href="{% url 'voting:admin_voting' %}" >Back to Elections</a>
+<br>
+<br>
+
+<h2>{{ election.name }}</h2>
+
+<div>
+    <a href="{% url 'voting:admin_voting_stats_details' election_slug=election.slug %}"><button type="button" class="btn btn-outline-primary">Election Results</button></a>
+    <a href="{% url 'voting:admin_voting_invites' election_slug=election.slug %}"><button type="button" class="btn btn-outline-primary">Invite Voters</button></a>
+</div>
+
+<div style="height:10px;"></div>
