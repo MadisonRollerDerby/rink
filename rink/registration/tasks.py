@@ -61,7 +61,7 @@ def send_registration_confirmation(registration_data_id, payment_data_id=None):
 
 
 @shared_task
-def send_registration_invite_reminder(event_id, invite_ids=[], custom_message=None):
+def send_registration_invite_reminder(event_id, invite_ids=[], custom_message=''):
     for invite_id in invite_ids:
         try:
             invite = RegistrationInvite.objects.get(pk=invite_id, event__pk=event_id)
