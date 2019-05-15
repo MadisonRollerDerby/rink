@@ -1,0 +1,22 @@
+{{ header_html }}
+
+
+<br>
+{% if event.logo %}
+<img src='{{ event.logo.url }}' alt='{{ event.name }}'>
+{% endif %}
+<br>
+<br>
+
+<p>Hi {{ ticket.derby_name }} ({{ ticket.real_name }}),</p>
+
+<p>Thanks for your payment for a guest at <strong>{{ event.name }}<strong>. Here's a receipt.</p>
+
+<p><strong>Payment Date:</strong> {{ ticket.payment_date }}</p>
+
+<p><strong>Amount Paid:</strong> $5</p>
+
+<p><strong>Transaction ID:</strong> {{ ticket.transaction_id }}</p>
+
+
+{{ footer_html }}

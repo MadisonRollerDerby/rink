@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^register/', include('registration.urls', namespace="register")),
     url(r'^registration/', include('registration.urls_admin', namespace='registration')),
     url(r'^roster/', include('roster.urls', namespace='roster')),
+    url(r'^tickets/', include('tickets.urls', namespace='tickets')),
     url(r'^voting/', include('voting.urls', namespace='voting')),
 
     url(r'^robots.txt',

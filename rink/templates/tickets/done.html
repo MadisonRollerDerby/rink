@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Guest Ticket Purchased - {{ event.name }}{% endblock %}
+
+
+{% block css %}
+<style type="text/css">
+
+#navbarSupportedContent {
+	display: none !important;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="row">
+  <div class="col-md-6">
+
+{% if event.logo %}
+<img class="img-fluid" src='{{ event.logo.url }}' alt='{{ event.name }}'>
+{% else %}
+<h1>{{ event.name }}</h1>
+{% endif %}
+
+<br>
+<br>
+
+<p><strong>SWEET!</strong> We received your guest payment.</p>
+
+<p>You will receive an email with a ticket, but we'll also have your name on a sheet at the door marked as paid.</p>
+
+<p><strong>SEE YOU SOON!</strong> ❤️</p>
+
+
+  </div>
+</div>
+
+
+{% endblock %}

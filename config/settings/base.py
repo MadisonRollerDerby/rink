@@ -88,6 +88,7 @@ LOCAL_APPS = [
     'registration',
     'billing',
     'roster',
+    'tickets',
     'voting',
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
