@@ -198,6 +198,7 @@ class RegistrationDataForm(forms.ModelForm):
                     'derby_insurance_type',
                     'derby_insurance_number',
                     'derby_pronoun',
+                    'marketing_source',
                 )
             )
 
@@ -279,6 +280,7 @@ class RegistrationDataForm(forms.ModelForm):
             'derby_insurance_type',
             'derby_insurance_number',
             'derby_pronoun',
+            'marketing_source',
 
             'emergency_contact',
             'emergency_phone',

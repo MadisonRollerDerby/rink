@@ -385,6 +385,13 @@ class RegistrationData(models.Model):
         blank=True
     )
 
+    marketing_source = models.CharField(
+        "How did you find out about Wreckers?",
+        max_length=250,
+        help_text="Optional. Facebook? Friend? MRD event?",
+        blank=True
+    )
+
     emergency_date_of_birth = models.DateField(
         "Date of Birth",
     )
