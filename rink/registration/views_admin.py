@@ -14,10 +14,12 @@ from django_tables2 import SingleTableView
 from django_filters.views import FilterView
 
 import csv
+import os
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 from guardian.shortcuts import get_users_with_perms
 import re
+from time import gmtime, strftime
 
 from .forms import RegistrationDataForm
 from .forms_admin import (RegistrationAdminEventForm, BillingPeriodInlineForm,
@@ -231,6 +233,107 @@ class EventAdminRosterCSV(EventAdminBaseView):
         dataset = roster_resource.export(queryset=roster)
         response = HttpResponse(dataset.csv, content_type='text/csv')
         response['Content-Disposition'] = 'attachment;filename=roster={}.csv'.format(self.event.slug)
+        return response
+
+
+class EventAdminMedicalCSV(EventAdminBaseView):
+    def get(self, request, *args, **kwargs):
+        from fpdf import FPDF
+
+        pdf = FPDF()
+        pdf.add_font('DejaVu','','rink/fonts/DejaVuSansCondensed.ttf',uni=True)
+
+        roster = Roster.objects.filter(event__slug=self.event.slug)
+
+        for roster_entry in roster:
+
+            registration_data = roster_entry.registrationdata_set.first()
+
+            pdf.add_page()
+            pdf.set_margins(16, 2)
+            pdf.ln(20)
+
+            pdf.set_font('DejaVu','',16)
+            pdf.cell(40,40,'Derby Name:')
+            pdf.set_font('DejaVu','',48)
+            pdf.cell(40,40, roster_entry.user.derby_name)
+            pdf.ln(20)
+            
+            pdf.set_font('DejaVu','',16)
+            pdf.cell(40,40,'Real Name:')
+            pdf.set_font('DejaVu','',24)
+            pdf.cell(40,40, roster_entry.user.first_name + " " + roster_entry.user.last_name)
+            pdf.ln(20)
+            
+            pdf.set_font('DejaVu','',16)
+            pdf.cell(60,40,'Date of Birth:')
+            pdf.set_font('DejaVu','',24)
+            pdf.cell(0,40, str(registration_data.emergency_date_of_birth))
+            pdf.ln(10)
+            
+            pdf.set_font('DejaVu','',16)
+            pdf.cell(60,40,'Emergency Contact:')
+            pdf.set_font('DejaVu','',24)
+            pdf.cell(0,40, registration_data.emergency_contact)
+            pdf.ln(10)
+            pdf.cell(60,40,'')
+            pdf.set_font('DejaVu','',24)
+            pdf.cell(0,40, registration_data.emergency_phone)
+            pdf.ln(10)
+            pdf.cell(60,40,'')
+            pdf.set_font('DejaVu','',24)
+            pdf.cell(0,40, registration_data.emergency_relationship)
+            pdf.ln(15)
+            
+            if registration_data.emergency_contact_second:
+                pdf.set_font('DejaVu','',16)
+                pdf.cell(60,40,'Emergency Contact #2:')
+                pdf.set_font('DejaVu','',24)
+                pdf.cell(0,40, registration_data.emergency_contact_second)
+                pdf.ln(10)
+                pdf.cell(60,40,'')
+                pdf.set_font('DejaVu','',24)
+                pdf.cell(0,40, registration_data.emergency_phone_second)
+                pdf.ln(10)
+                pdf.cell(60,40,'')
+                pdf.set_font('DejaVu','',24)
+                pdf.cell(0,40, registration_data.emergency_relationship_second)
+                pdf.ln(15)
+
+            pdf.set_font('DejaVu','',16)
+            pdf.cell(60,40,'Hosptial Preference:')
+            pdf.set_font('DejaVu','',24)
+            pdf.cell(0,40, registration_data.emergency_hospital)
+            pdf.ln(15)
+            
+            pdf.set_font('DejaVu','',12)
+            pdf.multi_cell(0,40,'Medical Conditions:')
+            pdf.ln(-15)
+            pdf.set_font('DejaVu','',24)
+            if registration_data.emergency_allergies == "":
+                details = "<none>"
+            else:
+                details = registration_data.emergency_allergies
+            
+            pdf.write(12, details)
+            pdf.ln(25)
+
+            wftda = ""
+            try:
+                wftda = int(registration_data.derby_insurance_number)
+            except:
+                pass
+
+            pdf.set_font('Courier','',7)
+            pdf.write(4, 'RINK #' + str(registration_data.user.id) + " | " + str(registration_data.user.email) + " | WFTDA #" + str(wftda) + " | generated on " + strftime("%Y-%m-%d", gmtime()))
+
+        pdf.output('/tmp/rink_medical.pdf', 'F')
+
+        with open('/tmp/rink_medical.pdf', 'rb') as pdf:
+            response = HttpResponse(pdf.read(), content_type='application/pdf')
+            response['Content-Disposition'] = 'inline;filename=rink_medical.pdf'
+
+        os.remove('/tmp/rink_medical.pdf')
         return response
 
 

@@ -30,7 +30,9 @@ $(document).ready(function() {
 {% include "registration/event_admin_menu.html" with section_title="Roster" %}
 
 <p class="float-right">
-    <a href="{% url 'registration:event_admin_roster_csv' event_slug=event.slug %}">Download CSV</a>
+    <a href="{% url 'registration:event_admin_roster_csv' event_slug=event.slug %}" target="_blank">Download CSV</a>
+    |
+    <a href="{% url 'registration:event_admin_medical_csv' event_slug=event.slug %}" target="_blank">Medical PDF</a>
 </p>
 
 {% if filter %}
